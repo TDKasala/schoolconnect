@@ -176,10 +176,10 @@ const HomePage: React.FC = () => {
               <p className="text-gray-600 leading-relaxed">
                 Interface conçue pour être utilisée facilement par tous les membres de votre équipe éducative.
               </p>
-              <div className="mt-6 flex items-center text-blue-600 font-medium group-hover:translate-x-2 transition-transform">
+              <Link to="/avantages" className="mt-6 flex items-center text-blue-600 font-medium group-hover:translate-x-2 transition-transform">
                 <span className="text-sm">En savoir plus</span>
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
+              </Link>
             </div>
 
             <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-scale-in" style={{animationDelay: '0.1s'}}>
@@ -190,10 +190,10 @@ const HomePage: React.FC = () => {
               <p className="text-gray-600 leading-relaxed">
                 Adapté aux spécificités du système éducatif congolais et optimisé pour les connexions lentes.
               </p>
-              <div className="mt-6 flex items-center text-green-600 font-medium group-hover:translate-x-2 transition-transform">
+              <Link to="/avantages" className="mt-6 flex items-center text-green-600 font-medium group-hover:translate-x-2 transition-transform">
                 <span className="text-sm">En savoir plus</span>
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
+              </Link>
             </div>
 
             <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-scale-in" style={{animationDelay: '0.2s'}}>
@@ -204,10 +204,10 @@ const HomePage: React.FC = () => {
               <p className="text-gray-600 leading-relaxed">
                 Équipe de support basée en RDC, parlant français et comprenant vos besoins spécifiques.
               </p>
-              <div className="mt-6 flex items-center text-purple-600 font-medium group-hover:translate-x-2 transition-transform">
+              <Link to="/avantages" className="mt-6 flex items-center text-purple-600 font-medium group-hover:translate-x-2 transition-transform">
                 <span className="text-sm">En savoir plus</span>
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -263,7 +263,7 @@ const HomePage: React.FC = () => {
                 </ul>
                 
                 <Link
-                  to="/posp"
+                  to="/pedagogie"
                   className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold group-hover:translate-x-2 transition-all duration-300"
                 >
                   Découvrir POSP
@@ -301,7 +301,7 @@ const HomePage: React.FC = () => {
                 </ul>
                 
                 <Link
-                  to="/ubank"
+                  to="/finances"
                   className="inline-flex items-center text-green-600 hover:text-green-700 font-semibold group-hover:translate-x-2 transition-all duration-300"
                 >
                   Découvrir UBank
@@ -339,7 +339,7 @@ const HomePage: React.FC = () => {
                 </ul>
                 
                 <Link
-                  to="/portails-connectes"
+                  to="/portails"
                   className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold group-hover:translate-x-2 transition-all duration-300"
                 >
                   Découvrir Portails
