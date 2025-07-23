@@ -109,20 +109,48 @@ const HomePage: React.FC = () => {
 
             <div className="relative">
               <div className="bg-white rounded-2xl shadow-2xl overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-300">
-                <img 
-                  src="/images/classroom-hero.jpg" 
-                  alt="Salle de classe avec enseignante et élèves en République Démocratique du Congo"
-                  className="w-full h-96 object-cover"
-                />
+                {/* Beautiful classroom-themed hero section */}
+                <div className="h-96 bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 relative overflow-hidden">
+                  {/* Decorative elements representing a classroom */}
+                  <div className="absolute inset-0 opacity-20">
+                    <div className="absolute top-8 left-8 w-16 h-12 bg-white rounded border-2 border-white/30"></div>
+                    <div className="absolute top-8 left-28 w-16 h-12 bg-white rounded border-2 border-white/30"></div>
+                    <div className="absolute top-8 left-48 w-16 h-12 bg-white rounded border-2 border-white/30"></div>
+                    <div className="absolute top-24 left-8 w-16 h-12 bg-white rounded border-2 border-white/30"></div>
+                    <div className="absolute top-24 left-28 w-16 h-12 bg-white rounded border-2 border-white/30"></div>
+                    <div className="absolute top-24 left-48 w-16 h-12 bg-white rounded border-2 border-white/30"></div>
+                  </div>
+                  
+                  {/* Central content */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                        <BookOpen className="w-10 h-10 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">Éducation de Qualité</h3>
+                      <p className="text-white/90">Pour chaque enfant congolais</p>
+                      <div className="mt-4 flex items-center justify-center space-x-2">
+                        <Users className="w-5 h-5" />
+                        <span className="text-sm">247 élèves connectés</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Floating academic elements */}
+                  <div className="absolute top-4 right-4 w-8 h-8 bg-secondary-400 rounded-full opacity-60 animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4 w-6 h-6 bg-white rounded-full opacity-40 animate-pulse animation-delay-1000"></div>
+                  <div className="absolute bottom-8 right-8 w-10 h-10 bg-secondary-300 rounded-full opacity-50 animate-pulse animation-delay-2000"></div>
+                </div>
+                
                 <div className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-primary-600" />
+                        <TrendingUp className="w-6 h-6 text-primary-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">Éducation de qualité</h3>
-                        <p className="text-gray-600 text-sm">Pour chaque enfant congolais</p>
+                        <h3 className="font-semibold text-gray-900">Performance en temps réel</h3>
+                        <p className="text-gray-600 text-sm">Suivi des progrès de vos élèves</p>
                       </div>
                     </div>
                     
@@ -132,7 +160,18 @@ const HomePage: React.FC = () => {
                         <span className="text-sm font-bold text-green-600">94.2%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{width: '94.2%'}}></div>
+                        <div className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full" style={{width: '94.2%'}}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-primary-50 rounded-lg">
+                        <div className="text-2xl font-bold text-primary-600">247</div>
+                        <div className="text-xs text-primary-600">Élèves</div>
+                      </div>
+                      <div className="text-center p-3 bg-secondary-50 rounded-lg">
+                        <div className="text-2xl font-bold text-secondary-600">18</div>
+                        <div className="text-xs text-secondary-600">Enseignants</div>
                       </div>
                     </div>
                   </div>
