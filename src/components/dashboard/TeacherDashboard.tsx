@@ -3,10 +3,10 @@ import { BookOpen, Users, ClipboardCheck, Calendar } from 'lucide-react';
 
 const TeacherDashboard: React.FC = () => {
   const stats = [
-    { name: 'Mes Classes', value: '3', icon: BookOpen, color: 'bg-blue-500' },
-    { name: 'Total Élèves', value: '87', icon: Users, color: 'bg-green-500' },
-    { name: 'Devoirs à corriger', value: '12', icon: ClipboardCheck, color: 'bg-yellow-500' },
-    { name: 'Cours cette semaine', value: '18', icon: Calendar, color: 'bg-purple-500' }
+    { name: 'Mes Classes', value: '3', icon: BookOpen, color: 'bg-primary-500' },
+    { name: 'Total Élèves', value: '87', icon: Users, color: 'bg-secondary-500' },
+    { name: 'Devoirs à corriger', value: '12', icon: ClipboardCheck, color: 'bg-secondary-600' },
+    { name: 'Cours cette semaine', value: '18', icon: Calendar, color: 'bg-primary-600' }
   ];
 
   const classes = [

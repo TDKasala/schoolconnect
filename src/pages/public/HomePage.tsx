@@ -108,37 +108,40 @@ const HomePage: React.FC = () => {
             </div>
 
             <div className="relative">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold">SC</span>
+              <div className="bg-white rounded-2xl shadow-2xl overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-300">
+                <img 
+                  src="/images/classroom-hero.jpg" 
+                  alt="Salle de classe avec enseignante et élèves en République Démocratique du Congo"
+                  className="w-full h-96 object-cover"
+                />
+                <div className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                        <BookOpen className="w-6 h-6 text-primary-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">École Primaire Exemple</h3>
-                        <p className="text-sm text-gray-500">Tableau de bord</p>
+                        <h3 className="font-semibold text-gray-900">Éducation de qualité</h3>
+                        <p className="text-gray-600 text-sm">Pour chaque enfant congolais</p>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">247</div>
-                      <div className="text-sm text-gray-600">Élèves inscrits</div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">98%</div>
-                      <div className="text-sm text-gray-600">Taux de présence</div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm font-medium text-gray-700">Présence aujourd'hui</span>
+                        <span className="text-sm font-bold text-green-600">94.2%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '94.2%'}}></div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+              
+              {/* Floating elements */}
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-secondary-400 rounded-full opacity-20 animate-pulse"></div>
+              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-primary-400 rounded-full opacity-20 animate-pulse animation-delay-2000"></div>
             </div>
           </div>
         </div>

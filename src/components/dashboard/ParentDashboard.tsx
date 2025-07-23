@@ -7,10 +7,10 @@ const ParentDashboard: React.FC = () => {
   ];
 
   const stats = [
-    { name: 'Enfants', value: children.length.toString(), icon: User, color: 'bg-blue-500' },
-    { name: 'Moyenne générale', value: '15.2/20', icon: BookOpen, color: 'bg-green-500' },
-    { name: 'Frais scolaires', value: 'À jour', icon: CreditCard, color: 'bg-purple-500' },
-    { name: 'Présence', value: '95%', icon: Calendar, color: 'bg-yellow-500' }
+    { name: 'Enfants', value: children.length.toString(), icon: User, color: 'bg-primary-500' },
+    { name: 'Moyenne générale', value: '15.2/20', icon: BookOpen, color: 'bg-secondary-500' },
+    { name: 'Frais scolaires', value: 'À jour', icon: CreditCard, color: 'bg-primary-600' },
+    { name: 'Présence', value: '95%', icon: Calendar, color: 'bg-secondary-600' }
   ];
 
   return (

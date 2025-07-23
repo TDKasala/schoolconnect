@@ -26,7 +26,7 @@ const SchoolAdminDashboard: React.FC = () => {
       change: '+12',
       changeType: 'increase',
       icon: Users,
-      color: 'bg-blue-500'
+      color: 'bg-primary-500'
     },
     {
       name: 'Enseignants Actifs',
@@ -34,7 +34,7 @@ const SchoolAdminDashboard: React.FC = () => {
       change: '+2',
       changeType: 'increase',
       icon: BookOpen,
-      color: 'bg-green-500'
+      color: 'bg-secondary-500'
     },
     {
       name: 'Recettes ce mois',
@@ -42,7 +42,7 @@ const SchoolAdminDashboard: React.FC = () => {
       change: '+8.2%',
       changeType: 'increase',
       icon: DollarSign,
-      color: 'bg-yellow-500'
+      color: 'bg-secondary-600'
     },
     {
       name: 'Taux de présence',
@@ -50,7 +50,7 @@ const SchoolAdminDashboard: React.FC = () => {
       change: '+2.1%',
       changeType: 'increase',
       icon: TrendingUp,
-      color: 'bg-purple-500'
+      color: 'bg-primary-600'
     }
   ];
 
