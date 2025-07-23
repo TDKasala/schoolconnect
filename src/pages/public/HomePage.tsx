@@ -9,7 +9,9 @@ import {
   Star,
   Shield,
   Zap,
-  Globe
+  Globe,
+  Sparkles,
+  TrendingUp
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -143,102 +145,283 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Why SchoolConnect Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container">
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-0 w-full h-full" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }}></div>
+        </div>
+        
+        <div className="container relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Pourquoi SchoolConnect ?
+            <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full mb-6 animate-fade-in">
+              <Sparkles className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Avantages Exclusifs</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6 animate-slide-up">
+              Pourquoi <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">SchoolConnect</span> ?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Une solution pensée spécifiquement pour répondre aux défis des écoles congolaises
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-fade-in">
+              Une solution complète qui s'adapte aux réalités des écoles congolaises
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {advantages.map((advantage, index) => (
-              <div key={index} className="text-center space-y-4">
-                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto">
-                  <advantage.icon className="w-8 h-8 text-primary-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">{advantage.title}</h3>
-                <p className="text-gray-600">{advantage.description}</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-scale-in">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle className="w-8 h-8 text-white" />
               </div>
-            ))}
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">Simple et Intuitif</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Interface conçue pour être utilisée facilement par tous les membres de votre équipe éducative.
+              </p>
+              <div className="mt-6 flex items-center text-blue-600 font-medium group-hover:translate-x-2 transition-transform">
+                <span className="text-sm">En savoir plus</span>
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </div>
+            </div>
+
+            <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-scale-in" style={{animationDelay: '0.1s'}}>
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 group-hover:text-green-600 transition-colors">Optimisé pour la RDC</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Adapté aux spécificités du système éducatif congolais et optimisé pour les connexions lentes.
+              </p>
+              <div className="mt-6 flex items-center text-green-600 font-medium group-hover:translate-x-2 transition-transform">
+                <span className="text-sm">En savoir plus</span>
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </div>
+            </div>
+
+            <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-scale-in" style={{animationDelay: '0.2s'}}>
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Star className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 group-hover:text-purple-600 transition-colors">Support Local</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Équipe de support basée en RDC, parlant français et comprenant vos besoins spécifiques.
+              </p>
+              <div className="mt-6 flex items-center text-purple-600 font-medium group-hover:translate-x-2 transition-transform">
+                <span className="text-sm">En savoir plus</span>
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Modules Overview */}
-      <section className="py-20">
-        <div className="container">
+      <section className="py-20 bg-white relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full -translate-y-48 translate-x-48 opacity-30"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-green-100 to-blue-100 rounded-full translate-y-48 -translate-x-48 opacity-30"></div>
+        
+        <div className="container relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Modules Principaux
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 rounded-full mb-6 animate-fade-in">
+              <BookOpen className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Modules Intégrés</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6 animate-slide-up">
+              Modules <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Principaux</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-fade-in">
               Trois modules intégrés pour une gestion complète de votre établissement
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {modules.map((module, index) => (
-              <div key={index} className="card p-8 hover:shadow-lg transition-shadow">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 ${module.color} rounded-lg flex items-center justify-center`}>
-                      <module.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900">{module.title}</h3>
+            <div className="group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border border-gray-100 animate-scale-in">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-float">
+                    <BookOpen className="w-8 h-8 text-white" />
                   </div>
-                  
-                  <p className="text-gray-600">{module.description}</p>
-                  
-                  <ul className="space-y-2">
-                    {module.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-gray-600">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Link
-                    to={module.link}
-                    className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    En savoir plus
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
+                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">POSP</h3>
                 </div>
+                
+                <p className="text-gray-600 leading-relaxed">
+                  Gestion pédagogique complète avec suivi des notes, présences et évaluations.
+                </p>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Gestion des classes et matières</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Carnet de notes numérique</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Suivi des présences</span>
+                  </li>
+                </ul>
+                
+                <Link
+                  to="/posp"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold group-hover:translate-x-2 transition-all duration-300"
+                >
+                  Découvrir POSP
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
-            ))}
+            </div>
+
+            <div className="group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border border-gray-100 animate-scale-in" style={{animationDelay: '0.1s'}}>
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-float" style={{animationDelay: '1s'}}>
+                    <DollarSign className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">UBank</h3>
+                </div>
+                
+                <p className="text-gray-600 leading-relaxed">
+                  Gestion financière et comptable adaptée aux écoles congolaises.
+                </p>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Gestion des frais scolaires</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Suivi des paiements</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Rapports financiers</span>
+                  </li>
+                </ul>
+                
+                <Link
+                  to="/ubank"
+                  className="inline-flex items-center text-green-600 hover:text-green-700 font-semibold group-hover:translate-x-2 transition-all duration-300"
+                >
+                  Découvrir UBank
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border border-gray-100 animate-scale-in" style={{animationDelay: '0.2s'}}>
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-float" style={{animationDelay: '2s'}}>
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Portails</h3>
+                </div>
+                
+                <p className="text-gray-600 leading-relaxed">
+                  Communication fluide entre école, enseignants et parents.
+                </p>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Portail parents</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Messagerie intégrée</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Notifications temps réel</span>
+                  </li>
+                </ul>
+                
+                <Link
+                  to="/portails-connectes"
+                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold group-hover:translate-x-2 transition-all duration-300"
+                >
+                  Découvrir Portails
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 bg-primary-600 text-white">
-        <div className="container text-center">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <h2 className="text-3xl lg:text-4xl font-bold">
-              Prêt à moderniser votre école ?
+      <section className="py-20 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute top-0 right-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="container text-center relative z-10">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full mb-6 animate-fade-in">
+              <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
+              <span className="font-medium">Rejoignez la révolution éducative</span>
+            </div>
+            
+            <h2 className="text-4xl lg:text-6xl font-bold mb-6 animate-slide-up">
+              Prêt à <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">moderniser</span> votre école ?
             </h2>
-            <p className="text-xl text-primary-100">
+            
+            <p className="text-xl lg:text-2xl text-blue-100 leading-relaxed animate-fade-in">
               Rejoignez les écoles qui ont déjà choisi SchoolConnect pour simplifier leur gestion quotidienne.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            
+            <div className="flex flex-col sm:flex-row gap-6 justify-center animate-scale-in">
               <Link
                 to="/contact"
-                className="btn bg-secondary-500 text-white hover:bg-secondary-600 px-8 py-4 text-lg font-semibold"
+                className="group bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-10 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
               >
+                <Zap className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                 Demander une démo
               </Link>
               <Link
-                to="/connexion"
-                className="btn border-2 border-white text-white hover:bg-white hover:text-primary-600 px-8 py-4 text-lg font-semibold"
+                to="/register"
+                className="group border-2 border-white/30 backdrop-blur-sm text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center"
               >
-                Se connecter
+                Commencer gratuitement
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
+            </div>
+            
+            {/* Trust Indicators */}
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-blue-200 animate-fade-in">
+              <div className="flex items-center">
+                <Shield className="h-5 w-5 mr-2 text-green-400" />
+                <span>Sécurité garantie</span>
+              </div>
+              <div className="flex items-center">
+                <Star className="h-5 w-5 mr-2 text-yellow-400" />
+                <span>Support 24/7</span>
+              </div>
+              <div className="flex items-center">
+                <CheckCircle className="h-5 w-5 mr-2 text-green-400" />
+                <span>Installation gratuite</span>
+              </div>
+            </div>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 animate-slide-up">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-yellow-400 mb-2">50+</div>
+                <div className="text-blue-200">Écoles partenaires</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-yellow-400 mb-2">10k+</div>
+                <div className="text-blue-200">Élèves gérés</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-yellow-400 mb-2">99%</div>
+                <div className="text-blue-200">Satisfaction client</div>
+              </div>
             </div>
           </div>
         </div>
