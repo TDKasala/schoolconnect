@@ -25,6 +25,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 // Dashboard
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import DashboardPage from './pages/dashboard/DashboardPage';
+import ScrollToTop from './components/ScrollToTop';
 import PospSection from './pages/dashboard/PospSection';
 import UbankSection from './pages/dashboard/UbankSection';
 import ParentPortalSection from './pages/dashboard/ParentPortalSection';
@@ -35,6 +36,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Public routes */}
