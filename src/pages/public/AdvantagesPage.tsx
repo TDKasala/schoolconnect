@@ -321,20 +321,20 @@ const AdvantagesPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Coût mensuel SchoolConnect</span>
-                  <span className="font-semibold">50,000 FC</span>
+                  <span className="font-semibold">$50 USD</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Économies administratives</span>
-                  <span className="font-semibold text-green-600">+80,000 FC</span>
+                  <span className="font-semibold text-green-600">+$80 USD</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Amélioration recettes</span>
-                  <span className="font-semibold text-green-600">+120,000 FC</span>
+                  <span className="font-semibold text-green-600">+$120 USD</span>
                 </div>
                 <hr />
                 <div className="flex justify-between items-center font-bold text-lg">
                   <span>Bénéfice net mensuel</span>
-                  <span className="text-green-600">+150,000 FC</span>
+                  <span className="text-green-600">+$150 USD</span>
                 </div>
                 <div className="text-center text-sm text-gray-500 mt-4">
                   ROI de 300% dès le premier mois

@@ -38,7 +38,7 @@ const SchoolAdminDashboard: React.FC = () => {
     },
     {
       name: 'Recettes ce mois',
-      value: '2,450,000 FC',
+      value: '$2,450,000 USD',
       change: '+8.2%',
       changeType: 'increase',
       icon: DollarSign,
@@ -56,7 +56,7 @@ const SchoolAdminDashboard: React.FC = () => {
 
   const recentActivities = [
     { id: '1', type: 'user_registered', message: 'Nouvel enseignant inscrit: Marie Kabongo', time: '2 heures' },
-    { id: '2', type: 'payment_received', message: 'Paiement reçu: 50,000 FC - Classe 6ème A', time: '4 heures' },
+    { id: '2', type: 'payment_received', message: 'Paiement reçu: $50 USD - Classe 6ème A', time: '4 heures' },
     { id: '3', type: 'grade_updated', message: '15 nouvelles notes ajoutées en Mathématiques', time: '6 heures' },
     { id: '4', type: 'parent_message', message: '3 nouveaux messages de parents', time: '1 jour' }
   ];

@@ -194,7 +194,7 @@ const UbankPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-green-50 p-4 rounded-lg text-center">
                     <div className="text-2xl font-bold text-green-600">2,450,000</div>
-                    <div className="text-sm text-gray-600">FC Recettes ce mois</div>
+                    <div className="text-sm text-gray-600">USD Recettes ce mois</div>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg text-center">
                     <div className="text-2xl font-bold text-blue-600">89%</div>
@@ -204,20 +204,20 @@ const UbankPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Frais scolaires</span>
-                    <span className="font-semibold">1,800,000 FC</span>
+                    <span className="font-semibold">$1,800 USD</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Inscriptions</span>
-                    <span className="font-semibold">650,000 FC</span>
+                    <span className="font-semibold">$650 USD</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Dépenses</span>
-                    <span className="font-semibold text-red-600">-420,000 FC</span>
+                    <span className="font-semibold text-red-600">-$420 USD</span>
                   </div>
                   <hr />
                   <div className="flex justify-between items-center font-bold">
                     <span>Solde net</span>
-                    <span className="text-green-600">2,030,000 FC</span>
+                    <span className="text-green-600">$2,030 USD</span>
                   </div>
                 </div>
               </div>

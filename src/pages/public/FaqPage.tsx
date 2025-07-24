@@ -28,7 +28,7 @@ const FaqPage: React.FC = () => {
       faqs: [
         {
           question: 'Quels sont les tarifs de SchoolConnect ?',
-          answer: 'Nous proposons deux plans : le Plan Flex à 250 FC par élève/mois et le Plan Forfait à 75,000 FC par école/mois avec élèves illimités. Tous les plans incluent tous les modules et le support technique.'
+          answer: 'Nous proposons deux plans : le Plan Flex à $5 USD par élève/mois et le Plan Forfait à $50 USD par école/mois avec élèves illimités. Tous les plans incluent tous les modules et le support technique.'
         },
         {
           question: 'Y a-t-il des frais d\'installation ou de configuration ?',

@@ -175,7 +175,7 @@ const PricingPage: React.FC = () => {
                   {/* Pricing */}
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gray-900">
-                      {plan.pricing[billingCycle].amount.toLocaleString()} FC
+                      ${plan.pricing[billingCycle].amount.toLocaleString()} USD
                     </div>
                     <div className="text-gray-600 mt-2">
                       {plan.pricing[billingCycle].unit}
