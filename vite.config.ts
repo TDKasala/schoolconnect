@@ -7,5 +7,23 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['lucide-react']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
+  preview: {
+    port: 3000,
+    host: true
   }
 })
