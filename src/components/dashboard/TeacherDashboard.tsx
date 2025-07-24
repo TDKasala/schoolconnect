@@ -76,9 +76,12 @@ const TeacherDashboard: React.FC = () => {
               </div>
               <span className="text-sm font-medium text-gray-700 group-hover:text-primary-700">Notes & Bulletins IA</span>
             </button>
-            <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-secondary-500 hover:bg-secondary-50 transition-colors">
-              <MessageSquare className="h-8 w-8 text-gray-400 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Messages</span>
+            <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-secondary-500 hover:bg-secondary-50 transition-colors group">
+              <div className="relative">
+                <MessageSquare className="h-8 w-8 text-gray-400 mb-2 group-hover:text-secondary-600" />
+                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">3</span>
+              </div>
+              <span className="text-sm font-medium text-gray-700 group-hover:text-secondary-700">Messages Parents</span>
             </button>
           </div>
         </div>

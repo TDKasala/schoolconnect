@@ -37,6 +37,47 @@ const ParentDashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Messages Section */}
+      <div className="bg-white rounded-lg shadow mb-8">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Messages des Enseignants</h2>
+            <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              2 nouveaux
+            </span>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            <div className="border-l-4 border-secondary-500 bg-secondary-50 p-4 rounded-r-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-gray-900">Mme. Lucie - Mathématiques</h3>
+                <span className="text-xs text-gray-500">Il y a 2h</span>
+              </div>
+              <p className="text-sm text-gray-700">Félicitations pour les excellents résultats de Marie en mathématiques ce trimestre!</p>
+              <button className="mt-2 text-sm text-secondary-600 hover:text-secondary-700 font-medium">
+                Répondre →
+              </button>
+            </div>
+            <div className="border-l-4 border-primary-500 bg-primary-50 p-4 rounded-r-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-gray-900">M. Pierre - Sciences</h3>
+                <span className="text-xs text-gray-500">Hier</span>
+              </div>
+              <p className="text-sm text-gray-700">Rappel: Projet de sciences à rendre vendredi prochain.</p>
+              <button className="mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
+                Répondre →
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <button className="text-sm text-gray-600 hover:text-gray-700 font-medium">
+              Voir tous les messages →
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Children Info */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
