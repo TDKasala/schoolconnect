@@ -21,8 +21,8 @@ const PricingPage: React.FC = () => {
       description: 'Parfait pour les écoles de toute taille',
       icon: Users,
       pricing: {
-        monthly: { amount: 250, unit: 'par élève/mois' },
-        yearly: { amount: 2500, unit: 'par élève/an' }
+        monthly: { amount: 5, unit: 'USD/élève/mois' },
+        yearly: { amount: 54, unit: 'USD/élève/an (-10% remise)' }
       },
       features: [
         'Tous les modules inclus',
@@ -43,8 +43,8 @@ const PricingPage: React.FC = () => {
       description: 'Tarif fixe, élèves illimités',
       icon: Infinity,
       pricing: {
-        monthly: { amount: 75000, unit: 'par école/mois' },
-        yearly: { amount: 750000, unit: 'par école/an' }
+        monthly: { amount: 50, unit: 'USD/école/mois' },
+        yearly: { amount: 540, unit: 'USD/école/an (-10% remise)' }
       },
       features: [
         'Élèves illimités',
