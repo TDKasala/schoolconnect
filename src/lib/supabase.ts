@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Access environment variables with proper Vite typing
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
+// Updated with real Supabase credentials
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://urtsvqedsewswknyxvnw.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVydHN2cWVkc2V3c3drbnl4dm53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTgzMTYsImV4cCI6MjA2OTAzNDMxNn0.0u-JwSKSisSH1elVir0tsrbPwPmg4OK-Hn6eenjjAjc'
 
 // Create a mock client if no real credentials are provided
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
