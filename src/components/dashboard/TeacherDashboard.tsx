@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, ClipboardCheck, Calendar, Plus, Eye, Edit, MessageSquare, BarChart3, Clock, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { BookOpen, Users, ClipboardCheck, Calendar, Plus, Eye, Edit, MessageSquare, BarChart3, CheckCircle } from 'lucide-react';
 
 const TeacherDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -27,7 +27,7 @@ const TeacherDashboard: React.FC = () => {
   const upcomingTasks = [
     { id: '1', task: 'Corriger contrôle de Mathématiques', deadline: 'Demain 16:00', priority: 'high', class: '6ème A' },
     { id: '2', task: 'Préparer cours sur les fractions', deadline: 'Vendredi 08:00', priority: 'medium', class: '5ème B' },
-    { id: '3', task: 'Réunion parents-professeurs', deadline: 'Lundi 14:00', priority: 'low', class: 'Toutes classes' }
+    { id: '3', task: 'Générer bulletins trimestriels', deadline: 'Vendredi 17:00', priority: 'high', class: 'Toutes classes' }
   ];
 
   return (
@@ -67,20 +67,15 @@ const TeacherDashboard: React.FC = () => {
             </button>
             <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-secondary-500 hover:bg-secondary-50 transition-colors">
               <ClipboardCheck className="h-8 w-8 text-gray-400 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Marquer Présences</span>
+              <span className="text-sm font-medium text-gray-700">Voir les notes</span>
             </button>
-            <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors group">
-              <div className="relative">
-                <BarChart3 className="h-8 w-8 text-gray-400 mb-2 group-hover:text-primary-600" />
-                <Sparkles className="h-3 w-3 text-secondary-500 absolute -top-1 -right-1" />
-              </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-primary-700">Notes & Bulletins IA</span>
+            <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
+              <FileText className="h-8 w-8 text-gray-400 mb-2" />
+              <span className="text-sm font-medium text-gray-700">AI Bulletins</span>
             </button>
-            <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-secondary-500 hover:bg-secondary-50 transition-colors group">
-              <div className="relative">
-                <MessageSquare className="h-8 w-8 text-gray-400 mb-2 group-hover:text-secondary-600" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">3</span>
-              </div>
+            <button className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-secondary-500 hover:bg-secondary-50 transition-colors">
+              <MessageSquare className="h-8 w-8 text-gray-400 mb-2" />
+              <span className="text-sm font-medium text-gray-700">Messages</span>
               <span className="text-sm font-medium text-gray-700 group-hover:text-secondary-700">Messages Parents</span>
             </button>
           </div>
