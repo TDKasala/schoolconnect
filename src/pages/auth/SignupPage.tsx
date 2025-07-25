@@ -1,38 +1,45 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 
-const LoginPage: React.FC = () => {
+const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
+    fullName: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login } = useAuth();
-
-  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    if (formData.password !== formData.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            role: 'teacher',
+          },
+        },
       });
 
       if (error) throw error;
-
-      await login(data.user);
-      navigate(from, { replace: true });
+      navigate('/login');
     } catch (error: any) {
-      setError(error.message || 'Erreur de connexion');
+      setError(error.message || 'Erreur lors de l\'inscription');
     } finally {
       setLoading(false);
     }
@@ -43,10 +50,10 @@ const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Connexion
+            Créer un compte
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Connectez-vous à votre compte
+            Rejoignez SchoolConnect dès aujourd'hui
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -57,6 +64,22 @@ const LoginPage: React.FC = () => {
           )}
           
           <div className="space-y-4">
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                Nom complet
+              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Votre nom complet"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              />
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
@@ -88,6 +111,22 @@ const LoginPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                Confirmer le mot de passe
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Confirmer le mot de passe"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              />
+            </div>
           </div>
 
           <div>
@@ -96,15 +135,15 @@ const LoginPage: React.FC = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {loading ? 'Connexion...' : 'Se connecter'}
+              {loading ? 'Création...' : 'Créer un compte'}
             </button>
           </div>
 
           <div className="text-center">
             <span className="text-sm text-gray-600">
-              Pas encore de compte?{' '}
-              <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-                S'inscrire
+              Vous avez déjà un compte?{' '}
+              <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                Se connecter
               </a>
             </span>
           </div>
@@ -114,4 +153,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;
