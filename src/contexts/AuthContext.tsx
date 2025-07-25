@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthContextType, UserRole } from '../types';
+import { supabase } from '../lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -15,83 +16,105 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string, role: string) => Promise<void>;
+  logout: () => Promise<void>;
+  loading: boolean;
+  isAuthenticated: boolean;
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const storedUser = localStorage.getItem('schoolconnect_user');
-    if (storedUser) {
+    const checkUser = async () => {
       try {
-        setUser(JSON.parse(storedUser));
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
       } catch (error) {
-        localStorage.removeItem('schoolconnect_user');
+        console.error('Session check error:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        localStorage.setItem('user', JSON.stringify(session.user));
+      } else {
+        localStorage.removeItem('user');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
-    setLoading(true);
+  const login = async (email: string, password: string) => {
     try {
-      // Simulate API call - replace with actual authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data - replace with actual API response
-      const mockUser: User = {
-        id: '1',
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0],
-        role: 'school_admin',
-        schoolId: 'school-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        password,
+      });
       
-      setUser(mockUser);
-      localStorage.setItem('schoolconnect_user', JSON.stringify(mockUser));
+      if (error) throw error;
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
     } catch (error) {
-      throw new Error('Échec de la connexion');
-    } finally {
-      setLoading(false);
+      console.error('Login error:', error);
+      throw error;
     }
   };
 
-  const register = async (
-    email: string, 
-    password: string, 
-    name: string, 
-    role: UserRole, 
-    schoolId?: string
-  ): Promise<void> => {
-    setLoading(true);
+  const register = async (email: string, password: string, fullName: string, role: string) => {
     try {
-      // Simulate API call - replace with actual registration
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        id: Date.now().toString(),
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
-        name,
-        role: role === 'teacher' || role === 'parent' ? 'pending' : role,
-        schoolId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('schoolconnect_user', JSON.stringify(newUser));
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: authData.user.id,
+              email,
+              full_name: fullName,
+              role,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ]);
+
+        if (profileError) throw profileError;
+      }
+
+      setUser(authData.user);
+      localStorage.setItem('user', JSON.stringify(authData.user));
     } catch (error) {
-      throw new Error('Échec de l\'inscription');
-    } finally {
-      setLoading(false);
+      console.error('Registration error:', error);
+      throw error;
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('schoolconnect_user');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const value: AuthContextType = {
@@ -100,7 +123,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     loading,
+    isAuthenticated: !!user,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
