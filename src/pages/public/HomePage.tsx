@@ -68,6 +68,12 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="space-y-4">
+                <img
+                  src="/logo.png"
+                  alt="SchoolConnect Logo"
+                  className="mx-auto mb-4 w-40 h-40 rounded-2xl shadow-lg object-contain"
+                  style={{ background: 'rgba(255,255,255,0.85)' }}
+                />
                 <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
                   La gestion scolaire,{' '}
                   <span className="text-secondary-300">simplifiée</span>{' '}
