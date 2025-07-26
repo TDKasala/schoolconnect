@@ -109,9 +109,9 @@ const LoginPage: React.FC = () => {
           <div className="text-center">
             <span className="text-sm text-gray-600">
               Pas encore de compte?{' '}
-              <a href="/inscription" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link to="/inscription" className="font-medium text-indigo-600 hover:text-indigo-500">
                 S'inscrire
-              </a>
+              </Link>
             </span>
           </div>
         </form>

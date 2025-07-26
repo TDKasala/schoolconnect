@@ -54,7 +54,8 @@ const RegisterPage: React.FC = () => {
         formData.email,
         formData.password,
         formData.name,
-        'teacher' // Default role for new users
+        'teacher', // Default role for new users
+        undefined // No school ID for new registrations
       );
       navigate('/dashboard');
     } catch (err: any) {
