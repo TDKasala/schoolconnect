@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -114,6 +114,7 @@ function App() {
             {/* Auth routes */}
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/inscription" element={<RegisterPage />} />
+            <Route path="/signup" element={<Navigate to="/inscription" replace />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
 
             {/* Dashboard routes */}
