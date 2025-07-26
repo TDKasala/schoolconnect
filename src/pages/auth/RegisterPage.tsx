@@ -83,8 +83,9 @@ const RegisterPage: React.FC = () => {
         formData.schoolId || undefined
       );
       navigate('/dashboard');
-    } catch (err) {
-      setError('Erreur lors de l\'inscription. Veuillez réessayer.');
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Erreur lors de l\'inscription. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }

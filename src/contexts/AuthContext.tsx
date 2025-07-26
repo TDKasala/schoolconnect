@@ -19,7 +19,7 @@ interface AuthProviderProps {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string, role: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string, role: string, schoolId?: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, fullName: string, role: string) => {
+  const register = async (email: string, password: string, fullName: string, role: string, schoolId?: string) => {
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -83,18 +83,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (authError) throw authError;
 
       if (authData.user) {
+        const userProfile: any = {
+          id: authData.user.id,
+          email,
+          full_name: fullName,
+          role,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Add school_id if provided
+        if (schoolId) {
+          userProfile.school_id = schoolId;
+        }
+
         const { error: profileError } = await supabase
           .from('users')
-          .insert([
-            {
-              id: authData.user.id,
-              email,
-              full_name: fullName,
-              role,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ]);
+          .insert([userProfile]);
 
         if (profileError) throw profileError;
       }

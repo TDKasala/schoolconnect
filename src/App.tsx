@@ -20,6 +20,7 @@ import PrivacyPage from './pages/public/PrivacyPage';
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import SimpleRegister from './pages/auth/SimpleRegister';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 
 // Dashboard
@@ -114,6 +115,7 @@ function App() {
             {/* Auth routes */}
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/inscription" element={<RegisterPage />} />
+            <Route path="/inscription-simple" element={<SimpleRegister />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
 
             {/* Dashboard routes */}
