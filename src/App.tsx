@@ -4,6 +4,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import PrivateRoute from './components/auth/PrivateRoute';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
+import ScrollToTop from './components/ScrollToTop';
 
 // Public pages
 import HomePage from './pages/public/HomePage';
@@ -25,7 +27,6 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 // Dashboard
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import DashboardPage from './pages/dashboard/DashboardPage';
-import ScrollToTop from './components/ScrollToTop';
 import PospSection from './pages/dashboard/PospSection';
 import UbankSection from './pages/dashboard/UbankSection';
 import ParentPortalSection from './pages/dashboard/ParentPortalSection';
@@ -161,6 +162,7 @@ function App() {
               </PrivateRoute>
             } />
           </Routes>
+          <PWAInstallPrompt />
         </div>
       </Router>
     </AuthProvider>

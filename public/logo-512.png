@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="51.2" fill="url(#grad512)"/>
+  <g transform="translate(256, 256)" fill="white">
+    <rect x="-128" y="-85.33333333333333" width="256" height="170.66666666666666" rx="16"/>
+    <path d="M -170.66666666666666 -85.33333333333333 L 0 -170.66666666666666 L 170.66666666666666 -85.33333333333333" />
+    <rect x="-42.666666666666664" y="-42.666666666666664" width="85.33333333333333" height="64" rx="8" fill="#3b82f6"/>
+    <circle cx="0" cy="-204.8" r="16"/>
+    <circle cx="0" cy="-204.8" r="32" fill="none" stroke="white" stroke-width="4"/>
+  </g>
+  <text x="256" y="435.2" text-anchor="middle" fill="white" font-size="32" font-weight="bold" font-family="system-ui, sans-serif">
+    SC
+  </text>
+</svg>
