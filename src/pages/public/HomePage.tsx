@@ -1,17 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  BookOpen, 
-  DollarSign, 
-  Users, 
-  CheckCircle, 
+import {
+  BookOpen,
+  DollarSign,
+  Users,
   ArrowRight,
   Star,
   Shield,
   Zap,
-  Globe,
-  Sparkles,
-  TrendingUp
+  CheckCircle
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -49,11 +46,6 @@ const HomePage: React.FC = () => {
       description: 'Interface intuitive conçue pour tous les niveaux de compétence technique.'
     },
     {
-      icon: Globe,
-      title: 'Optimisé pour la RDC',
-      description: 'Fonctionne parfaitement même avec des connexions internet de faible débit.'
-    },
-    {
       icon: Shield,
       title: 'Support technique local',
       description: 'Équipe de support basée en RDC, disponible dans votre fuseau horaire.'
@@ -68,12 +60,6 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="space-y-4">
-                <img
-                  src="/logo.png"
-                  alt="SchoolConnect Logo"
-                  className="mx-auto mb-4 w-40 h-40 rounded-2xl shadow-lg object-contain"
-                  style={{ background: 'rgba(255,255,255,0.85)' }}
-                />
                 <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
                   La gestion scolaire,{' '}
                   <span className="text-secondary-300">simplifiée</span>{' '}
@@ -102,13 +88,13 @@ const HomePage: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-6 text-primary-100">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-secondary-300" />
-                  <span>Installation gratuite</span>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span>Gestion des notes et bulletins</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-secondary-300" />
-                  <span>Support 24/7</span>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span>Suivi des présences</span>
                 </div>
               </div>
             </div>
@@ -152,11 +138,11 @@ const HomePage: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-primary-600" />
+                        <Star className="w-6 h-6 text-primary-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">Performance en temps réel</h3>
-                        <p className="text-gray-600 text-sm">Suivi des progrès de vos élèves</p>
+                        <h3 className="font-semibold text-gray-900">Support personnalisé</h3>
+                        <p className="text-sm text-gray-600">Équipe dédiée pour vous accompagner</p>
                       </div>
                     </div>
                     
