@@ -44,12 +44,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Add a timeout to prevent indefinite hanging
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000)
+        setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
       );
       
       const supabasePromise = supabase
         .from('users')
-        .select('*')
+        .select('id, full_name, role, school_id, created_at')
         .eq('id', authUser.id)
         .single();
       
@@ -117,38 +117,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('AuthProvider: error in session check, setting user to null');
         if (isMounted) {
           setUser(null);
+          localStorage.removeItem('user');
         }
       } finally {
-        console.log('AuthProvider: finally block, setting loading to false');
+        // Ensure loading is always set to false after checkUser completes
         if (isMounted) {
-          console.log('AuthProvider: component is mounted, setting loading to false');
+          console.log('AuthProvider: checkUser complete, setting loading to false');
           setLoading(false);
-        } else {
-          console.log('AuthProvider: component is unmounted, not setting loading');
         }
       }
     };
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('AuthProvider: onAuthStateChange triggered', _event, session);
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('AuthProvider: onAuthStateChange triggered', _event, session?.user?.id);
       if (isMounted) {
         if (session?.user) {
           console.log('AuthProvider: onAuthStateChange user found, fetching profile');
-          const userWithProfile = await fetchUserProfile(session.user);
-          console.log('AuthProvider: onAuthStateChange profile fetch complete, setting user');
-          setUser(userWithProfile);
-          localStorage.setItem('user', JSON.stringify(userWithProfile));
+          fetchUserProfile(session.user).then((userWithProfile) => {
+            if (isMounted) {
+              console.log('AuthProvider: profile fetch complete in onAuthStateChange, setting user');
+              setUser(userWithProfile);
+            }
+          }).catch((error) => {
+            console.error('AuthProvider: error fetching profile in onAuthStateChange', error);
+            if (isMounted) {
+              setUser(session.user as UserWithProfile);
+            }
+          }).finally(() => {
+            // Ensure loading is set to false after profile fetch
+            if (loading) {
+              console.log('AuthProvider: onAuthStateChange setting loading to false');
+              setLoading(false);
+            }
+          });
         } else {
           console.log('AuthProvider: onAuthStateChange no user, setting user to null');
           setUser(null);
           localStorage.removeItem('user');
-        }
-        // Ensure loading is set to false when auth state changes
-        if (loading) {
-          console.log('AuthProvider: onAuthStateChange setting loading to false');
-          setLoading(false);
+          // Ensure loading is set to false when user logs out
+          if (loading) {
+            console.log('AuthProvider: onAuthStateChange setting loading to false for logout');
+            setLoading(false);
+          }
         }
       } else {
         console.log('AuthProvider: onAuthStateChange component is unmounted');
@@ -158,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       console.log('AuthProvider: cleanup function called');
       isMounted = false;
-      subscription.unsubscribe();
+      authSubscription?.unsubscribe();
       // Ensure loading is set to false when component unmounts
       if (loading) {
         console.log('AuthProvider: cleanup setting loading to false');

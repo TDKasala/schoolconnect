@@ -83,7 +83,6 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import PlatformAdminDashboard from './components/dashboard/PlatformAdminDashboard';
-import DebugUserInfo from './components/DebugUserInfo';
 import PospSection from './pages/dashboard/PospSection';
 import UbankSection from './pages/dashboard/UbankSection';
 import ParentPortalSection from './pages/dashboard/ParentPortalSection';
@@ -95,18 +94,7 @@ const AppContent: React.FC = () => {
   
   console.log('AppContent: rendering', { user, loading });
 
-  // Add a safety check to ensure we don't get stuck in loading state
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (loading) {
-        console.log('AppContent: forcing loading to false after timeout');
-        console.log('AppContent: debug - loading is true after timeout', { user, loading });
-        // Note: We should not force setLoading(false) here as it might hide real issues
-      }
-    }, 10000); // 10 second timeout for debugging purposes
-    
-    return () => clearTimeout(timer);
-  }, [loading]);
+  // Loading state is handled by AuthContext, no additional timeout needed
 
   if (loading) {
     console.log('AppContent: showing spinner - loading is true');
@@ -115,7 +103,6 @@ const AppContent: React.FC = () => {
         <div className="text-center">
           <Spinner />
           <p className="mt-4 text-gray-600">Chargement de l'application...</p>
-          <p className="mt-2 text-sm text-gray-500">Debug: loading={loading.toString()}, user={user ? 'present' : 'null'}</p>
         </div>
       </div>
     );
@@ -124,7 +111,6 @@ const AppContent: React.FC = () => {
   console.log('AppContent: rendering routes', { user });
   return (
     <>
-      <DebugUserInfo />
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
         <ScrollToTop />
