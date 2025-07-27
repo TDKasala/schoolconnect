@@ -37,7 +37,11 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Step 3.1: Create function to handle new user creation
+-- Step 3.1: Drop existing trigger and function if they exist
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user;
+
+-- Step 3.2: Create function to handle new user creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 SET search_path = ''
@@ -54,7 +58,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Step 3.2: Create trigger to automatically create user record
+-- Step 3.3: Create trigger to automatically create user record
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
