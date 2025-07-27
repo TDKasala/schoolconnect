@@ -30,7 +30,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (authUser: any) => {
-    if (!authUser) return null;
+    if (!authUser) {
+      console.log('AuthProvider: fetchUserProfile called with null user');
+      return null;
+    }
     
     try {
       console.log('AuthProvider: fetching user profile for', authUser.id);
@@ -42,19 +45,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) {
         console.error('Error fetching user profile:', error);
+        console.log('AuthProvider: returning auth user only due to profile fetch error');
         return authUser; // Return auth user if profile fetch fails
       }
       
       console.log('AuthProvider: user profile fetched', profile);
       // Merge auth user with profile data
-      return {
+      const userWithProfile = {
         ...authUser,
         ...profile,
         name: profile.full_name || authUser.email,
         role: profile.role
       };
+      console.log('AuthProvider: returning merged user profile', userWithProfile);
+      return userWithProfile;
     } catch (error) {
       console.error('Profile fetch error:', error);
+      console.log('AuthProvider: returning auth user only due to exception');
       return authUser;
     }
   };
@@ -70,19 +77,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('AuthProvider: session check result', session);
         
         if (isMounted && session?.user) {
+          console.log('AuthProvider: session user found, fetching profile');
           const userWithProfile = await fetchUserProfile(session.user);
+          console.log('AuthProvider: profile fetch complete, setting user');
           if (isMounted) {
             setUser(userWithProfile);
           }
         } else if (isMounted) {
+          console.log('AuthProvider: no session user found, setting user to null');
           setUser(null);
         }
       } catch (error) {
         console.error('Session check error:', error);
-      } finally {
+        console.log('AuthProvider: error in session check, setting user to null');
         if (isMounted) {
-          console.log('AuthProvider: setting loading to false');
+          setUser(null);
+        }
+      } finally {
+        console.log('AuthProvider: finally block, setting loading to false');
+        if (isMounted) {
+          console.log('AuthProvider: component is mounted, setting loading to false');
           setLoading(false);
+        } else {
+          console.log('AuthProvider: component is unmounted, not setting loading');
         }
       }
     };
@@ -93,22 +110,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('AuthProvider: onAuthStateChange triggered', _event, session);
       if (isMounted) {
         if (session?.user) {
+          console.log('AuthProvider: onAuthStateChange user found, fetching profile');
           const userWithProfile = await fetchUserProfile(session.user);
+          console.log('AuthProvider: onAuthStateChange profile fetch complete, setting user');
           setUser(userWithProfile);
           localStorage.setItem('user', JSON.stringify(userWithProfile));
         } else {
+          console.log('AuthProvider: onAuthStateChange no user, setting user to null');
           setUser(null);
           localStorage.removeItem('user');
         }
         // Ensure loading is set to false when auth state changes
         if (loading) {
-          console.log('AuthProvider: setting loading to false in onAuthStateChange');
+          console.log('AuthProvider: onAuthStateChange setting loading to false');
           setLoading(false);
         }
+      } else {
+        console.log('AuthProvider: onAuthStateChange component is unmounted');
       }
     });
 
     return () => {
+      console.log('AuthProvider: cleanup function called');
       isMounted = false;
       subscription.unsubscribe();
     };

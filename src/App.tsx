@@ -100,6 +100,7 @@ const AppContent: React.FC = () => {
     const timer = setTimeout(() => {
       if (loading) {
         console.log('AppContent: forcing loading to false after timeout');
+        console.log('AppContent: debug - loading is true after timeout', { user, loading });
         // Note: We should not force setLoading(false) here as it might hide real issues
       }
     }, 10000); // 10 second timeout for debugging purposes
@@ -108,12 +109,13 @@ const AppContent: React.FC = () => {
   }, [loading]);
 
   if (loading) {
-    console.log('AppContent: showing spinner');
+    console.log('AppContent: showing spinner - loading is true');
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <div className="text-center">
           <Spinner />
           <p className="mt-4 text-gray-600">Chargement de l'application...</p>
+          <p className="mt-2 text-sm text-gray-500">Debug: loading={loading.toString()}, user={user ? 'present' : 'null'}</p>
         </div>
       </div>
     );
