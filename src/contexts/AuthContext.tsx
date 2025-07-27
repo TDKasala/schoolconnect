@@ -41,11 +41,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       console.log('AuthProvider: fetching user profile for', authUser.id);
-      const { data, error } = await supabase
+      
+      // Add a timeout to prevent indefinite hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000)
+      );
+      
+      const supabasePromise = supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single();
+      
+      const { data, error } = await Promise.race([supabasePromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('Profile fetch error:', error);
@@ -151,6 +159,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('AuthProvider: cleanup function called');
       isMounted = false;
       subscription.unsubscribe();
+      // Ensure loading is set to false when component unmounts
+      if (loading) {
+        console.log('AuthProvider: cleanup setting loading to false');
+        setLoading(false);
+      }
     };
   }, []);
 
@@ -167,7 +180,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
       
-      console.log('AuthProvider: login successful, fetching profile');
+      console.log('AuthProvider: login successful, user data:', data.user);
+      console.log('AuthProvider: fetching profile for logged in user');
       // Fetch user profile to get role information
       const userWithProfile = await fetchUserProfile(data.user);
       console.log('AuthProvider: profile fetch complete, setting user');
