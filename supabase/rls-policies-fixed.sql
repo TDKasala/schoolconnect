@@ -2,16 +2,14 @@
 -- Run these SQL commands in Supabase SQL Editor
 
 -- Step 1: Enable RLS on all tables
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.schools ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.grades ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Step 2: Drop existing policies to avoid conflicts
@@ -57,16 +55,6 @@ DROP POLICY IF EXISTS "Users can read their messages" ON public.messages;
 DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
 DROP POLICY IF EXISTS "Users can update their sent messages" ON public.messages;
 DROP POLICY IF EXISTS "Service role full access" ON public.messages;
-
--- Events policies
-DROP POLICY IF EXISTS "Users can read school events" ON public.events;
-DROP POLICY IF EXISTS "Teachers can manage events" ON public.events;
-DROP POLICY IF EXISTS "Service role full access" ON public.events;
-
--- Documents policies
-DROP POLICY IF EXISTS "Users can read school documents" ON public.documents;
-DROP POLICY IF EXISTS "Teachers can manage documents" ON public.documents;
-DROP POLICY IF EXISTS "Service role full access" ON public.documents;
 
 -- Notifications policies
 DROP POLICY IF EXISTS "Users can read their notifications" ON public.notifications;
@@ -328,69 +316,33 @@ CREATE POLICY "Users can update their sent messages" ON public.messages
         sender_id = auth.uid()
     );
 
--- Events policies
--- Platform admins have full access to events
-CREATE POLICY "Platform admins have full access to events" ON public.events
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.users u 
-            WHERE u.id = auth.uid() AND u.role = 'platform_admin' AND u.is_active = TRUE
-        )
-    );
+-- Service role full access policies (for internal operations)
+CREATE POLICY "Service role full access to schools" ON public.schools
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
--- Users can read events from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school events" ON public.events
-    FOR SELECT USING (
-        school_id IN (
-            SELECT school_id FROM public.users u WHERE u.id = auth.uid() AND u.role != 'platform_admin'
-        ) OR
-        EXISTS (
-            SELECT 1 FROM public.users u 
-            WHERE u.id = auth.uid() AND u.role = 'platform_admin' AND u.is_active = TRUE
-        )
-    );
+CREATE POLICY "Service role full access to users" ON public.users
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
--- Teachers can manage events
-CREATE POLICY "Teachers can manage events" ON public.events
-    FOR ALL USING (
-        created_by = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM public.users u 
-            WHERE u.id = auth.uid() AND u.role IN ('school_admin', 'platform_admin') AND u.is_active = TRUE
-        )
-    );
+CREATE POLICY "Service role full access to classes" ON public.classes
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
--- Documents policies
--- Platform admins have full access to documents
-CREATE POLICY "Platform admins have full access to documents" ON public.documents
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.users u 
-            WHERE u.id = auth.uid() AND u.role = 'platform_admin' AND u.is_active = TRUE
-        )
-    );
+CREATE POLICY "Service role full access to students" ON public.students
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
--- Users can read documents from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school documents" ON public.documents
-    FOR SELECT USING (
-        school_id IN (
-            SELECT school_id FROM public.users u WHERE u.id = auth.uid() AND u.role != 'platform_admin'
-        ) OR
-        EXISTS (
-            SELECT 1 FROM public.users u 
-            WHERE u.id = auth.uid() AND u.role = 'platform_admin' AND u.is_active = TRUE
-        )
-    );
+CREATE POLICY "Service role full access to grades" ON public.grades
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
--- Teachers can manage documents
-CREATE POLICY "Teachers can manage documents" ON public.documents
-    FOR ALL USING (
-        uploaded_by = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM public.users u 
-            WHERE u.id = auth.uid() AND u.role IN ('school_admin', 'platform_admin') AND u.is_active = TRUE
-        )
-    );
+CREATE POLICY "Service role full access to attendance" ON public.attendance
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
+
+CREATE POLICY "Service role full access to payments" ON public.payments
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
+
+CREATE POLICY "Service role full access to messages" ON public.messages
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
+
+CREATE POLICY "Service role full access to notifications" ON public.notifications
+    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
 -- Notifications policies
 -- Platform admins have full access to notifications
@@ -426,26 +378,7 @@ CREATE POLICY "Users can delete their notifications" ON public.notifications
         user_id = auth.uid()
     );
 
--- Service role full access policies
-CREATE POLICY "Service role full access" ON public.users
-    FOR ALL USING (
-        auth.jwt() ->> 'role' = 'service_role'
-    );
 
-CREATE POLICY "Service role full access" ON public.schools
-    FOR ALL USING (
-        auth.jwt() ->> 'role' = 'service_role'
-    );
-
-CREATE POLICY "Service role full access" ON public.classes
-    FOR ALL USING (
-        auth.jwt() ->> 'role' = 'service_role'
-    );
-
-CREATE POLICY "Service role full access" ON public.students
-    FOR ALL USING (
-        auth.jwt() ->> 'role' = 'service_role'
-    );
 
 CREATE POLICY "Service role full access" ON public.grades
     FOR ALL USING (
