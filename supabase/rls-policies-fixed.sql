@@ -67,7 +67,7 @@ DROP POLICY IF EXISTS "Service role full access" ON public.notifications;
 
 -- Users policies
 -- Platform admins have full access to users (no recursion)
-CREATE POLICY "Platform admins have full access to users" ON public.users
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to users" ON public.users
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -76,32 +76,32 @@ CREATE POLICY "Platform admins have full access to users" ON public.users
     );
 
 -- Authenticated users can read their own profile
-CREATE POLICY "Users can read own profile" ON public.users
+CREATE POLICY IF NOT EXISTS "Users can read own profile" ON public.users
     FOR SELECT USING (
         auth.uid() = id
     );
 
 -- Authenticated users can update their own profile
-CREATE POLICY "Users can update own profile" ON public.users
+CREATE POLICY IF NOT EXISTS "Users can update own profile" ON public.users
     FOR UPDATE USING (
         auth.uid() = id
     );
 
 -- Allow service role to insert users (for auth trigger)
-CREATE POLICY "Service role can insert users" ON public.users
+CREATE POLICY IF NOT EXISTS "Service role can insert users" ON public.users
     FOR INSERT WITH CHECK (
         auth.jwt() ->> 'role' = 'service_role'
     );
 
 -- Allow anonymous users to register (insert their own record)
-CREATE POLICY "Users can register" ON public.users
+CREATE POLICY IF NOT EXISTS "Users can register" ON public.users
     FOR INSERT WITH CHECK (
         true
     );
 
 -- Schools policies
 -- Platform admins have full access to schools
-CREATE POLICY "Platform admins have full access to schools" ON public.schools
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to schools" ON public.schools
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -110,20 +110,20 @@ CREATE POLICY "Platform admins have full access to schools" ON public.schools
     );
 
 -- Authenticated users can read schools
-CREATE POLICY "Authenticated users can read schools" ON public.schools
+CREATE POLICY IF NOT EXISTS "Authenticated users can read schools" ON public.schools
     FOR SELECT USING (
         auth.role() = 'authenticated'
     );
 
 -- Service role can manage schools
-CREATE POLICY "Service role can manage schools" ON public.schools
+CREATE POLICY IF NOT EXISTS "Service role can manage schools" ON public.schools
     FOR ALL USING (
         auth.jwt() ->> 'role' = 'service_role'
     );
 
 -- Classes policies
 -- Platform admins have full access to classes
-CREATE POLICY "Platform admins have full access to classes" ON public.classes
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to classes" ON public.classes
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -132,7 +132,7 @@ CREATE POLICY "Platform admins have full access to classes" ON public.classes
     );
 
 -- Users can read classes from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school classes" ON public.classes
+CREATE POLICY IF NOT EXISTS "Users can read school classes" ON public.classes
     FOR SELECT USING (
         school_id IN (
             SELECT school_id FROM public.users u WHERE u.id = auth.uid() AND u.role != 'platform_admin'
@@ -144,7 +144,7 @@ CREATE POLICY "Users can read school classes" ON public.classes
     );
 
 -- Teachers can manage their classes
-CREATE POLICY "Teachers can manage their classes" ON public.classes
+CREATE POLICY IF NOT EXISTS "Teachers can manage their classes" ON public.classes
     FOR ALL USING (
         teacher_id = auth.uid() OR
         EXISTS (
@@ -155,7 +155,7 @@ CREATE POLICY "Teachers can manage their classes" ON public.classes
 
 -- Students policies
 -- Platform admins have full access to students
-CREATE POLICY "Platform admins have full access to students" ON public.students
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to students" ON public.students
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -164,7 +164,7 @@ CREATE POLICY "Platform admins have full access to students" ON public.students
     );
 
 -- Users can read students from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school students" ON public.students
+CREATE POLICY IF NOT EXISTS "Users can read school students" ON public.students
     FOR SELECT USING (
         school_id IN (
             SELECT school_id FROM public.users u WHERE u.id = auth.uid() AND u.role != 'platform_admin'
@@ -176,7 +176,7 @@ CREATE POLICY "Users can read school students" ON public.students
     );
 
 -- Teachers can manage their students
-CREATE POLICY "Teachers can manage their students" ON public.students
+CREATE POLICY IF NOT EXISTS "Teachers can manage their students" ON public.students
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.classes c
@@ -191,7 +191,7 @@ CREATE POLICY "Teachers can manage their students" ON public.students
 
 -- Grades policies
 -- Platform admins have full access to grades
-CREATE POLICY "Platform admins have full access to grades" ON public.grades
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to grades" ON public.grades
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -200,7 +200,7 @@ CREATE POLICY "Platform admins have full access to grades" ON public.grades
     );
 
 -- Users can read grades from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school grades" ON public.grades
+CREATE POLICY IF NOT EXISTS "Users can read school grades" ON public.grades
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM public.students s
@@ -214,7 +214,7 @@ CREATE POLICY "Users can read school grades" ON public.grades
     );
 
 -- Teachers can manage grades
-CREATE POLICY "Teachers can manage grades" ON public.grades
+CREATE POLICY IF NOT EXISTS "Teachers can manage grades" ON public.grades
     FOR ALL USING (
         teacher_id = auth.uid() OR
         EXISTS (
@@ -225,7 +225,7 @@ CREATE POLICY "Teachers can manage grades" ON public.grades
 
 -- Attendance policies
 -- Platform admins have full access to attendance
-CREATE POLICY "Platform admins have full access to attendance" ON public.attendance
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to attendance" ON public.attendance
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -234,7 +234,7 @@ CREATE POLICY "Platform admins have full access to attendance" ON public.attenda
     );
 
 -- Users can read attendance from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school attendance" ON public.attendance
+CREATE POLICY IF NOT EXISTS "Users can read school attendance" ON public.attendance
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM public.students s
@@ -248,7 +248,7 @@ CREATE POLICY "Users can read school attendance" ON public.attendance
     );
 
 -- Teachers can manage attendance
-CREATE POLICY "Teachers can manage attendance" ON public.attendance
+CREATE POLICY IF NOT EXISTS "Teachers can manage attendance" ON public.attendance
     FOR ALL USING (
         teacher_id = auth.uid() OR
         EXISTS (
@@ -259,7 +259,7 @@ CREATE POLICY "Teachers can manage attendance" ON public.attendance
 
 -- Payments policies
 -- Platform admins have full access to payments
-CREATE POLICY "Platform admins have full access to payments" ON public.payments
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to payments" ON public.payments
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -268,7 +268,7 @@ CREATE POLICY "Platform admins have full access to payments" ON public.payments
     );
 
 -- Users can read payments from their school (optimized to avoid recursion)
-CREATE POLICY "Users can read school payments" ON public.payments
+CREATE POLICY IF NOT EXISTS "Users can read school payments" ON public.payments
     FOR SELECT USING (
         school_id IN (
             SELECT school_id FROM public.users u WHERE u.id = auth.uid() AND u.role != 'platform_admin'
@@ -280,7 +280,7 @@ CREATE POLICY "Users can read school payments" ON public.payments
     );
 
 -- School admins can manage payments
-CREATE POLICY "School admins can manage payments" ON public.payments
+CREATE POLICY IF NOT EXISTS "School admins can manage payments" ON public.payments
     FOR ALL USING (
         school_id IN (
             SELECT school_id FROM public.users u 
@@ -290,7 +290,7 @@ CREATE POLICY "School admins can manage payments" ON public.payments
 
 -- Messages policies
 -- Platform admins have full access to messages
-CREATE POLICY "Platform admins have full access to messages" ON public.messages
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to messages" ON public.messages
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -299,54 +299,54 @@ CREATE POLICY "Platform admins have full access to messages" ON public.messages
     );
 
 -- Users can read their messages
-CREATE POLICY "Users can read their messages" ON public.messages
+CREATE POLICY IF NOT EXISTS "Users can read their messages" ON public.messages
     FOR SELECT USING (
         sender_id = auth.uid() OR receiver_id = auth.uid()
     );
 
 -- Users can send messages
-CREATE POLICY "Users can send messages" ON public.messages
+CREATE POLICY IF NOT EXISTS "Users can send messages" ON public.messages
     FOR INSERT WITH CHECK (
         sender_id = auth.uid()
     );
 
 -- Users can update their sent messages
-CREATE POLICY "Users can update their sent messages" ON public.messages
+CREATE POLICY IF NOT EXISTS "Users can update their sent messages" ON public.messages
     FOR UPDATE USING (
         sender_id = auth.uid()
     );
 
 -- Service role full access policies (for internal operations)
-CREATE POLICY "Service role full access to schools" ON public.schools
+CREATE POLICY IF NOT EXISTS "Service role full access to schools" ON public.schools
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to users" ON public.users
+CREATE POLICY IF NOT EXISTS "Service role full access to users" ON public.users
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to classes" ON public.classes
+CREATE POLICY IF NOT EXISTS "Service role full access to classes" ON public.classes
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to students" ON public.students
+CREATE POLICY IF NOT EXISTS "Service role full access to students" ON public.students
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to grades" ON public.grades
+CREATE POLICY IF NOT EXISTS "Service role full access to grades" ON public.grades
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to attendance" ON public.attendance
+CREATE POLICY IF NOT EXISTS "Service role full access to attendance" ON public.attendance
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to payments" ON public.payments
+CREATE POLICY IF NOT EXISTS "Service role full access to payments" ON public.payments
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to messages" ON public.messages
+CREATE POLICY IF NOT EXISTS "Service role full access to messages" ON public.messages
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
-CREATE POLICY "Service role full access to notifications" ON public.notifications
+CREATE POLICY IF NOT EXISTS "Service role full access to notifications" ON public.notifications
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
 -- Notifications policies
 -- Platform admins have full access to notifications
-CREATE POLICY "Platform admins have full access to notifications" ON public.notifications
+CREATE POLICY IF NOT EXISTS "Platform admins have full access to notifications" ON public.notifications
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.users u 
@@ -355,25 +355,25 @@ CREATE POLICY "Platform admins have full access to notifications" ON public.noti
     );
 
 -- Users can read their notifications
-CREATE POLICY "Users can read their notifications" ON public.notifications
+CREATE POLICY IF NOT EXISTS "Users can read their notifications" ON public.notifications
     FOR SELECT USING (
         user_id = auth.uid()
     );
 
 -- System can create notifications
-CREATE POLICY "System can create notifications" ON public.notifications
+CREATE POLICY IF NOT EXISTS "System can create notifications" ON public.notifications
     FOR INSERT WITH CHECK (
         auth.jwt() ->> 'role' = 'service_role'
     );
 
 -- Users can update their notifications
-CREATE POLICY "Users can update their notifications" ON public.notifications
+CREATE POLICY IF NOT EXISTS "Users can update their notifications" ON public.notifications
     FOR UPDATE USING (
         user_id = auth.uid()
     );
 
 -- Users can delete their notifications
-CREATE POLICY "Users can delete their notifications" ON public.notifications
+CREATE POLICY IF NOT EXISTS "Users can delete their notifications" ON public.notifications
     FOR DELETE USING (
         user_id = auth.uid()
     );
