@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.schools (
 
 -- Step 3: Create users table (extends auth.users)
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
     role TEXT CHECK (role IN ('platform_admin', 'school_admin', 'teacher', 'parent')) NOT NULL DEFAULT 'teacher',
@@ -36,6 +36,28 @@ CREATE TABLE IF NOT EXISTS public.users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Step 3.1: Create function to handle new user creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+SET search_path = ''
+AS $$
+BEGIN
+    INSERT INTO public.users (id, email, full_name, role)
+    VALUES (
+        new.id,
+        new.email,
+        COALESCE(new.raw_user_meta_data->>'full_name', 'Utilisateur'),
+        COALESCE(new.raw_user_meta_data->>'role', 'teacher')::TEXT
+    );
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Step 3.2: Create trigger to automatically create user record
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Step 4: Create classes table
 CREATE TABLE IF NOT EXISTS public.classes (

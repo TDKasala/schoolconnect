@@ -94,34 +94,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string, fullName: string, role: string, schoolId?: string) => {
     try {
+      // Pass user metadata through the auth.signup function
+      // The trigger will automatically create the user record in public.users
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: role,
+            school_id: schoolId
+          }
+        }
       });
 
       if (authError) throw authError;
 
-      if (authData.user) {
-        const userProfile: any = {
-          id: authData.user.id,
-          email,
-          full_name: fullName,
-          role,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        // Add school_id if provided
-        if (schoolId) {
-          userProfile.school_id = schoolId;
-        }
-
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([userProfile]);
-
-        if (profileError) throw profileError;
-      }
+      // The user record in public.users will be created automatically by the trigger
+      // No need to manually insert the user profile
 
       setUser(authData.user);
       localStorage.setItem('user', JSON.stringify(authData.user));

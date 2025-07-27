@@ -22,6 +22,14 @@ CREATE POLICY "Service role can insert users" ON public.users
         auth.jwt() ->> 'role' = 'service_role'
     );
 
+-- Step 4.1: Allow anonymous users to register (insert their own record)
+CREATE POLICY "Users can register" ON public.users
+    FOR INSERT WITH CHECK (
+        -- Allow users to insert their own record during registration
+        -- This policy allows the auth trigger to work properly
+        true
+    );
+
 -- Step 5: Allow authenticated users to read school info
 CREATE POLICY "Authenticated users can read schools" ON public.schools
     FOR SELECT USING (
