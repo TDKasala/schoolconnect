@@ -283,6 +283,9 @@ CREATE POLICY "School admins can update their school" ON public.schools
     );
 
 -- Users policies
+CREATE POLICY "Users can register" ON public.users
+    FOR INSERT WITH CHECK (true);
+
 CREATE POLICY "Users can view their own profile" ON public.users
     FOR SELECT USING (auth.uid() = id);
 
