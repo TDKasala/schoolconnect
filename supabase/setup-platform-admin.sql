@@ -7,24 +7,24 @@
 -- Password: @Raysunkasala2016
 -- After creating the auth user, get the UUID and use it below
 
--- Step 2: Insert or update the user in the public.users table as platform_admin
--- Replace 'YOUR_AUTH_USER_UUID_HERE' with the actual UUID from the auth.users table
-INSERT INTO public.users (id, email, full_name, role, phone, is_active, created_at, updated_at)
-VALUES (
-    'YOUR_AUTH_USER_UUID_HERE'::UUID, -- Replace with actual UUID from auth.users
-    'deniskasala17@gmail.com',
-    'Denis Kasala',
-    'platform_admin',
-    NULL, -- Add phone if needed
-    TRUE,
-    NOW(),
-    NOW()
-)
-ON CONFLICT (id) DO UPDATE SET
+-- Step 2: Update the existing user to platform_admin role
+-- The user already exists (created by trigger), so we just need to update the role
+UPDATE public.users 
+SET 
     role = 'platform_admin',
     full_name = 'Denis Kasala',
     is_active = TRUE,
-    updated_at = NOW();
+    updated_at = NOW()
+WHERE email = 'deniskasala17@gmail.com';
+
+-- Alternative: If you want to ensure the ID matches as well
+-- UPDATE public.users 
+-- SET 
+--     role = 'platform_admin',
+--     full_name = 'Denis Kasala',
+--     is_active = TRUE,
+--     updated_at = NOW()
+-- WHERE id = '6353072c-eea2-4c6c-8b0d-b882a91f224c'::UUID;
 
 -- Step 3: Verify the platform admin user
 SELECT 
