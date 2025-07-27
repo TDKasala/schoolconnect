@@ -8,7 +8,9 @@ import {
   Star,
   Shield,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Sparkle,
+  TrendingUp
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -190,7 +192,7 @@ const HomePage: React.FC = () => {
         <div className="container relative z-10">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full mb-6 animate-fade-in">
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkle className="h-4 w-4 mr-2" />
               <span className="text-sm font-medium">Avantages Exclusifs</span>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6 animate-slide-up">
@@ -397,7 +399,7 @@ const HomePage: React.FC = () => {
         <div className="container text-center relative z-10">
           <div className="max-w-4xl mx-auto space-y-8">
             <div className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full mb-6 animate-fade-in">
-              <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
+              <Sparkle className="h-5 w-5 mr-2 text-yellow-400" />
               <span className="font-medium">Rejoignez la révolution éducative</span>
             </div>
             

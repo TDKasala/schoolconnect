@@ -20,15 +20,20 @@ const Spinner: React.FC = () => (
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  
+  console.log('PrivateRoute: checking auth state', { user, loading });
 
   if (loading) {
+    console.log('PrivateRoute: showing spinner');
     return <Spinner />;
   }
 
   if (!user) {
+    console.log('PrivateRoute: redirecting to login');
     return <Navigate to="/connexion" replace />;
   }
 
+  console.log('PrivateRoute: allowing access');
   return <>{children}</>;
 };
 

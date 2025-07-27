@@ -3,7 +3,7 @@ import {
   BarChart3, 
   FileText, 
   Download, 
-  Sparkles, 
+  Sparkle, 
   Calculator, 
   TrendingUp, 
   Award,
@@ -233,7 +233,7 @@ const GradeManager: React.FC = () => {
               </>
             ) : (
               <>
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Sparkle className="h-4 w-4 mr-2" />
                 Générer Bulletins IA
               </>
             )}
@@ -479,7 +479,7 @@ const GradeManager: React.FC = () => {
                 {/* Recommendations */}
                 <div>
                   <h4 className="text-lg font-semibold mb-3 flex items-center">
-                    <Sparkles className="h-5 w-5 mr-2 text-primary-600" />
+                    <Sparkle className="h-5 w-5 mr-2 text-primary-600" />
                     Recommandations IA
                   </h4>
                   <ul className="space-y-2">

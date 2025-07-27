@@ -30,32 +30,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: useEffect triggered');
+    let isMounted = true;
+    
     const checkUser = async () => {
       try {
+        console.log('AuthProvider: checking session');
         const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
+        console.log('AuthProvider: session check result', session);
+        if (isMounted) {
+          setUser(session?.user ?? null);
+        }
       } catch (error) {
         console.error('Session check error:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          console.log('AuthProvider: setting loading to false');
+          setLoading(false);
+        }
       }
     };
 
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        localStorage.setItem('user', JSON.stringify(session.user));
-      } else {
-        localStorage.removeItem('user');
+      console.log('AuthProvider: onAuthStateChange triggered', _event, session);
+      if (isMounted) {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          localStorage.setItem('user', JSON.stringify(session.user));
+        } else {
+          localStorage.removeItem('user');
+        }
+        // Ensure loading is set to false when auth state changes
+        if (loading) {
+          console.log('AuthProvider: setting loading to false in onAuthStateChange');
+          setLoading(false);
+        }
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loading]);
 
   const login = async (email: string, password: string) => {
     try {
