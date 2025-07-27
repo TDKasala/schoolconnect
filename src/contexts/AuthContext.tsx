@@ -29,39 +29,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserProfile = async (authUser: any) => {
+    if (!authUser) return null;
+    
+    try {
+      console.log('AuthProvider: fetching user profile for', authUser.id);
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return authUser; // Return auth user if profile fetch fails
+      }
+      
+      console.log('AuthProvider: user profile fetched', profile);
+      // Merge auth user with profile data
+      return {
+        ...authUser,
+        ...profile,
+        name: profile.full_name || authUser.email,
+        role: profile.role
+      };
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      return authUser;
+    }
+  };
+
   useEffect(() => {
     console.log('AuthProvider: useEffect triggered');
     let isMounted = true;
-    
-    const fetchUserProfile = async (authUser: any) => {
-      if (!authUser) return null;
-      
-      try {
-        console.log('AuthProvider: fetching user profile for', authUser.id);
-        const { data: profile, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          return authUser; // Return auth user if profile fetch fails
-        }
-        
-        console.log('AuthProvider: user profile fetched', profile);
-        // Merge auth user with profile data
-        return {
-          ...authUser,
-          ...profile,
-          name: profile.full_name || authUser.email,
-          role: profile.role
-        };
-      } catch (error) {
-        console.error('Profile fetch error:', error);
-        return authUser;
-      }
-    };
     
     const checkUser = async () => {
       try {
@@ -71,7 +71,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (isMounted && session?.user) {
           const userWithProfile = await fetchUserProfile(session.user);
-          setUser(userWithProfile);
+          if (isMounted) {
+            setUser(userWithProfile);
+          }
         } else if (isMounted) {
           setUser(null);
         }
@@ -110,7 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [loading]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -120,8 +122,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       if (error) throw error;
-      setUser(data.user);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Fetch user profile to get role information
+      const userWithProfile = await fetchUserProfile(data.user);
+      setUser(userWithProfile);
+      localStorage.setItem('user', JSON.stringify(userWithProfile));
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -149,8 +154,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // The user record in public.users will be created automatically by the trigger
       // No need to manually insert the user profile
 
-      setUser(authData.user);
-      localStorage.setItem('user', JSON.stringify(authData.user));
+      // Fetch user profile to get role information
+      const userWithProfile = await fetchUserProfile(authData.user);
+      setUser(userWithProfile);
+      localStorage.setItem('user', JSON.stringify(userWithProfile));
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
