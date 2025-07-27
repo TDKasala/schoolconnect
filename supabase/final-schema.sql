@@ -37,9 +37,19 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Step 3.1: Drop existing trigger and function if they exist
+-- Step 3.1: Drop existing triggers and functions if they exist
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user;
+DROP TRIGGER IF EXISTS update_schools_updated_at ON public.schools;
+DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
+DROP TRIGGER IF EXISTS update_classes_updated_at ON public.classes;
+DROP TRIGGER IF EXISTS update_students_updated_at ON public.students;
+DROP TRIGGER IF EXISTS update_grades_updated_at ON public.grades;
+DROP TRIGGER IF EXISTS update_attendance_updated_at ON public.attendance;
+DROP TRIGGER IF EXISTS update_payments_updated_at ON public.payments;
+DROP TRIGGER IF EXISTS update_messages_updated_at ON public.messages;
+DROP TRIGGER IF EXISTS update_notifications_updated_at ON public.notifications;
+DROP FUNCTION IF EXISTS update_updated_at_column;
 
 -- Step 3.2: Create function to handle new user creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
