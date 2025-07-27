@@ -57,14 +57,25 @@ RETURNS TRIGGER
 SET search_path = ''
 AS $$
 BEGIN
-    INSERT INTO public.users (id, email, full_name, role)
+    -- Insert user record with proper error handling
+    INSERT INTO public.users (id, email, full_name, role, school_id)
     VALUES (
         new.id,
         new.email,
-        COALESCE(new.raw_user_meta_data->>'full_name', 'Utilisateur'),
-        COALESCE(new.raw_user_meta_data->>'role', 'teacher')::TEXT
+        COALESCE(new.raw_user_meta_data->>'full_name', COALESCE(new.raw_user_meta_data->>'name', 'Utilisateur')),
+        COALESCE(new.raw_user_meta_data->>'role', 'teacher'),
+        CASE 
+            WHEN new.raw_user_meta_data->>'school_id' IS NOT NULL AND new.raw_user_meta_data->>'school_id' != '' 
+            THEN (new.raw_user_meta_data->>'school_id')::UUID 
+            ELSE NULL 
+        END
     );
     RETURN new;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log the error and still return new to not break auth
+        RAISE LOG 'Error in handle_new_user trigger: %', SQLERRM;
+        RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
