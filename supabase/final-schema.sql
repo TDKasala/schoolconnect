@@ -255,6 +255,17 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Step 14: Drop existing RLS policies if they exist
+-- Platform admin policies
+DROP POLICY IF EXISTS "Platform admins have full access to schools" ON public.schools;
+DROP POLICY IF EXISTS "Platform admins have full access to users" ON public.users;
+DROP POLICY IF EXISTS "Platform admins have full access to classes" ON public.classes;
+DROP POLICY IF EXISTS "Platform admins have full access to students" ON public.students;
+DROP POLICY IF EXISTS "Platform admins have full access to grades" ON public.grades;
+DROP POLICY IF EXISTS "Platform admins have full access to attendance" ON public.attendance;
+DROP POLICY IF EXISTS "Platform admins have full access to payments" ON public.payments;
+DROP POLICY IF EXISTS "Platform admins have full access to messages" ON public.messages;
+DROP POLICY IF EXISTS "Platform admins have full access to notifications" ON public.notifications;
+-- Regular policies
 DROP POLICY IF EXISTS "Schools are viewable by authenticated users" ON public.schools;
 DROP POLICY IF EXISTS "School admins can update their school" ON public.schools;
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
@@ -280,6 +291,14 @@ DROP POLICY IF EXISTS "Users can update their notifications" ON public.notificat
 -- Step 15: Create RLS Policies (simplified and working)
 
 -- Schools policies
+CREATE POLICY "Platform admins have full access to schools" ON public.schools
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "Schools are viewable by authenticated users" ON public.schools
     FOR SELECT USING (auth.role() = 'authenticated');
 
@@ -294,6 +313,14 @@ CREATE POLICY "School admins can update their school" ON public.schools
     );
 
 -- Users policies
+CREATE POLICY "Platform admins have full access to users" ON public.users
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "Users can register" ON public.users
     FOR INSERT WITH CHECK (true);
 
@@ -311,6 +338,14 @@ CREATE POLICY "School members can view school users" ON public.users
     );
 
 -- Classes policies
+CREATE POLICY "Platform admins have full access to classes" ON public.classes
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "School members can view school classes" ON public.classes
     FOR SELECT USING (
         school_id IN (
@@ -327,6 +362,14 @@ CREATE POLICY "School admins can manage classes" ON public.classes
     );
 
 -- Students policies
+CREATE POLICY "Platform admins have full access to students" ON public.students
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "School members can view school students" ON public.students
     FOR SELECT USING (
         school_id IN (
@@ -343,6 +386,14 @@ CREATE POLICY "School admins can manage students" ON public.students
     );
 
 -- Grades policies
+CREATE POLICY "Platform admins have full access to grades" ON public.grades
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "School members can view grades" ON public.grades
     FOR SELECT USING (
         EXISTS (
@@ -362,6 +413,14 @@ CREATE POLICY "Teachers can manage grades" ON public.grades
     );
 
 -- Attendance policies
+CREATE POLICY "Platform admins have full access to attendance" ON public.attendance
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "School members can view attendance" ON public.attendance
     FOR SELECT USING (
         EXISTS (
@@ -381,6 +440,14 @@ CREATE POLICY "Teachers can manage attendance" ON public.attendance
     );
 
 -- Payments policies
+CREATE POLICY "Platform admins have full access to payments" ON public.payments
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "School members can view payments" ON public.payments
     FOR SELECT USING (
         school_id IN (
@@ -397,6 +464,14 @@ CREATE POLICY "School admins can manage payments" ON public.payments
     );
 
 -- Messages policies
+CREATE POLICY "Platform admins have full access to messages" ON public.messages
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "Users can view their messages" ON public.messages
     FOR SELECT USING (
         sender_id = auth.uid() OR receiver_id = auth.uid()
@@ -409,6 +484,14 @@ CREATE POLICY "Users can update their sent messages" ON public.messages
     FOR UPDATE USING (sender_id = auth.uid());
 
 -- Notifications policies
+CREATE POLICY "Platform admins have full access to notifications" ON public.notifications
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE id = auth.uid() AND role = 'platform_admin'
+        )
+    );
+
 CREATE POLICY "Users can view their notifications" ON public.notifications
     FOR SELECT USING (user_id = auth.uid());
 
