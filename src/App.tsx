@@ -82,6 +82,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 // Dashboard pages
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import DashboardPage from './pages/dashboard/DashboardPage';
+import PlatformAdminDashboard from './components/dashboard/PlatformAdminDashboard';
 import PospSection from './pages/dashboard/PospSection';
 import UbankSection from './pages/dashboard/UbankSection';
 import ParentPortalSection from './pages/dashboard/ParentPortalSection';
@@ -146,7 +147,7 @@ const AppContent: React.FC = () => {
             <Route path="/dashboard" element={
               <PrivateRoute>
                 <DashboardLayout>
-                  <DashboardPage />
+                  {user?.role === 'platform_admin' ? <PlatformAdminDashboard /> : <DashboardPage />}
                 </DashboardLayout>
               </PrivateRoute>
             } />

@@ -33,13 +33,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('AuthProvider: useEffect triggered');
     let isMounted = true;
     
+    const fetchUserProfile = async (authUser: any) => {
+      if (!authUser) return null;
+      
+      try {
+        console.log('AuthProvider: fetching user profile for', authUser.id);
+        const { data: profile, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          return authUser; // Return auth user if profile fetch fails
+        }
+        
+        console.log('AuthProvider: user profile fetched', profile);
+        // Merge auth user with profile data
+        return {
+          ...authUser,
+          ...profile,
+          name: profile.full_name || authUser.email,
+          role: profile.role
+        };
+      } catch (error) {
+        console.error('Profile fetch error:', error);
+        return authUser;
+      }
+    };
+    
     const checkUser = async () => {
       try {
         console.log('AuthProvider: checking session');
         const { data: { session } } = await supabase.auth.getSession();
         console.log('AuthProvider: session check result', session);
-        if (isMounted) {
-          setUser(session?.user ?? null);
+        
+        if (isMounted && session?.user) {
+          const userWithProfile = await fetchUserProfile(session.user);
+          setUser(userWithProfile);
+        } else if (isMounted) {
+          setUser(null);
         }
       } catch (error) {
         console.error('Session check error:', error);
@@ -53,13 +87,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('AuthProvider: onAuthStateChange triggered', _event, session);
       if (isMounted) {
-        setUser(session?.user ?? null);
         if (session?.user) {
-          localStorage.setItem('user', JSON.stringify(session.user));
+          const userWithProfile = await fetchUserProfile(session.user);
+          setUser(userWithProfile);
+          localStorage.setItem('user', JSON.stringify(userWithProfile));
         } else {
+          setUser(null);
           localStorage.removeItem('user');
         }
         // Ensure loading is set to false when auth state changes

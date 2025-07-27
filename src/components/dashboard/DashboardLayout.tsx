@@ -10,9 +10,10 @@ import {
   MessageSquare, 
   Calendar,
   LogOut,
-  User,
   Settings,
-  Bell
+  Bell,
+  Building,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
@@ -27,7 +28,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navigation = [
+  // Platform admin gets different navigation
+  const navigation = user?.role === 'platform_admin' ? [
+    { name: 'Administration', href: '/dashboard', icon: Home },
+    { name: 'Écoles', href: '/dashboard/schools', icon: Building },
+    { name: 'Utilisateurs', href: '/dashboard/users', icon: Users },
+    { name: 'Analytiques', href: '/dashboard/analytics', icon: BarChart3 },
+    { name: 'Paramètres', href: '/dashboard/settings', icon: Settings },
+  ] : [
     { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
     { name: 'Pédagogie', href: '/dashboard/pedagogie', icon: BookOpen },
     { name: 'Finances', href: '/dashboard/finances', icon: DollarSign },
@@ -200,13 +208,13 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
           <div className="flex-shrink-0">
             <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center">
               <span className="text-sm font-medium text-white">
-                {user?.name?.charAt(0).toUpperCase()}
+                {(user?.name || user?.full_name || user?.email)?.charAt(0).toUpperCase()}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {user?.name}
+              {user?.name || user?.full_name || user?.email}
             </p>
             <span className={cn(
               'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
