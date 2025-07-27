@@ -243,7 +243,30 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- Step 14: Create RLS Policies (simplified and working)
+-- Step 14: Drop existing RLS policies if they exist
+DROP POLICY IF EXISTS "Schools are viewable by authenticated users" ON public.schools;
+DROP POLICY IF EXISTS "School admins can update their school" ON public.schools;
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
+DROP POLICY IF EXISTS "School members can view school users" ON public.users;
+DROP POLICY IF EXISTS "Users can register" ON public.users;
+DROP POLICY IF EXISTS "School members can view school classes" ON public.classes;
+DROP POLICY IF EXISTS "School admins can manage classes" ON public.classes;
+DROP POLICY IF EXISTS "School members can view school students" ON public.students;
+DROP POLICY IF EXISTS "School admins can manage students" ON public.students;
+DROP POLICY IF EXISTS "School members can view grades" ON public.grades;
+DROP POLICY IF EXISTS "Teachers can manage grades" ON public.grades;
+DROP POLICY IF EXISTS "School members can view attendance" ON public.attendance;
+DROP POLICY IF EXISTS "Teachers can manage attendance" ON public.attendance;
+DROP POLICY IF EXISTS "School members can view payments" ON public.payments;
+DROP POLICY IF EXISTS "School admins can manage payments" ON public.payments;
+DROP POLICY IF EXISTS "Users can view their messages" ON public.messages;
+DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
+DROP POLICY IF EXISTS "Users can update their sent messages" ON public.messages;
+DROP POLICY IF EXISTS "Users can view their notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Users can update their notifications" ON public.notifications;
+
+-- Step 15: Create RLS Policies (simplified and working)
 
 -- Schools policies
 CREATE POLICY "Schools are viewable by authenticated users" ON public.schools
@@ -378,17 +401,4 @@ CREATE POLICY "Users can view their notifications" ON public.notifications
 CREATE POLICY "Users can update their notifications" ON public.notifications
     FOR UPDATE USING (user_id = auth.uid());
 
--- Step 15: Create a function to handle new user registration
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.users (id, email, full_name, role)
-    VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email), 'teacher');
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
--- Step 16: Create trigger for new user registration
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- Note: User creation function and trigger are already created in Step 3.2-3.3 above
