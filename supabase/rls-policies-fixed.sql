@@ -14,54 +14,72 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Step 2: Drop existing policies to avoid conflicts
 -- Users policies
+DROP POLICY IF EXISTS "Platform admins have full access to users" ON public.users;
 DROP POLICY IF EXISTS "Users can read own profile" ON public.users;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
 DROP POLICY IF EXISTS "Service role can insert users" ON public.users;
 DROP POLICY IF EXISTS "Users can register" ON public.users;
 DROP POLICY IF EXISTS "Service role full access" ON public.users;
+DROP POLICY IF EXISTS "Service role full access to users" ON public.users;
 
 -- Schools policies
+DROP POLICY IF EXISTS "Platform admins have full access to schools" ON public.schools;
 DROP POLICY IF EXISTS "Authenticated users can read schools" ON public.schools;
 DROP POLICY IF EXISTS "Service role can manage schools" ON public.schools;
 DROP POLICY IF EXISTS "Service role full access" ON public.schools;
+DROP POLICY IF EXISTS "Service role full access to schools" ON public.schools;
 
 -- Classes policies
+DROP POLICY IF EXISTS "Platform admins have full access to classes" ON public.classes;
 DROP POLICY IF EXISTS "Users can read school classes" ON public.classes;
 DROP POLICY IF EXISTS "Teachers can manage their classes" ON public.classes;
 DROP POLICY IF EXISTS "Service role full access" ON public.classes;
+DROP POLICY IF EXISTS "Service role full access to classes" ON public.classes;
 
 -- Students policies
+DROP POLICY IF EXISTS "Platform admins have full access to students" ON public.students;
 DROP POLICY IF EXISTS "Users can read school students" ON public.students;
 DROP POLICY IF EXISTS "Teachers can manage their students" ON public.students;
 DROP POLICY IF EXISTS "Service role full access" ON public.students;
+DROP POLICY IF EXISTS "Service role full access to students" ON public.students;
 
 -- Grades policies
+DROP POLICY IF EXISTS "Platform admins have full access to grades" ON public.grades;
 DROP POLICY IF EXISTS "Users can read school grades" ON public.grades;
 DROP POLICY IF EXISTS "Teachers can manage grades" ON public.grades;
 DROP POLICY IF EXISTS "Service role full access" ON public.grades;
+DROP POLICY IF EXISTS "Service role full access to grades" ON public.grades;
 
 -- Attendance policies
+DROP POLICY IF EXISTS "Platform admins have full access to attendance" ON public.attendance;
 DROP POLICY IF EXISTS "Users can read school attendance" ON public.attendance;
 DROP POLICY IF EXISTS "Teachers can manage attendance" ON public.attendance;
 DROP POLICY IF EXISTS "Service role full access" ON public.attendance;
+DROP POLICY IF EXISTS "Service role full access to attendance" ON public.attendance;
 
 -- Payments policies
+DROP POLICY IF EXISTS "Platform admins have full access to payments" ON public.payments;
 DROP POLICY IF EXISTS "Users can read school payments" ON public.payments;
 DROP POLICY IF EXISTS "School admins can manage payments" ON public.payments;
 DROP POLICY IF EXISTS "Service role full access" ON public.payments;
+DROP POLICY IF EXISTS "Service role full access to payments" ON public.payments;
 
 -- Messages policies
+DROP POLICY IF EXISTS "Platform admins have full access to messages" ON public.messages;
 DROP POLICY IF EXISTS "Users can read their messages" ON public.messages;
 DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
 DROP POLICY IF EXISTS "Users can update their sent messages" ON public.messages;
 DROP POLICY IF EXISTS "Service role full access" ON public.messages;
+DROP POLICY IF EXISTS "Service role full access to messages" ON public.messages;
 
 -- Notifications policies
+DROP POLICY IF EXISTS "Platform admins have full access to notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Users can read their notifications" ON public.notifications;
 DROP POLICY IF EXISTS "System can create notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Users can update their notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Users can delete their notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Service role full access" ON public.notifications;
+DROP POLICY IF EXISTS "Service role full access to notifications" ON public.notifications;
 
 -- Step 3: Create new policies with proper platform admin access
 
