@@ -25,11 +25,15 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+interface UserWithProfile extends User {
+  profile: any;
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = async (authUser: any) => {
+  const fetchUserProfile = async (authUser: User | null): Promise<UserWithProfile | null> => {
     if (!authUser) {
       console.log('AuthProvider: fetchUserProfile called with null user');
       return null;
@@ -37,32 +41,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       console.log('AuthProvider: fetching user profile for', authUser.id);
-      const { data: profile, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single();
-      
+
       if (error) {
-        console.error('Error fetching user profile:', error);
-        console.log('AuthProvider: returning auth user only due to profile fetch error');
-        return authUser; // Return auth user if profile fetch fails
+        console.error('Profile fetch error:', error);
+        console.error('Profile fetch error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        console.log('AuthProvider: returning auth user only due to error');
+        return authUser as UserWithProfile;
       }
-      
-      console.log('AuthProvider: user profile fetched', profile);
-      // Merge auth user with profile data
-      const userWithProfile = {
+
+      console.log('AuthProvider: profile data fetched', data);
+      const userWithProfile: UserWithProfile = {
         ...authUser,
-        ...profile,
-        name: profile.full_name || authUser.email,
-        role: profile.role
+        profile: data
       };
       console.log('AuthProvider: returning merged user profile', userWithProfile);
       return userWithProfile;
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error('Profile fetch exception:', error);
+      console.error('Profile fetch exception details:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
       console.log('AuthProvider: returning auth user only due to exception');
-      return authUser;
+      return authUser as UserWithProfile;
     }
   };
 
@@ -89,6 +101,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Session check error:', error);
+        console.error('Session check error details:', {
+          name: (error as Error).name,
+          message: (error as Error).message,
+          stack: (error as Error).stack
+        });
         console.log('AuthProvider: error in session check, setting user to null');
         if (isMounted) {
           setUser(null);
@@ -139,25 +156,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('AuthProvider: attempting login for', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Login auth error:', error);
+        throw error;
+      }
       
+      console.log('AuthProvider: login successful, fetching profile');
       // Fetch user profile to get role information
       const userWithProfile = await fetchUserProfile(data.user);
+      console.log('AuthProvider: profile fetch complete, setting user');
       setUser(userWithProfile);
       localStorage.setItem('user', JSON.stringify(userWithProfile));
+      console.log('AuthProvider: user set and stored in localStorage');
     } catch (error) {
       console.error('Login error:', error);
+      console.error('Login error details:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
       throw error;
     }
   };
 
   const register = async (email: string, password: string, fullName: string, role: string, schoolId?: string) => {
     try {
+      console.log('AuthProvider: attempting registration for', email);
       // Pass user metadata through the auth.signup function
       // The trigger will automatically create the user record in public.users
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -172,17 +202,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Registration auth error:', authError);
+        throw authError;
+      }
 
+      console.log('AuthProvider: registration successful, user data:', authData.user);
       // The user record in public.users will be created automatically by the trigger
       // No need to manually insert the user profile
 
       // Fetch user profile to get role information
+      console.log('AuthProvider: fetching profile for newly registered user');
       const userWithProfile = await fetchUserProfile(authData.user);
+      console.log('AuthProvider: profile fetch complete, setting user');
       setUser(userWithProfile);
       localStorage.setItem('user', JSON.stringify(userWithProfile));
+      console.log('AuthProvider: user set and stored in localStorage');
     } catch (error) {
       console.error('Registration error:', error);
+      console.error('Registration error details:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
       throw error;
     }
   };
