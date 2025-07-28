@@ -25,7 +25,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-interface UserWithProfile extends User {
+export interface UserWithProfile extends User {
   profile: any;
 }
 

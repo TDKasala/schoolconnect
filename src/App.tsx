@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth, UserWithProfile } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import PrivateRoute from './components/auth/PrivateRoute';
@@ -92,6 +92,7 @@ import CalendarSection from './pages/dashboard/CalendarSection';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
+  const typedUser = user as UserWithProfile | null;
   
   console.log('AppContent: rendering', { user, loading });
 
@@ -140,7 +141,7 @@ const AppContent: React.FC = () => {
             <Route path="/dashboard" element={
               <PrivateRoute>
                 <DashboardLayout>
-                  {user?.role === 'platform_admin' ? <PlatformAdminDashboard /> : <DashboardPage />}
+                  {typedUser?.profile?.role === 'platform_admin' ? <PlatformAdminDashboard /> : <DashboardPage />}
                 </DashboardLayout>
               </PrivateRoute>
             } />
