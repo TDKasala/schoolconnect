@@ -7,6 +7,7 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import ScrollToTop from './components/ScrollToTop';
 import Spinner from './components/Spinner';
+import AnalyticsTracker from './components/AnalyticsTracker';
 
 // Error Boundary Component
 interface ErrorBoundaryProps {
@@ -114,6 +115,7 @@ const AppContent: React.FC = () => {
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
         <ScrollToTop />
+        <AnalyticsTracker />
         <main className="flex-grow">
           <Routes>
             {/* Public routes */}
