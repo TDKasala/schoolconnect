@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom';
 import { 
   Check, 
   X, 
-  ArrowRight, 
   Users, 
   Infinity,
-  HelpCircle,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -21,8 +19,8 @@ const PricingPage: React.FC = () => {
       description: 'Parfait pour les écoles de toute taille',
       icon: Users,
       pricing: {
-        monthly: { amount: 5, unit: 'USD/élève/mois' },
-        yearly: { amount: 54, unit: 'USD/élève/an (-10% remise)' }
+        monthly: { amount: 'A discuter', unit: 'selon le nombre et la capacité' },
+        yearly: { amount: 'A discuter', unit: 'selon le nombre et la capacité' }
       },
       features: [
         'Tous les modules inclus',
@@ -43,8 +41,8 @@ const PricingPage: React.FC = () => {
       description: 'Tarif fixe, élèves illimités',
       icon: Infinity,
       pricing: {
-        monthly: { amount: 50, unit: 'USD/école/mois' },
-        yearly: { amount: 540, unit: 'USD/école/an (-10% remise)' }
+        monthly: { amount: 'A discuter', unit: 'selon le nombre et la capacité' },
+        yearly: { amount: 'A discuter', unit: 'selon le nombre et la capacité' }
       },
       features: [
         'Élèves illimités',
@@ -175,7 +173,7 @@ const PricingPage: React.FC = () => {
                   {/* Pricing */}
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gray-900">
-                      ${plan.pricing[billingCycle].amount.toLocaleString()} USD
+                      {plan.pricing[billingCycle].amount}
                     </div>
                     <div className="text-gray-600 mt-2">
                       {plan.pricing[billingCycle].unit}
