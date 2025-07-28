@@ -121,6 +121,7 @@ const AppContent: React.FC = () => {
             <Route path="/pedagogie" element={<PospPage />} />
             <Route path="/finances" element={<UbankPage />} />
             <Route path="/parents" element={<ParentPortalPage />} />
+            <Route path="/portails" element={<ParentPortalPage />} />
             <Route path="/avantages" element={<AdvantagesPage />} />
             <Route path="/tarifs" element={<PricingPage />} />
             <Route path="/contact" element={<ContactPage />} />

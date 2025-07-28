@@ -89,11 +89,11 @@ const ParentPortalPage: React.FC = () => {
               <Users className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold">
-              Portails Connectés
+              Portails pour Enseignants, Parents et Administrateurs
             </h1>
             <p className="text-xl lg:text-2xl text-purple-100 leading-relaxed">
-              Trois portails dédiés pour renforcer la communication et la collaboration 
-              entre tous les acteurs de votre communauté scolaire.
+              Trois portails spécialisés pour répondre aux besoins spécifiques de chaque acteur 
+              de votre établissement scolaire.
             </p>
             <Link
               to="/contact"
@@ -111,10 +111,10 @@ const ParentPortalPage: React.FC = () => {
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Trois Portails, Une Communication Unifiée
+              Portails Spécialisés pour chaque Acteur
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Chaque utilisateur dispose d'un portail adapté à ses besoins spécifiques
+              Enseignants, Parents et Administrateurs disposent chacun d'un portail dédié
             </p>
           </div>
 
@@ -286,10 +286,10 @@ const ParentPortalPage: React.FC = () => {
         <div className="container text-center">
           <div className="max-w-3xl mx-auto space-y-8">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              Connectez votre communauté scolaire
+              Connectez Enseignants, Parents et Administrateurs
             </h2>
             <p className="text-xl text-purple-100">
-              Découvrez comment les portails connectés peuvent transformer la communication dans votre école.
+              Découvrez comment nos trois portails spécialisés peuvent transformer la communication dans votre école.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
