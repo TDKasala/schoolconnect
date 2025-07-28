@@ -34,7 +34,7 @@ const Header: React.FC = () => {
           <div className="flex items-center animate-fade-in">
             <Link to="/" className="flex items-center group">
               <img
-                src="/schoolconnect-header.png"
+                src="/schoolconnect-logo.png"
                 alt="SchoolConnect"
                 className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               />
