@@ -17,7 +17,9 @@ const LoginPage: React.FC = () => {
 
   // If user is already authenticated, redirect to dashboard
   useEffect(() => {
-    if (user) {
+    console.log('LoginPage: useEffect triggered', { user, userId: user?.id });
+    if (user && user.id) {
+      console.log('LoginPage: user authenticated, redirecting to', from);
       navigate(from, { replace: true });
     }
   }, [user, navigate, from]);
@@ -26,13 +28,16 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('LoginPage: attempting login for', formData.email);
 
     try {
       await login(formData.email, formData.password);
-      navigate(from, { replace: true });
+      console.log('LoginPage: login successful, waiting for useEffect to redirect');
+      // Redirect is handled by useEffect when user state changes
+      // Note: AuthContext will handle setting loading to false
     } catch (error: any) {
+      console.error('LoginPage: login error', error);
       setError(error.message || 'Erreur de connexion');
-    } finally {
       setLoading(false);
     }
   };

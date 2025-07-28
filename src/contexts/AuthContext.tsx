@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('AuthProvider: onAuthStateChange user found, fetching profile');
           fetchUserProfile(session.user).then((userWithProfile) => {
             if (isMounted) {
-              console.log('AuthProvider: profile fetch complete in onAuthStateChange, setting user');
+              console.log('AuthProvider: profile fetch complete in onAuthStateChange, setting user', userWithProfile);
               setUser(userWithProfile);
             }
           }).catch((error) => {
@@ -196,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('AuthProvider: fetching profile for logged in user');
       // Fetch user profile to get role information
       const userWithProfile = await fetchUserProfile(data.user);
-      console.log('AuthProvider: profile fetch complete, setting user');
+      console.log('AuthProvider: profile fetch complete, setting user', userWithProfile);
       setUser(userWithProfile);
       localStorage.setItem('user', JSON.stringify(userWithProfile));
       console.log('AuthProvider: user set and stored in localStorage');
@@ -208,6 +208,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         stack: (error as Error).stack
       });
       throw error;
+    } finally {
+      // Ensure loading is set to false after login attempt
+      if (loading) {
+        console.log('AuthProvider: login setting loading to false');
+        setLoading(false);
+      }
     }
   };
 
