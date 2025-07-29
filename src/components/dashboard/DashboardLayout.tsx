@@ -15,7 +15,7 @@ import {
   Building,
   BarChart3
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
 
 interface DashboardLayoutProps {
@@ -25,11 +25,12 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
+  const typedUser = user as UserWithProfile | null;
   const location = useLocation();
   const navigate = useNavigate();
 
   // Platform admin gets different navigation
-  const navigation = user?.role === 'platform_admin' ? [
+  const navigation = typedUser?.profile?.role === 'platform_admin' ? [
     { name: 'Administration', href: '/dashboard', icon: Home },
     { name: 'Écoles', href: '/dashboard/schools', icon: Building },
     { name: 'Utilisateurs', href: '/dashboard/users', icon: Users },
@@ -89,7 +90,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <SidebarContent 
               navigation={navigation} 
               location={location} 
-              user={user} 
+              user={typedUser} 
               getRoleDisplayName={getRoleDisplayName}
               getRoleBadgeColor={getRoleBadgeColor}
               handleLogout={handleLogout}
@@ -104,7 +105,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <SidebarContent 
             navigation={navigation} 
             location={location} 
-            user={user} 
+            user={typedUser} 
             getRoleDisplayName={getRoleDisplayName}
             getRoleBadgeColor={getRoleBadgeColor}
             handleLogout={handleLogout}
@@ -176,7 +177,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 interface SidebarContentProps {
   navigation: Array<{ name: string; href: string; icon: any }>;
   location: any;
-  user: any;
+  user: UserWithProfile | null;
   getRoleDisplayName: (role: string) => string;
   getRoleBadgeColor: (role: string) => string;
   handleLogout: () => void;
@@ -185,7 +186,7 @@ interface SidebarContentProps {
 const SidebarContent: React.FC<SidebarContentProps> = ({
   navigation,
   location,
-  user,
+  user: typedUser,
   getRoleDisplayName,
   getRoleBadgeColor,
   handleLogout
@@ -208,19 +209,19 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
           <div className="flex-shrink-0">
             <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center">
               <span className="text-sm font-medium text-white">
-                {(user?.name || user?.full_name || user?.email)?.charAt(0).toUpperCase()}
+                {(typedUser?.profile?.full_name || typedUser?.email)?.charAt(0).toUpperCase()}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {user?.name || user?.full_name || user?.email}
+              {typedUser?.profile?.full_name || typedUser?.email}
             </p>
             <span className={cn(
               'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-              getRoleBadgeColor(user?.role || '')
+              getRoleBadgeColor(typedUser?.profile?.role || '')
             )}>
-              {getRoleDisplayName(user?.role || '')}
+              {getRoleDisplayName(typedUser?.profile?.role || '')}
             </span>
           </div>
         </div>

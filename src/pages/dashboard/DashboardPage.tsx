@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import SchoolAdminDashboard from '../../components/dashboard/SchoolAdminDashboard';
 import TeacherDashboard from '../../components/dashboard/TeacherDashboard';
 import PlatformAdminDashboard from '../../components/dashboard/PlatformAdminDashboard';
@@ -8,18 +8,19 @@ import PendingAccountMessage from '../../components/dashboard/PendingAccountMess
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const typedUser = user as UserWithProfile | null;
 
-  if (!user) {
+  if (!typedUser) {
     return null;
   }
 
   // Show pending message for users awaiting activation
-  if (user.role === 'pending') {
+  if (typedUser.profile?.role === 'pending') {
     return <PendingAccountMessage />;
   }
 
   const renderDashboard = () => {
-    switch (user?.role) {
+    switch (typedUser?.profile?.role) {
       case 'platform_admin':
         return <PlatformAdminDashboard />;
       case 'school_admin':
@@ -36,7 +37,7 @@ const DashboardPage: React.FC = () => {
                 Tableau de bord en développement
               </h2>
               <p className="text-gray-600">
-                Votre tableau de bord pour le rôle {user?.role} sera bientôt disponible.
+                Votre tableau de bord pour le rôle {typedUser?.profile?.role} sera bientôt disponible.
               </p>
             </div>
           </div>
