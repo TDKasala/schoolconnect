@@ -76,14 +76,14 @@ const HomePage: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/contact"
-                  className="btn bg-secondary-500 text-white hover:bg-secondary-600 px-8 py-4 text-lg font-semibold"
+                  className="btn bg-secondary-500 text-white hover:bg-secondary-600 px-6 py-3 text-base font-semibold rounded-r-full"
                 >
-                  Demander une démo gratuite
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  Demander une démo
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
                 <Link
                   to="/tarifs"
-                  className="btn border-2 border-white text-white hover:bg-white hover:text-primary-600 px-8 py-4 text-lg font-semibold"
+                  className="btn border-2 border-white text-white hover:bg-white hover:text-primary-600 px-6 py-3 text-base font-semibold rounded-l-full"
                 >
                   Voir les tarifs
                 </Link>
@@ -411,20 +411,20 @@ const HomePage: React.FC = () => {
               Rejoignez les écoles qui ont déjà choisi SchoolConnect pour simplifier leur gestion quotidienne.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-6 justify-center animate-scale-in">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in">
               <Link
                 to="/contact"
-                className="group bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-10 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+                className="group bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-6 py-3 rounded-r-full font-semibold text-base hover:shadow-xl hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
               >
-                <Zap className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
+                <Zap className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
                 Demander une démo
               </Link>
               <Link
                 to="/register"
-                className="group border-2 border-white/30 backdrop-blur-sm text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center"
+                className="group border-2 border-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-l-full font-semibold text-base hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center"
               >
-                Commencer gratuitement
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                Commencer
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
             
