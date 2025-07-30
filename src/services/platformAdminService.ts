@@ -1,0 +1,550 @@
+import { supabase } from '../lib/supabase';
+import { User, School, UserRole } from '../types';
+
+export interface PlatformStats {
+  totalSchools: number;
+  totalStudents: number;
+  totalTeachers: number;
+  totalRevenue: number;
+  monthlyGrowth: {
+    schools: number;
+    students: number;
+    teachers: number;
+    revenue: number;
+  };
+}
+
+export interface SchoolWithStats extends School {
+  studentCount: number;
+  teacherCount: number;
+  status: 'active' | 'inactive' | 'suspended';
+  plan: 'Basic' | 'Standard' | 'Premium';
+  revenue: number;
+  lastActive: string;
+  location: string;
+}
+
+export interface UserWithSchool extends User {
+  schoolName?: string;
+  status: 'active' | 'pending' | 'suspended';
+}
+
+export interface ActivityLog {
+  id: string;
+  action: string;
+  description: string;
+  userId: string;
+  userName: string;
+  timestamp: Date;
+  type: 'school' | 'user' | 'system' | 'financial';
+}
+
+export interface SystemAnalytics {
+  userRegistrations: {
+    date: string;
+    count: number;
+  }[];
+  schoolGrowth: {
+    date: string;
+    count: number;
+  }[];
+  revenueData: {
+    date: string;
+    amount: number;
+  }[];
+  usersByRole: {
+    role: UserRole;
+    count: number;
+  }[];
+}
+
+export class PlatformAdminService {
+  /**
+   * Get platform-wide statistics
+   */
+  static async getPlatformStats(): Promise<PlatformStats> {
+    try {
+      // Get total schools
+      const { count: totalSchools } = await supabase
+        .from('schools')
+        .select('*', { count: 'exact', head: true });
+
+      // Get total students
+      const { count: totalStudents } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true });
+
+      // Get total teachers
+      const { count: totalTeachers } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'teacher');
+
+      // Calculate revenue (mock calculation - replace with actual revenue logic)
+      const { data: schools } = await supabase
+        .from('schools')
+        .select('subscription_type, max_students');
+
+      let totalRevenue = 0;
+      schools?.forEach(school => {
+        // Basic pricing logic - adjust based on actual pricing model
+        const basePrice = school.subscription_type === 'forfait' ? 50 : 30;
+        const studentMultiplier = Math.min(school.max_students / 100, 5);
+        totalRevenue += basePrice * (1 + studentMultiplier);
+      });
+
+      // Mock growth data - replace with actual historical data queries
+      const monthlyGrowth = {
+        schools: 2,
+        students: 45,
+        teachers: 8,
+        revenue: 12
+      };
+
+      return {
+        totalSchools: totalSchools || 0,
+        totalStudents: totalStudents || 0,
+        totalTeachers: totalTeachers || 0,
+        totalRevenue,
+        monthlyGrowth
+      };
+    } catch (error) {
+      console.error('Error fetching platform stats:', error);
+      throw new Error('Failed to fetch platform statistics');
+    }
+  }
+
+  /**
+   * Get all schools with detailed statistics
+   */
+  static async getSchoolsWithStats(): Promise<SchoolWithStats[]> {
+    try {
+      const { data: schools, error } = await supabase
+        .from('schools')
+        .select(`
+          *,
+          students(count),
+          users!users_school_id_fkey(count)
+        `);
+
+      if (error) throw error;
+
+      const schoolsWithStats: SchoolWithStats[] = await Promise.all(
+        schools?.map(async (school) => {
+          // Get student count
+          const { count: studentCount } = await supabase
+            .from('students')
+            .select('*', { count: 'exact', head: true })
+            .eq('school_id', school.id);
+
+          // Get teacher count
+          const { count: teacherCount } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('school_id', school.id)
+            .eq('role', 'teacher');
+
+          // Calculate revenue based on subscription
+          const basePrice = school.subscription_type === 'forfait' ? 50 : 30;
+          const revenue = basePrice * Math.max(1, Math.floor((studentCount || 0) / 50));
+
+          // Determine plan based on max_students
+          let plan: 'Basic' | 'Standard' | 'Premium' = 'Basic';
+          if (school.max_students > 500) plan = 'Premium';
+          else if (school.max_students > 200) plan = 'Standard';
+
+          // Mock status and location - replace with actual data
+          const status = studentCount && studentCount > 0 ? 'active' : 'inactive';
+          const location = school.address || 'Unknown';
+
+          return {
+            ...school,
+            studentCount: studentCount || 0,
+            teacherCount: teacherCount || 0,
+            status,
+            plan,
+            revenue,
+            lastActive: new Date().toISOString().split('T')[0],
+            location
+          };
+        }) || []
+      );
+
+      return schoolsWithStats;
+    } catch (error) {
+      console.error('Error fetching schools with stats:', error);
+      throw new Error('Failed to fetch schools data');
+    }
+  }
+
+  /**
+   * Get all users with school information
+   */
+  static async getUsersWithSchool(): Promise<UserWithSchool[]> {
+    try {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          schools(name)
+        `);
+
+      if (error) throw error;
+
+      return users?.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: user.role,
+        schoolId: user.school_id,
+        schoolName: user.schools?.name,
+        status: 'active', // Mock status - replace with actual status logic
+        createdAt: new Date(user.created_at),
+        updatedAt: new Date(user.updated_at)
+      })) || [];
+    } catch (error) {
+      console.error('Error fetching users with school:', error);
+      throw new Error('Failed to fetch users data');
+    }
+  }
+
+  /**
+   * Create a new school
+   */
+  static async createSchool(schoolData: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    subscription_type: 'flex' | 'forfait';
+    max_students: number;
+  }): Promise<School> {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .insert([schoolData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+        email: data.email,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+    } catch (error) {
+      console.error('Error creating school:', error);
+      throw new Error('Failed to create school');
+    }
+  }
+
+  /**
+   * Update school information
+   */
+  static async updateSchool(schoolId: string, updates: Partial<{
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    subscription_type: 'flex' | 'forfait';
+    max_students: number;
+  }>): Promise<School> {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .update(updates)
+        .eq('id', schoolId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+        email: data.email,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+    } catch (error) {
+      console.error('Error updating school:', error);
+      throw new Error('Failed to update school');
+    }
+  }
+
+  /**
+   * Delete a school
+   */
+  static async deleteSchool(schoolId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .delete()
+        .eq('id', schoolId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting school:', error);
+      throw new Error('Failed to delete school');
+    }
+  }
+
+  /**
+   * Update user status (approve, suspend, activate)
+   */
+  static async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<void> {
+    try {
+      // For now, we'll use a custom field or handle this in the application logic
+      // since the current schema doesn't have a status field
+      const { error } = await supabase
+        .from('users')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Log the activity
+      await this.logActivity({
+        action: `User ${status}`,
+        description: `User status changed to ${status}`,
+        userId: userId,
+        type: 'user'
+      });
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      throw new Error('Failed to update user status');
+    }
+  }
+
+  /**
+   * Get recent activity logs
+   */
+  static async getActivityLogs(limit: number = 20): Promise<ActivityLog[]> {
+    try {
+      // Mock activity logs - replace with actual activity logging system
+      const mockLogs: ActivityLog[] = [
+        {
+          id: '1',
+          action: 'School Created',
+          description: 'Nouvelle école ajoutée: Institut Moderne',
+          userId: 'admin-1',
+          userName: 'Platform Admin',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+          type: 'school'
+        },
+        {
+          id: '2',
+          action: 'Users Approved',
+          description: '15 nouveaux utilisateurs approuvés',
+          userId: 'admin-1',
+          userName: 'Platform Admin',
+          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+          type: 'user'
+        },
+        {
+          id: '3',
+          action: 'System Update',
+          description: 'Mise à jour système déployée',
+          userId: 'system',
+          userName: 'System',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+          type: 'system'
+        }
+      ];
+
+      return mockLogs.slice(0, limit);
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      throw new Error('Failed to fetch activity logs');
+    }
+  }
+
+  /**
+   * Log an activity
+   */
+  static async logActivity(activity: {
+    action: string;
+    description: string;
+    userId: string;
+    type: 'school' | 'user' | 'system' | 'financial';
+  }): Promise<void> {
+    try {
+      // In a real implementation, you would save this to an activity_logs table
+      console.log('Activity logged:', activity);
+      
+      // For now, we'll just log to console
+      // TODO: Implement actual activity logging to database
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
+  }
+
+  /**
+   * Get system analytics data
+   */
+  static async getSystemAnalytics(): Promise<SystemAnalytics> {
+    try {
+      // Mock analytics data - replace with actual analytics queries
+      const userRegistrations = Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 10) + 1
+      })).reverse();
+
+      const schoolGrowth = Array.from({ length: 12 }, (_, i) => ({
+        date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 5) + 1
+      })).reverse();
+
+      const revenueData = Array.from({ length: 12 }, (_, i) => ({
+        date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        amount: Math.floor(Math.random() * 10000) + 5000
+      })).reverse();
+
+      // Get actual user counts by role
+      const { data: usersByRole } = await supabase
+        .from('users')
+        .select('role')
+        .not('role', 'is', null);
+
+      const roleCounts = usersByRole?.reduce((acc, user) => {
+        acc[user.role] = (acc[user.role] || 0) + 1;
+        return acc;
+      }, {} as Record<UserRole, number>) || {};
+
+      const usersByRoleArray = Object.entries(roleCounts).map(([role, count]) => ({
+        role: role as UserRole,
+        count
+      }));
+
+      return {
+        userRegistrations,
+        schoolGrowth,
+        revenueData,
+        usersByRole: usersByRoleArray
+      };
+    } catch (error) {
+      console.error('Error fetching system analytics:', error);
+      throw new Error('Failed to fetch system analytics');
+    }
+  }
+
+  /**
+   * Export platform data
+   */
+  static async exportData(dataType: 'schools' | 'users' | 'analytics'): Promise<Blob> {
+    try {
+      let data: any;
+
+      switch (dataType) {
+        case 'schools':
+          data = await this.getSchoolsWithStats();
+          break;
+        case 'users':
+          data = await this.getUsersWithSchool();
+          break;
+        case 'analytics':
+          data = await this.getSystemAnalytics();
+          break;
+        default:
+          throw new Error('Invalid data type for export');
+      }
+
+      const jsonData = JSON.stringify(data, null, 2);
+      return new Blob([jsonData], { type: 'application/json' });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      throw new Error('Failed to export data');
+    }
+  }
+
+  /**
+   * Search schools by name or location
+   */
+  static async searchSchools(query: string): Promise<SchoolWithStats[]> {
+    try {
+      const { data: schools, error } = await supabase
+        .from('schools')
+        .select('*')
+        .or(`name.ilike.%${query}%,address.ilike.%${query}%`);
+
+      if (error) throw error;
+
+      // Convert to SchoolWithStats format
+      const schoolsWithStats = await Promise.all(
+        schools?.map(async (school) => {
+          const { count: studentCount } = await supabase
+            .from('students')
+            .select('*', { count: 'exact', head: true })
+            .eq('school_id', school.id);
+
+          const { count: teacherCount } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('school_id', school.id)
+            .eq('role', 'teacher');
+
+          return {
+            ...school,
+            studentCount: studentCount || 0,
+            teacherCount: teacherCount || 0,
+            status: 'active' as const,
+            plan: 'Standard' as const,
+            revenue: 10000,
+            lastActive: new Date().toISOString().split('T')[0],
+            location: school.address
+          };
+        }) || []
+      );
+
+      return schoolsWithStats;
+    } catch (error) {
+      console.error('Error searching schools:', error);
+      throw new Error('Failed to search schools');
+    }
+  }
+
+  /**
+   * Get pending user approvals
+   */
+  static async getPendingUsers(): Promise<UserWithSchool[]> {
+    try {
+      // In a real implementation, you would filter by a status field
+      // For now, we'll return users created in the last 24 hours as "pending"
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      const { data: users, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          schools(name)
+        `)
+        .gte('created_at', yesterday);
+
+      if (error) throw error;
+
+      return users?.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: user.role,
+        schoolId: user.school_id,
+        schoolName: user.schools?.name,
+        status: 'pending',
+        createdAt: new Date(user.created_at),
+        updatedAt: new Date(user.updated_at)
+      })) || [];
+    } catch (error) {
+      console.error('Error fetching pending users:', error);
+      throw new Error('Failed to fetch pending users');
+    }
+  }
+}
+
+export default PlatformAdminService;
