@@ -287,6 +287,43 @@ CREATE POLICY "Users can view their own notifications" ON public.notifications
 CREATE POLICY "Users can update their own notifications" ON public.notifications
     FOR UPDATE USING (user_id = auth.uid());
 
+-- Events table
+CREATE TABLE IF NOT EXISTS public.events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    school_id UUID REFERENCES public.schools(id) ON DELETE CASCADE NOT NULL,
+    class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    location TEXT,
+    event_type TEXT CHECK (event_type IN ('meeting', 'exam', 'activity', 'holiday', 'other')) NOT NULL,
+    created_by UUID REFERENCES public.users(id) NOT NULL,
+    is_all_day BOOLEAN DEFAULT FALSE,
+    color TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for events
+CREATE INDEX IF NOT EXISTS idx_events_school_id ON public.events(school_id);
+CREATE INDEX IF NOT EXISTS idx_events_class_id ON public.events(class_id);
+CREATE INDEX IF NOT EXISTS idx_events_start_date ON public.events(start_date);
+CREATE INDEX IF NOT EXISTS idx_events_created_by ON public.events(created_by);
+
+-- Events policies
+CREATE POLICY "School members can view school events" ON public.events
+    FOR SELECT USING (
+        school_id = (SELECT school_id FROM public.users WHERE id = auth.uid())
+    );
+
+CREATE POLICY "Teachers and admins can manage school events" ON public.events
+    FOR ALL USING (
+        school_id = (SELECT school_id FROM public.users WHERE id = auth.uid()) AND
+        (created_by = auth.uid() OR
+         auth.uid() IN (SELECT id FROM public.users WHERE role IN ('school_admin', 'platform_admin')))
+    );
+
 -- Triggers for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -321,4 +358,7 @@ CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON public.messages
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_notifications_updated_at BEFORE UPDATE ON public.notifications
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON public.events
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

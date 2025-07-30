@@ -1,11 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Building, Users, TrendingUp, Plus, Settings, Shield, Database, 
-  BarChart3, UserCheck, AlertTriangle, DollarSign, Calendar,
-  Search, Filter, Download, Edit, Trash2, Eye, Mail, Phone
+  Building, Users, TrendingUp, Plus, Settings, Shield, 
+  BarChart3, UserCheck, AlertTriangle, DollarSign,
+  Search, Filter, Download, Edit, Trash2, Eye, Mail
 } from 'lucide-react';
+import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
+import { useOverview } from '../../hooks/useOverview';
 
 const PlatformAdminDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const typedUser = user as UserWithProfile | null;
+  
+  const {
+    stats,
+    recentActivities,
+    upcomingEvents,
+    recentMessages,
+    financialSummary,
+    classPerformance,
+    loading,
+    error,
+    fetchOverviewData
+  } = useOverview(typedUser?.id || '', 'platform_admin');
+
+  useEffect(() => {
+    if (typedUser?.id) {
+      fetchOverviewData();
+    }
+  }, [typedUser?.id, fetchOverviewData]);
+
   const [activeTab, setActiveTab] = useState('overview');
   const [schools] = useState([
     { 
@@ -49,11 +72,11 @@ const PlatformAdminDashboard: React.FC = () => {
     { id: '3', name: 'Pierre Tshisekedi', email: 'pierre@school3.cd', role: 'school_admin', school: 'Collège Moderne', status: 'suspended' }
   ]);
 
-  const stats = [
-    { name: 'Total Écoles', value: schools.length.toString(), icon: Building, color: 'bg-blue-500', change: '+2' },
-    { name: 'Total Élèves', value: schools.reduce((sum, school) => sum + school.students, 0).toString(), icon: Users, color: 'bg-green-500', change: '+45' },
-    { name: 'Total Enseignants', value: schools.reduce((sum, school) => sum + school.teachers, 0).toString(), icon: Users, color: 'bg-purple-500', change: '+8' },
-    { name: 'Revenus Mensuels', value: `$${schools.reduce((sum, school) => sum + school.revenue, 0).toLocaleString()}`, icon: DollarSign, color: 'bg-yellow-500', change: '+12%' }
+  const statsData = [
+    { name: 'Total Écoles', value: stats?.totalSchools.toString() || '0', icon: Building, color: 'bg-blue-500', change: '+2' },
+    { name: 'Total Élèves', value: stats?.totalStudents.toString() || '0', icon: Users, color: 'bg-green-500', change: '+45' },
+    { name: 'Total Enseignants', value: stats?.totalTeachers.toString() || '0', icon: Users, color: 'bg-purple-500', change: '+8' },
+    { name: 'Revenus Mensuels', value: financialSummary ? `$${financialSummary.totalRevenue.toLocaleString()}` : '$0', icon: DollarSign, color: 'bg-yellow-500', change: '+12%' }
   ];
 
   const tabs = [
@@ -66,25 +89,57 @@ const PlatformAdminDashboard: React.FC = () => {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className={`${stat.color} rounded-lg p-3`}>
-                  <stat.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-red-400" />
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Erreur de chargement</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
               </div>
-              <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+              <div className="mt-4">
+                <button
+                  onClick={fetchOverviewData}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Réessayer
+                </button>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+      
+      {/* Stats Grid */}
+      {!loading && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statsData.map((stat, index) => (
+            <div key={index} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className={`${stat.color} rounded-lg p-3`}>
+                    <stat.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                  </div>
+                </div>
+                <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -109,27 +164,26 @@ const PlatformAdminDashboard: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Activité Récente</h3>
         <div className="space-y-3">
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-              <span className="text-sm">Nouvelle école ajoutée: Institut Moderne</span>
+          {recentActivities && recentActivities.length > 0 ? (
+            recentActivities.slice(0, 5).map((activity, index) => (
+              <div key={index} className="flex items-center justify-between py-2">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                  <span className="text-sm">{activity.action}: {activity.target}</span>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {new Date(activity.timestamp).toLocaleDateString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              Aucune activité récente
             </div>
-            <span className="text-xs text-gray-500">Il y a 2h</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-              <span className="text-sm">15 nouveaux utilisateurs approuvés</span>
-            </div>
-            <span className="text-xs text-gray-500">Il y a 4h</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
-              <span className="text-sm">Mise à jour système déployée</span>
-            </div>
-            <span className="text-xs text-gray-500">Il y a 1j</span>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -309,15 +363,108 @@ const PlatformAdminDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Événements à Venir</h3>
+          <div className="space-y-3">
+            {upcomingEvents && upcomingEvents.length > 0 ? (
+              upcomingEvents.slice(0, 5).map((event, index) => (
+                <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div>
+                    <p className="font-medium text-gray-900">{event.title}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(event.startDate).toLocaleDateString('fr-FR', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short'
+                      })} à {new Date(event.startDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {event.eventType}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                Aucun événement à venir
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Messages Récents</h3>
+          <div className="space-y-3">
+            {recentMessages && recentMessages.length > 0 ? (
+              recentMessages.slice(0, 5).map((message, index) => (
+                <div key={index} className="flex items-start py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-900 truncate">{message.senderName}</p>
+                      <span className="text-xs text-gray-500">
+                        {new Date(message.timestamp).toLocaleDateString('fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">{message.content}</p>
+                  </div>
+                  {!message.isRead && (
+                    <span className="ml-2 inline-flex items-center justify-center h-2 w-2 rounded-full bg-blue-500"></span>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                Aucun message récent
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Croissance des Écoles</h3>
           <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
             <p className="text-gray-500">Graphique de croissance</p>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenus par Région</h3>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
-            <p className="text-gray-500">Graphique des revenus</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance des Classes</h3>
+          <div className="space-y-4">
+            {classPerformance && classPerformance.length > 0 ? (
+              classPerformance.slice(0, 5).map((performance, index) => (
+                <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{performance.className}</p>
+                    <div className="flex items-center mt-1">
+                      <span className="text-sm text-gray-500 mr-4">
+                        {performance.studentCount} élèves
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Moyenne: {performance.averageGrade.toFixed(1)}%</span>
+                          <span>Présence: {performance.attendanceRate.toFixed(1)}%</span>
+                        </div>
+                        <div className="flex h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="flex flex-col justify-center rounded-full overflow-hidden bg-green-500 text-xs text-white text-center whitespace-nowrap transition duration-500" 
+                            style={{ width: `${performance.averageGrade}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                Aucune donnée de performance disponible
+              </div>
+            )}
           </div>
         </div>
       </div>
