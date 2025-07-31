@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Building, Users, TrendingUp, Plus, Settings, Shield, Database, 
   BarChart3, UserCheck, AlertTriangle, DollarSign, Calendar,
-  Search, Filter, Download, Edit, Trash2, Eye, Mail, Phone
+  Search, Filter, Download, Edit, Trash2, Eye, Mail, Phone, FileText
 } from 'lucide-react';
 import usePlatformAdmin from '../../hooks/usePlatformAdmin';
 

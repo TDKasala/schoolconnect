@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Building, Users, TrendingUp, Plus, Settings, Shield, 
   BarChart3, UserCheck, AlertTriangle, DollarSign,
-  Search, Filter, Download, Edit, Trash2, Eye, Mail
+  Search, Filter, Download, Edit, Trash2, Eye, Mail, FileText
 } from 'lucide-react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { useOverview } from '../../hooks/useOverview';
