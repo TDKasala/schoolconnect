@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, ClipboardCheck, Calendar, Plus, Eye, Edit, MessageSquare, BarChart3, CheckCircle } from 'lucide-react';
+import { BookOpen, Users, ClipboardCheck, Calendar, Plus, Eye, Edit, MessageSquare, BarChart3, CheckCircle, FileText } from 'lucide-react';
 
 const TeacherDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
