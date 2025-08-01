@@ -1,57 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  Building, 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  Settings, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  UserCheck, 
+import {
+  Users,
+  BarChart3,
+  Settings,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  UserCheck,
   Download,
+  TrendingUp,
+  DollarSign,
+  Building2,
   AlertCircle,
-  Shield
+  Shield,
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PlatformAdminService, type SchoolWithStats, type UserWithSchool } from '../../services/platformAdminService';
 import { useOverview } from '../../hooks/useOverview';
-import { PlatformAdminService } from '../../services/platformAdminService';
-import type { User } from '../../types/auth';
-
-// TypeScript interfaces for the dashboard data
-interface School {
-  id: string;
-  name: string;
-  city: string;
-  country: string;
-  studentCount: number;
-  teacherCount: number;
-  is_active: boolean;
-  subscription_type: 'forfait' | 'flex';
-}
-
-interface DashboardUser {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  schoolName?: string;
-  is_active: boolean;
-}
-
-interface ActivityLog {
-  id: string;
-  action: string;
-  userName: string;
-  description: string;
-  timestamp: string;
-}
 
 const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
-  const typedUser = user as User | null;
   
   // Use the overview hook for basic stats and activity logs
   const {
@@ -61,15 +31,12 @@ const PlatformAdminDashboard: React.FC = () => {
     loading,
     error,
     fetchOverviewData
-  } = useOverview(typedUser?.id || '', 'platform_admin');
-
-  // Initialize the platform admin service
-  const platformAdminService = new PlatformAdminService();
+  } = useOverview(user?.id || '', 'platform_admin');
 
   // State for dashboard-specific data
   const [activeTab, setActiveTab] = useState('overview');
-  const [schools, setSchools] = useState<School[]>([]);
-  const [users, setUsers] = useState<DashboardUser[]>([]);
+  const [schools, setSchools] = useState<SchoolWithStats[]>([]);
+  const [users, setUsers] = useState<UserWithSchool[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
@@ -80,8 +47,8 @@ const PlatformAdminDashboard: React.FC = () => {
       setDashboardError(null);
       try {
         const [schoolsData, usersData] = await Promise.all([
-          platformAdminService.getSchoolsWithStats(),
-          platformAdminService.getUsersWithSchool()
+          PlatformAdminService.getSchools(), // Fix property name
+          PlatformAdminService.getUsers() // Fix property name
         ]);
         setSchools(schoolsData);
         setUsers(usersData);
@@ -102,7 +69,7 @@ const PlatformAdminDashboard: React.FC = () => {
 
   const handleApproveUsers = async () => {
     try {
-      const pendingUsers = await platformAdminService.getPendingUsers();
+      const pendingUsers = await PlatformAdminService.getPendingUsers();
       console.log('Pending users:', pendingUsers);
     } catch (error) {
       console.error('Failed to get pending users:', error);
@@ -111,7 +78,7 @@ const PlatformAdminDashboard: React.FC = () => {
 
   const handleExportData = async () => {
     try {
-      const data = await platformAdminService.exportData('schools');
+      const data = await PlatformAdminService.exportData('schools');
       console.log('Export data:', data);
     } catch (error) {
       console.error('Failed to export data:', error);
@@ -167,20 +134,20 @@ const PlatformAdminDashboard: React.FC = () => {
       
       {/* Stats Grid */}
       {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {statsData.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow p-6">
+            <div key={index} className="bg-white rounded-lg shadow p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className={`${stat.color} rounded-lg p-3`}>
-                    <stat.icon className="h-6 w-6 text-white" />
+                <div className="flex items-center min-w-0 flex-1">
+                  <div className={`${stat.color} rounded-lg p-2 sm:p-3 flex-shrink-0`}>
+                    <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                  <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{stat.name}</p>
+                    <p className="text-lg sm:text-2xl font-semibold text-gray-900">{stat.value}</p>
                   </div>
                 </div>
-                <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+                <span className="text-xs sm:text-sm text-green-600 font-medium ml-2 flex-shrink-0">{stat.change}</span>
               </div>
             </div>
           ))}
@@ -188,29 +155,29 @@ const PlatformAdminDashboard: React.FC = () => {
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Rapides</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Actions Rapides</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <button 
             onClick={handleAddSchool}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
           >
-            <Plus className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-gray-600">Ajouter École</span>
+            <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
+            <span className="text-sm sm:text-base text-gray-600">Ajouter École</span>
           </button>
           <button 
             onClick={handleApproveUsers}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
           >
-            <UserCheck className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-gray-600">Approuver Utilisateurs</span>
+            <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
+            <span className="text-sm sm:text-base text-gray-600">Approuver Utilisateurs</span>
           </button>
           <button 
             onClick={handleExportData}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
+            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors sm:col-span-2 lg:col-span-1"
           >
-            <Download className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-gray-600">Exporter Données</span>
+            <Download className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
+            <span className="text-sm sm:text-base text-gray-600">Exporter Données</span>
           </button>
         </div>
       </div>
@@ -258,10 +225,10 @@ const PlatformAdminDashboard: React.FC = () => {
   );
 
   const renderSchools = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestion des Écoles</h2>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Écoles</h2>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center sm:justify-start">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter École
         </button>
@@ -272,75 +239,128 @@ const PlatformAdminDashboard: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">École</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Élèves</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enseignants</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {schools.length > 0 ? schools.map((school) => (
-                <tr key={school.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{school.name}</div>
-                      <div className="text-sm text-gray-500">{school.city}, {school.country}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.studentCount || 0}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.teacherCount || 0}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      school.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {school.is_active ? 'Actif' : 'Inactif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {school.subscription_type === 'forfait' ? 'Forfait' : 'Flex'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="text-green-600 hover:text-green-900 mr-3">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                    Aucune école trouvée. Ajoutez votre première école pour commencer.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Mobile Card Layout */}
+          <div className="sm:hidden space-y-4">
+            {schools.length > 0 ? schools.map((school) => (
+              <div key={school.id} className="bg-white rounded-lg shadow p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">{school.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{school.city}, {school.country}</p>
+                  </div>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
+                    school.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {school.is_active ? 'Actif' : 'Inactif'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center mb-3">
+                  <div>
+                    <p className="text-lg font-semibold text-gray-900">{school.studentCount || 0}</p>
+                    <p className="text-xs text-gray-500">Élèves</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-gray-900">{school.teacherCount || 0}</p>
+                    <p className="text-xs text-gray-500">Enseignants</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{school.subscription_type === 'forfait' ? 'Forfait' : 'Flex'}</p>
+                    <p className="text-xs text-gray-500">Plan</p>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button className="text-blue-600 hover:text-blue-900">
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button className="text-green-600 hover:text-green-900">
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button className="text-red-600 hover:text-red-900">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )) : (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <p className="text-gray-500">Aucune école trouvée. Ajoutez votre première école pour commencer.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden sm:block bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">École</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Élèves</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enseignants</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {schools.length > 0 ? schools.map((school) => (
+                    <tr key={school.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{school.name}</div>
+                          <div className="text-sm text-gray-500">{school.city}, {school.country}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.studentCount || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.teacherCount || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          school.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {school.is_active ? 'Actif' : 'Inactif'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {school.subscription_type === 'forfait' ? 'Forfait' : 'Flex'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button className="text-green-600 hover:text-green-900 mr-3">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button className="text-red-600 hover:text-red-900">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                        Aucune école trouvée. Ajoutez votre première école pour commencer.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 
   const renderUsers = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h2>
-        <div className="flex space-x-2">
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h2>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center">
             <UserCheck className="h-4 w-4 mr-2" />
             Approuver En Attente
           </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center">
             <Plus className="h-4 w-4 mr-2" />
             Ajouter Utilisateur
           </button>
@@ -352,26 +372,25 @@ const PlatformAdminDashboard: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">École</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.length > 0 ? users.map((user) => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.full_name || user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+        <>
+          {/* Mobile Card Layout */}
+          <div className="sm:hidden space-y-4">
+            {users.length > 0 ? users.map((user) => (
+              <div key={user.id} className="bg-white rounded-lg shadow p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">{user.full_name || user.email}</h3>
+                    <p className="text-xs text-gray-500 mt-1 truncate">{user.email}</p>
+                  </div>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
+                    user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {user.is_active ? 'Actif' : 'Inactif'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Rôle</p>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       user.role === 'platform_admin' ? 'bg-purple-100 text-purple-800' :
                       user.role === 'school_admin' ? 'bg-blue-100 text-blue-800' :
@@ -382,49 +401,120 @@ const PlatformAdminDashboard: React.FC = () => {
                        user.role === 'school_admin' ? 'Admin École' :
                        user.role === 'teacher' ? 'Enseignant' : user.role}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.schoolName || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.is_active ? 'Actif' : 'Inactif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="text-green-600 hover:text-green-900 mr-3">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button 
-                      className="text-green-600 hover:text-green-900 mr-3"
-                      onClick={async () => {
-                        try {
-                          await platformAdminService.updateUserStatus(user.id, user.is_active ? 'suspended' : 'active');
-                          // Refresh data
-                          const usersData = await platformAdminService.getUsersWithSchool();
-                          setUsers(usersData);
-                        } catch (error) {
-                          console.error('Failed to update user status:', error);
-                        }
-                      }}
-                    >
-                      <UserCheck className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                    Aucun utilisateur trouvé.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">École</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.schoolName || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button className="text-blue-600 hover:text-blue-900">
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button className="text-green-600 hover:text-green-900">
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button 
+                    className="text-green-600 hover:text-green-900"
+                    onClick={async () => {
+                      try {
+                        await PlatformAdminService.updateUserStatus(user.id, user.is_active ? 'suspended' : 'active');
+                        // Refresh data
+                        const usersData = await PlatformAdminService.getUsersWithSchool();
+                        setUsers(usersData);
+                      } catch (error) {
+                        console.error('Failed to update user status:', error);
+                      }
+                    }}
+                  >
+                    <UserCheck className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )) : (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <p className="text-gray-500">Aucun utilisateur trouvé.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden sm:block bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">École</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.length > 0 ? users.map((user) => (
+                    <tr key={user.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{user.full_name || user.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.role === 'platform_admin' ? 'bg-purple-100 text-purple-800' :
+                          user.role === 'school_admin' ? 'bg-blue-100 text-blue-800' :
+                          user.role === 'teacher' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.role === 'platform_admin' ? 'Admin Plateforme' :
+                           user.role === 'school_admin' ? 'Admin École' :
+                           user.role === 'teacher' ? 'Enseignant' : user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.schoolName || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.is_active ? 'Actif' : 'Inactif'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button className="text-green-600 hover:text-green-900 mr-3">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button 
+                          className="text-green-600 hover:text-green-900 mr-3"
+                          onClick={async () => {
+                            try {
+                              await PlatformAdminService.updateUserStatus(user.id, user.is_active ? 'suspended' : 'active');
+                              // Refresh data
+                              const usersData = await PlatformAdminService.getUsersWithSchool();
+                              setUsers(usersData);
+                            } catch (error) {
+                              console.error('Failed to update user status:', error);
+                            }
+                          }}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                        Aucun utilisateur trouvé.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -505,17 +595,33 @@ const PlatformAdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord - Administration Plateforme</h1>
-          <p className="mt-2 text-gray-600">Gérez toutes les écoles et utilisateurs de la plateforme SchoolConnect</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tableau de Bord</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">Administration Plateforme SchoolConnect</p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow mb-8">
+        <div className="bg-white rounded-lg shadow mb-6 sm:mb-8">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
+            {/* Mobile Tab Navigation - Dropdown */}
+            <div className="sm:hidden">
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="block w-full px-3 py-2 border-0 border-b border-gray-200 focus:ring-0 focus:border-blue-500 text-sm font-medium"
+              >
+                {tabs.map((tab) => (
+                  <option key={tab.id} value={tab.id}>
+                    {tab.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Desktop Tab Navigation */}
+            <nav className="hidden sm:flex -mb-px space-x-4 lg:space-x-8 px-4 sm:px-6">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -526,15 +632,16 @@ const PlatformAdminDashboard: React.FC = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
                 >
-                  <tab.icon className="h-5 w-5 mr-2" />
-                  {tab.name}
+                  <tab.icon className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                  <span className="hidden lg:inline">{tab.name}</span>
+                  <span className="lg:hidden">{tab.name.split(' ')[0]}</span>
                 </button>
               ))}
             </nav>
           </div>
 
           {/* Tab Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'schools' && renderSchools()}
             {activeTab === 'users' && renderUsers()}
