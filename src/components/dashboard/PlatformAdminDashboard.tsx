@@ -40,6 +40,13 @@ const PlatformAdminDashboard: React.FC = () => {
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (dashboardError) {
+      // Log error to console for debugging
+      console.error('Dashboard error:', dashboardError);
+    }
+  }, [dashboardError]);
+
   // Fetch dashboard data on component mount
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -50,11 +57,19 @@ const PlatformAdminDashboard: React.FC = () => {
           PlatformAdminService.getSchoolsWithStats(),
           PlatformAdminService.getUsersWithSchool()
         ]);
+        console.log('Fetched schools data:', schoolsData);
+        console.log('Fetched users data:', usersData);
         setSchools(schoolsData);
         setUsers(usersData);
+        if (!schoolsData || schoolsData.length === 0) {
+          setDashboardError('Aucune école trouvée. Vérifiez que vos données existent dans Supabase et que les permissions sont correctes.');
+        }
+        if (!usersData || usersData.length === 0) {
+          setDashboardError('Aucun utilisateur trouvé. Vérifiez que vos données existent dans Supabase et que les permissions sont correctes.');
+        }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        setDashboardError('Erreur lors du chargement des données du tableau de bord');
+        setDashboardError('Erreur lors du chargement des données du tableau de bord: ' + (error?.message || error));
       } finally {
         setDashboardLoading(false);
       }
@@ -86,10 +101,10 @@ const PlatformAdminDashboard: React.FC = () => {
   };
 
   const statsData = [
-    { name: 'Total Écoles', value: stats?.totalSchools.toString() || '0', icon: Building, color: 'bg-blue-500', change: '+2' },
-    { name: 'Total Élèves', value: stats?.totalStudents.toString() || '0', icon: Users, color: 'bg-green-500', change: '+45' },
-    { name: 'Total Enseignants', value: stats?.totalTeachers.toString() || '0', icon: Users, color: 'bg-purple-500', change: '+8' },
-    { name: 'Revenus Mensuels', value: financialSummary ? `$${financialSummary.totalRevenue.toLocaleString()}` : '$0', icon: DollarSign, color: 'bg-yellow-500', change: '+12%' }
+    { name: 'Total Écoles', value: stats?.totalSchools?.toString() || '0', icon: Building, color: 'bg-blue-500', change: stats?.schoolsChange || '' },
+    { name: 'Total Élèves', value: stats?.totalStudents?.toString() || '0', icon: Users, color: 'bg-green-500', change: stats?.studentsChange || '' },
+    { name: 'Total Enseignants', value: stats?.totalTeachers?.toString() || '0', icon: Users, color: 'bg-purple-500', change: stats?.teachersChange || '' },
+    { name: 'Revenus Mensuels', value: financialSummary ? `$${financialSummary.totalRevenue?.toLocaleString()}` : '$0', icon: DollarSign, color: 'bg-yellow-500', change: financialSummary?.revenueChange || '' }
   ];
 
   const tabs = [
@@ -108,14 +123,13 @@ const PlatformAdminDashboard: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       )}
-      
-      {/* Error State */}
+      {/* Error State (Overview) */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 text-red-400" />
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Erreur de chargement</h3>
+              <h3 className="text-sm font-medium text-red-800">Erreur de chargement des statistiques</h3>
               <div className="mt-2 text-sm text-red-700">
                 <p>{error}</p>
               </div>
@@ -131,9 +145,30 @@ const PlatformAdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
-      
+      {/* Error State (Dashboard) */}
+      {dashboardError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Erreur du tableau de bord</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{dashboardError}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Recharger la page
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Stats Grid */}
-      {!loading && !error && (
+      {!loading && !error && !dashboardError && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {statsData.map((stat, index) => (
             <div key={index} className="bg-white rounded-lg shadow p-4 sm:p-6">
@@ -153,7 +188,6 @@ const PlatformAdminDashboard: React.FC = () => {
           ))}
         </div>
       )}
-
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Actions Rapides</h3>
