@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import {
   Users,
   BarChart3,
@@ -38,6 +39,10 @@ const PlatformAdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<UserWithSchool[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+  // Modal state for add school
+  const [addSchoolOpen, setAddSchoolOpen] = useState(false);
+  const [addSchoolLoading, setAddSchoolLoading] = useState(false);
+  const [addSchoolError, setAddSchoolError] = useState('');
 
   useEffect(() => {
     if (dashboardError) {
@@ -77,50 +82,30 @@ const PlatformAdminDashboard: React.FC = () => {
   }, []);
 
   // Quick action handlers
-  const handleAddSchool = async () => {
-    const schoolName = prompt('Nom de l\'école:');
-    if (!schoolName) return;
-    
-    const schoolAddress = prompt('Adresse de l\'école:');
-    if (!schoolAddress) return;
-    
-    const schoolCity = prompt('Ville:');
-    if (!schoolCity) return;
-    
-    const schoolProvince = prompt('Province:');
-    if (!schoolProvince) return;
-    
-    const schoolPhone = prompt('Téléphone de l\'école:');
-    if (!schoolPhone) return;
-    
-    const schoolEmail = prompt('Email de l\'école:');
-    if (!schoolEmail) return;
-    
-    const subscriptionType = prompt('Type d\'abonnement (flex/forfait):') || 'flex';
-    const maxStudents = parseInt(prompt('Nombre maximum d\'élèves:') || '100');
-    
+  const openAddSchoolModal = () => {
+    setAddSchoolError('');
+    setAddSchoolOpen(true);
+  };
+
+  const closeAddSchoolModal = () => {
+    setAddSchoolOpen(false);
+    setAddSchoolError('');
+  };
+
+  const handleAddSchoolSubmit = async (form: SchoolForm) => {
+    setAddSchoolLoading(true);
+    setAddSchoolError('');
     try {
-      const newSchool = await PlatformAdminService.createSchool({
-        name: schoolName,
-        address: schoolAddress,
-        city: schoolCity,
-        province: schoolProvince,
-        phone: schoolPhone,
-        email: schoolEmail,
-        subscription_type: subscriptionType as 'flex' | 'forfait',
-        max_students: maxStudents
-      });
-      
+      const newSchool = await PlatformAdminService.createSchool(form);
       console.log('École créée avec succès:', newSchool);
-      
-      // Refresh the schools list
       const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
       setSchools(updatedSchools);
-      
-      alert('École ajoutée avec succès!');
-    } catch (error) {
+      closeAddSchoolModal();
+    } catch (error: any) {
       console.error('Erreur lors de la création de l\'école:', error);
-      alert('Erreur lors de la création de l\'école. Veuillez réessayer.');
+      setAddSchoolError(error.message || 'Erreur lors de la création de l\'école. Veuillez réessayer.');
+    } finally {
+      setAddSchoolLoading(false);
     }
   };
 
@@ -235,12 +220,19 @@ const PlatformAdminDashboard: React.FC = () => {
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Actions Rapides</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <button 
-            onClick={handleAddSchool}
+            onClick={openAddSchoolModal}
             className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
           >
             <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
             <span className="text-sm sm:text-base text-gray-600">Ajouter École</span>
           </button>
+          <AddSchoolModal
+            isOpen={addSchoolOpen}
+            onClose={closeAddSchoolModal}
+            onSubmit={handleAddSchoolSubmit}
+            loading={addSchoolLoading}
+            error={addSchoolError}
+          />
           <button 
             onClick={handleApproveUsers}
             className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
