@@ -78,7 +78,42 @@ const PlatformAdminDashboard: React.FC = () => {
 
   // Quick action handlers
   const handleAddSchool = async () => {
-    console.log('Add school functionality');
+    const schoolName = prompt('Nom de l\'école:');
+    if (!schoolName) return;
+    
+    const schoolAddress = prompt('Adresse de l\'école:');
+    if (!schoolAddress) return;
+    
+    const schoolPhone = prompt('Téléphone de l\'école:');
+    if (!schoolPhone) return;
+    
+    const schoolEmail = prompt('Email de l\'école:');
+    if (!schoolEmail) return;
+    
+    const subscriptionType = prompt('Type d\'abonnement (flex/forfait):') || 'flex';
+    const maxStudents = parseInt(prompt('Nombre maximum d\'élèves:') || '100');
+    
+    try {
+      const newSchool = await PlatformAdminService.createSchool({
+        name: schoolName,
+        address: schoolAddress,
+        phone: schoolPhone,
+        email: schoolEmail,
+        subscription_type: subscriptionType as 'flex' | 'forfait',
+        max_students: maxStudents
+      });
+      
+      console.log('École créée avec succès:', newSchool);
+      
+      // Refresh the schools list
+      const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
+      setSchools(updatedSchools);
+      
+      alert('École ajoutée avec succès!');
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'école:', error);
+      alert('Erreur lors de la création de l\'école. Veuillez réessayer.');
+    }
   };
 
   const handleApproveUsers = async () => {
@@ -261,7 +296,10 @@ const PlatformAdminDashboard: React.FC = () => {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Écoles</h2>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center sm:justify-start">
+        <button 
+          onClick={handleAddSchool}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center sm:justify-start"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Ajouter École
         </button>
