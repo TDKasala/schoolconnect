@@ -47,8 +47,8 @@ const PlatformAdminDashboard: React.FC = () => {
       setDashboardError(null);
       try {
         const [schoolsData, usersData] = await Promise.all([
-          PlatformAdminService.getSchools(), // Fix property name
-          PlatformAdminService.getUsers() // Fix property name
+          PlatformAdminService.getSchoolsWithStats(),
+          PlatformAdminService.getUsersWithSchool()
         ]);
         setSchools(schoolsData);
         setUsers(usersData);
@@ -247,12 +247,12 @@ const PlatformAdminDashboard: React.FC = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-gray-900 truncate">{school.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{school.city}, {school.country}</p>
+                    <p className="text-xs text-gray-500 mt-1">{school.location}</p>
                   </div>
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
-                    school.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    school.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {school.is_active ? 'Actif' : 'Inactif'}
+                    {school.status === 'active' ? 'Actif' : 'Inactif'}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-center mb-3">
@@ -265,7 +265,7 @@ const PlatformAdminDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500">Enseignants</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{school.subscription_type === 'forfait' ? 'Forfait' : 'Flex'}</p>
+                    <p className="text-sm font-medium text-gray-900">{school.plan}</p>
                     <p className="text-xs text-gray-500">Plan</p>
                   </div>
                 </div>
@@ -308,20 +308,20 @@ const PlatformAdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{school.name}</div>
-                          <div className="text-sm text-gray-500">{school.city}, {school.country}</div>
+                          <div className="text-sm text-gray-500">{school.location}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.studentCount || 0}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.teacherCount || 0}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          school.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          school.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {school.is_active ? 'Actif' : 'Inactif'}
+                          {school.status === 'active' ? 'Actif' : 'Inactif'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {school.subscription_type === 'forfait' ? 'Forfait' : 'Flex'}
+                        {school.plan}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button className="text-blue-600 hover:text-blue-900 mr-3">
@@ -379,13 +379,13 @@ const PlatformAdminDashboard: React.FC = () => {
               <div key={user.id} className="bg-white rounded-lg shadow p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{user.full_name || user.email}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 truncate">{user.name || user.email}</h3>
                     <p className="text-xs text-gray-500 mt-1 truncate">{user.email}</p>
                   </div>
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
-                    user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {user.is_active ? 'Actif' : 'Inactif'}
+                    {user.status === 'active' ? 'Actif' : 'Inactif'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mb-3">
@@ -418,7 +418,7 @@ const PlatformAdminDashboard: React.FC = () => {
                     className="text-green-600 hover:text-green-900"
                     onClick={async () => {
                       try {
-                        await PlatformAdminService.updateUserStatus(user.id, user.is_active ? 'suspended' : 'active');
+                        await PlatformAdminService.updateUserStatus(user.id, user.status === 'active' ? 'suspended' : 'active');
                         // Refresh data
                         const usersData = await PlatformAdminService.getUsersWithSchool();
                         setUsers(usersData);
@@ -456,7 +456,7 @@ const PlatformAdminDashboard: React.FC = () => {
                   {users.length > 0 ? users.map((user) => (
                     <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{user.full_name || user.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{user.name || user.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -474,9 +474,9 @@ const PlatformAdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.schoolName || 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {user.is_active ? 'Actif' : 'Inactif'}
+                          {user.status === 'active' ? 'Actif' : 'Inactif'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -490,7 +490,7 @@ const PlatformAdminDashboard: React.FC = () => {
                           className="text-green-600 hover:text-green-900 mr-3"
                           onClick={async () => {
                             try {
-                              await PlatformAdminService.updateUserStatus(user.id, user.is_active ? 'suspended' : 'active');
+                              await PlatformAdminService.updateUserStatus(user.id, user.status === 'active' ? 'suspended' : 'active');
                               // Refresh data
                               const usersData = await PlatformAdminService.getUsersWithSchool();
                               setUsers(usersData);
