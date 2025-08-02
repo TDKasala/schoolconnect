@@ -12,7 +12,8 @@ import {
   TrendingUp,
   DollarSign,
   Building2,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlatformAdminService, type SchoolWithStats, type UserWithSchool, type ActivityLog } from '../../services/platformAdminService';
