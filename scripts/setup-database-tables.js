@@ -7,12 +7,18 @@
  * Run this script to set up the activity_logs and events tables required by the dashboard
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 // Load environment variables
-require('dotenv').config();
+dotenv.config();
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -122,10 +128,10 @@ async function executeManualSetup() {
 }
 
 // Run the setup
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     setupDatabase().catch(() => {
         executeManualSetup();
     });
 }
 
-module.exports = { setupDatabase, executeManualSetup };
+export { setupDatabase, executeManualSetup };

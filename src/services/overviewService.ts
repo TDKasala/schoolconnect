@@ -253,7 +253,7 @@ export class OverviewService {
         .from('activity_logs')
         .select(`
           *,
-          user:users!activity_logs_user_id_fkey(full_name)
+          users!inner(full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -269,7 +269,7 @@ export class OverviewService {
       return data?.map(activity => ({
         id: activity.id,
         userId: activity.user_id,
-        userName: activity.user?.full_name || 'Unknown User',
+        userName: activity.users?.full_name || 'Unknown User',
         action: activity.action,
         target: activity.target,
         timestamp: new Date(activity.created_at)
@@ -322,8 +322,7 @@ export class OverviewService {
       let query = supabase
         .from('messages')
         .select(`
-          *,
-          sender:users!messages_sender_id_fkey(full_name)
+          *
         `)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -339,10 +338,10 @@ export class OverviewService {
       return data?.map(message => ({
         id: message.id,
         senderId: message.sender_id,
-        senderName: message.sender?.full_name || 'Unknown User',
+        senderName: 'User', // Simplified for now
         content: message.content,
         timestamp: new Date(message.created_at),
-        isRead: message.is_read
+        isRead: message.is_read || false
       })) || [];
     } catch (error) {
       console.error('Error fetching recent messages:', error);
