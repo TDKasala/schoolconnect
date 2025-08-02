@@ -10,10 +10,7 @@ import {
   MessageSquare, 
   Calendar,
   LogOut,
-  Settings,
-  Bell,
-  Building,
-  BarChart3
+  Bell
 } from 'lucide-react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
@@ -32,10 +29,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Platform admin gets different navigation
   const navigation = typedUser?.profile?.role === 'platform_admin' ? [
     { name: 'Administration', href: '/dashboard', icon: Home },
-    { name: 'Écoles', href: '/dashboard/schools', icon: Building },
-    { name: 'Utilisateurs', href: '/dashboard/users', icon: Users },
-    { name: 'Analytiques', href: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'Paramètres', href: '/dashboard/settings', icon: Settings },
   ] : [
     { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
     { name: 'Pédagogie', href: '/dashboard/pedagogie', icon: BookOpen },
@@ -256,13 +249,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
       {/* Bottom actions */}
       <div className="flex-shrink-0 border-t border-gray-200 p-4 space-y-2">
-        <Link
-          to="/dashboard/settings"
-          className="group flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
-        >
-          <Settings className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
-          Paramètres
-        </Link>
         <button
           onClick={handleLogout}
           className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
