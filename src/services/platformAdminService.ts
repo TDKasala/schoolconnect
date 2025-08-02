@@ -214,6 +214,8 @@ export class PlatformAdminService {
   static async createSchool(schoolData: {
     name: string;
     address: string;
+    city: string;
+    province: string;
     phone: string;
     email: string;
     subscription_type: 'flex' | 'forfait';

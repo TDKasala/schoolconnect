@@ -84,6 +84,12 @@ const PlatformAdminDashboard: React.FC = () => {
     const schoolAddress = prompt('Adresse de l\'école:');
     if (!schoolAddress) return;
     
+    const schoolCity = prompt('Ville:');
+    if (!schoolCity) return;
+    
+    const schoolProvince = prompt('Province:');
+    if (!schoolProvince) return;
+    
     const schoolPhone = prompt('Téléphone de l\'école:');
     if (!schoolPhone) return;
     
@@ -97,6 +103,8 @@ const PlatformAdminDashboard: React.FC = () => {
       const newSchool = await PlatformAdminService.createSchool({
         name: schoolName,
         address: schoolAddress,
+        city: schoolCity,
+        province: schoolProvince,
         phone: schoolPhone,
         email: schoolEmail,
         subscription_type: subscriptionType as 'flex' | 'forfait',
