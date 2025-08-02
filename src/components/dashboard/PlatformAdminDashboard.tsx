@@ -12,12 +12,10 @@ import {
   TrendingUp,
   DollarSign,
   Building2,
-  AlertCircle,
-  Shield,
-  ChevronDown
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { PlatformAdminService, type SchoolWithStats, type UserWithSchool } from '../../services/platformAdminService';
+import { PlatformAdminService, type SchoolWithStats, type UserWithSchool, type ActivityLog } from '../../services/platformAdminService';
 import { useOverview } from '../../hooks/useOverview';
 
 const PlatformAdminDashboard: React.FC = () => {
@@ -69,7 +67,7 @@ const PlatformAdminDashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        setDashboardError('Erreur lors du chargement des données du tableau de bord: ' + (error?.message || error));
+        setDashboardError('Erreur lors du chargement des données du tableau de bord: ' + (error instanceof Error ? error.message : String(error)));
       } finally {
         setDashboardLoading(false);
       }
@@ -101,15 +99,15 @@ const PlatformAdminDashboard: React.FC = () => {
   };
 
   const statsData = [
-    { name: 'Total Écoles', value: stats?.totalSchools?.toString() || '0', icon: Building, color: 'bg-blue-500', change: stats?.schoolsChange || '' },
-    { name: 'Total Élèves', value: stats?.totalStudents?.toString() || '0', icon: Users, color: 'bg-green-500', change: stats?.studentsChange || '' },
-    { name: 'Total Enseignants', value: stats?.totalTeachers?.toString() || '0', icon: Users, color: 'bg-purple-500', change: stats?.teachersChange || '' },
-    { name: 'Revenus Mensuels', value: financialSummary ? `$${financialSummary.totalRevenue?.toLocaleString()}` : '$0', icon: DollarSign, color: 'bg-yellow-500', change: financialSummary?.revenueChange || '' }
+    { name: 'Total Écoles', value: stats?.totalSchools?.toString() || '0', icon: Building2, color: 'bg-blue-500', change: '' },
+    { name: 'Total Élèves', value: stats?.totalStudents?.toString() || '0', icon: Users, color: 'bg-green-500', change: '' },
+    { name: 'Total Enseignants', value: stats?.totalTeachers?.toString() || '0', icon: Users, color: 'bg-purple-500', change: '' },
+    { name: 'Revenus Mensuels', value: financialSummary ? `$${financialSummary.totalRevenue?.toLocaleString()}` : '$0', icon: DollarSign, color: 'bg-yellow-500', change: '' }
   ];
 
   const tabs = [
     { id: 'overview', name: 'Vue d\'ensemble', icon: BarChart3 },
-    { id: 'schools', name: 'Écoles', icon: Building },
+    { id: 'schools', name: 'Écoles', icon: Building2 },
     { id: 'users', name: 'Utilisateurs', icon: Users },
     { id: 'analytics', name: 'Analytiques', icon: TrendingUp },
     { id: 'settings', name: 'Paramètres', icon: Settings }

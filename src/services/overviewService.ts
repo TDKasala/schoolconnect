@@ -140,21 +140,13 @@ export class OverviewService {
         if (schoolsError) throw schoolsError;
         totalSchools = schoolsCount || 0;
 
-        const { count: activeUsersCount, error: activeUsersError } = await supabase
+        const { count: allUsersCount, error: allUsersError } = await supabase
           .from('users')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active');
+          .select('*', { count: 'exact', head: true });
 
-        if (activeUsersError) throw activeUsersError;
-        activeUsers = activeUsersCount || 0;
-
-        const { count: pendingUsersCount, error: pendingUsersError } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-
-        if (pendingUsersError) throw pendingUsersError;
-        pendingUsers = pendingUsersCount || 0;
+        if (allUsersError) throw allUsersError;
+        activeUsers = allUsersCount || 0;
+        pendingUsers = 0; // No status column available, set to 0
       } else if (this.userRole === 'school_admin' && this.schoolId) {
         // School admin sees stats for their school
         const { count: studentsCount, error: studentsError } = await supabase
