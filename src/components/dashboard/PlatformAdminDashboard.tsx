@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
+import EditSchoolModal from './EditSchoolModal';
 import {
   Users,
   BarChart3,
@@ -43,6 +44,11 @@ const PlatformAdminDashboard: React.FC = () => {
   const [addSchoolOpen, setAddSchoolOpen] = useState(false);
   const [addSchoolLoading, setAddSchoolLoading] = useState(false);
   const [addSchoolError, setAddSchoolError] = useState('');
+  // Modal state for edit school
+  const [editSchoolOpen, setEditSchoolOpen] = useState(false);
+  const [editSchoolLoading, setEditSchoolLoading] = useState(false);
+  const [editSchoolError, setEditSchoolError] = useState('');
+  const [selectedSchool, setSelectedSchool] = useState<any>(null);
 
   useEffect(() => {
     if (dashboardError) {
@@ -106,6 +112,53 @@ const PlatformAdminDashboard: React.FC = () => {
       setAddSchoolError(error.message || 'Erreur lors de la création de l\'école. Veuillez réessayer.');
     } finally {
       setAddSchoolLoading(false);
+    }
+  };
+
+  // Edit school handlers
+  const openEditSchoolModal = (school: any) => {
+    setSelectedSchool(school);
+    setEditSchoolError('');
+    setEditSchoolOpen(true);
+  };
+
+  const closeEditSchoolModal = () => {
+    setEditSchoolOpen(false);
+    setEditSchoolError('');
+    setSelectedSchool(null);
+  };
+
+  const handleEditSchoolSubmit = async (form: SchoolForm) => {
+    if (!selectedSchool) return;
+    setEditSchoolLoading(true);
+    setEditSchoolError('');
+    try {
+      await PlatformAdminService.updateSchool(selectedSchool.id, form);
+      console.log('École modifiée avec succès');
+      const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
+      setSchools(updatedSchools);
+      closeEditSchoolModal();
+    } catch (error: any) {
+      console.error('Erreur lors de la modification de l\'école:', error);
+      setEditSchoolError(error.message || 'Erreur lors de la modification de l\'école. Veuillez réessayer.');
+    } finally {
+      setEditSchoolLoading(false);
+    }
+  };
+
+  // Delete school handler
+  const handleDeleteSchool = async (school: any) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'école "${school.name}" ? Cette action est irréversible.`)) {
+      return;
+    }
+    try {
+      await PlatformAdminService.deleteSchool(school.id);
+      console.log('École supprimée avec succès');
+      const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
+      setSchools(updatedSchools);
+    } catch (error: any) {
+      console.error('Erreur lors de la suppression de l\'école:', error);
+      alert('Erreur lors de la suppression de l\'école. Veuillez réessayer.');
     }
   };
 
@@ -233,6 +286,14 @@ const PlatformAdminDashboard: React.FC = () => {
             loading={addSchoolLoading}
             error={addSchoolError}
           />
+          <EditSchoolModal
+            isOpen={editSchoolOpen}
+            onClose={closeEditSchoolModal}
+            onSubmit={handleEditSchoolSubmit}
+            loading={editSchoolLoading}
+            error={editSchoolError}
+            school={selectedSchool}
+          />
           <button 
             onClick={handleApproveUsers}
             className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
@@ -344,10 +405,16 @@ const PlatformAdminDashboard: React.FC = () => {
                   <button className="text-blue-600 hover:text-blue-900">
                     <Eye className="h-4 w-4" />
                   </button>
-                  <button className="text-green-600 hover:text-green-900">
+                  <button 
+                    onClick={() => openEditSchoolModal(school)}
+                    className="text-green-600 hover:text-green-900"
+                  >
                     <Edit className="h-4 w-4" />
                   </button>
-                  <button className="text-red-600 hover:text-red-900">
+                  <button 
+                    onClick={() => handleDeleteSchool(school)}
+                    className="text-red-600 hover:text-red-900"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -398,10 +465,16 @@ const PlatformAdminDashboard: React.FC = () => {
                         <button className="text-blue-600 hover:text-blue-900 mr-3">
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button className="text-green-600 hover:text-green-900 mr-3">
+                        <button 
+                          onClick={() => openEditSchoolModal(school)}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button className="text-red-600 hover:text-red-900">
+                        <button 
+                          onClick={() => handleDeleteSchool(school)}
+                          className="text-red-600 hover:text-red-900"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
