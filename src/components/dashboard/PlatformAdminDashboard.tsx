@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
+import AddUserModal, { UserForm } from './AddUserModal';
 import {
   Users,
   BarChart3,
@@ -49,6 +50,10 @@ const PlatformAdminDashboard: React.FC = () => {
   const [editSchoolLoading, setEditSchoolLoading] = useState(false);
   const [editSchoolError, setEditSchoolError] = useState('');
   const [selectedSchool, setSelectedSchool] = useState<any>(null);
+  // Modal state for add user
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [addUserError, setAddUserError] = useState('');
 
   useEffect(() => {
     if (dashboardError) {
@@ -159,6 +164,34 @@ const PlatformAdminDashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Erreur lors de la suppression de l\'école:', error);
       alert('Erreur lors de la suppression de l\'école. Veuillez réessayer.');
+    }
+  };
+
+  // Add user handlers
+  const openAddUserModal = () => {
+    setAddUserError('');
+    setAddUserOpen(true);
+  };
+
+  const closeAddUserModal = () => {
+    setAddUserOpen(false);
+    setAddUserError('');
+  };
+
+  const handleAddUserSubmit = async (form: UserForm) => {
+    setAddUserLoading(true);
+    setAddUserError('');
+    try {
+      const newUser = await PlatformAdminService.createUser(form);
+      console.log('Utilisateur créé avec succès:', newUser);
+      const updatedUsers = await PlatformAdminService.getUsersWithSchool();
+      setUsers(updatedUsers);
+      closeAddUserModal();
+    } catch (error: any) {
+      console.error('Erreur lors de la création de l\'utilisateur:', error);
+      setAddUserError(error.message || 'Erreur lors de la création de l\'utilisateur. Veuillez réessayer.');
+    } finally {
+      setAddUserLoading(false);
     }
   };
 
@@ -504,10 +537,21 @@ const PlatformAdminDashboard: React.FC = () => {
             <UserCheck className="h-4 w-4 mr-2" />
             Approuver En Attente
           </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+          <button 
+            onClick={openAddUserModal}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Ajouter Utilisateur
           </button>
+          <AddUserModal
+            isOpen={addUserOpen}
+            onClose={closeAddUserModal}
+            onSubmit={handleAddUserSubmit}
+            loading={addUserLoading}
+            error={addUserError}
+            schools={schools.map(school => ({ id: school.id, name: school.name }))}
+          />
         </div>
       </div>
 

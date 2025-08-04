@@ -547,6 +547,76 @@ export class PlatformAdminService {
       throw new Error('Failed to fetch pending users');
     }
   }
+
+  /**
+   * Create a new user with role assignment
+   */
+  static async createUser(userData: {
+    email: string;
+    full_name: string;
+    password: string;
+    role: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
+    school_id?: string;
+    phone?: string;
+  }): Promise<UserWithSchool> {
+    try {
+      // Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.full_name,
+            role: userData.role,
+            school_id: userData.school_id,
+            phone: userData.phone
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user');
+
+      // The user profile will be created automatically by the trigger
+      // Wait a moment for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Fetch the created user with school information
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select(`
+          *,
+          schools(name)
+        `)
+        .eq('id', authData.user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Log the activity
+      await this.logActivity({
+        action: 'User Created',
+        description: `New user created: ${userData.full_name} (${userData.role})`,
+        userId: authData.user.id,
+        type: 'user'
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: user.role,
+        schoolId: user.school_id,
+        schoolName: user.schools?.name,
+        status: 'active',
+        createdAt: new Date(user.created_at),
+        updatedAt: new Date(user.updated_at)
+      };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new Error('Failed to create user: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  }
 }
 
 export default PlatformAdminService;
