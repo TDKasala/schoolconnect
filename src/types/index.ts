@@ -7,13 +7,30 @@ export interface User {
   role_id?: string;
   roleData?: Role; // Joined role data
   user_status_id?: string;
-  status?: Status; // Joined status data
+  userStatus?: UserStatus; // Joined user status data
   schoolId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface UserWithStatus extends User {
+  userStatus: UserStatus;
+}
+
+export interface UserWithRole extends User {
+  roleData: Role;
+}
+
+export interface UserWithStatusAndRole extends User {
+  userStatus: UserStatus;
+  roleData: Role;
+}
+
 export type UserRole = 'platform_admin' | 'school_admin' | 'teacher' | 'parent' | 'pending';
+
+export type StatusName = 'active' | 'inactive' | 'suspended' | 'pending' | 'blocked' | 'archived';
+
+export type RoleName = 'platform_admin' | 'school_admin' | 'teacher' | 'parent' | 'pending';
 
 export interface Status {
   id: string;
@@ -21,6 +38,18 @@ export interface Status {
   display_name: string;
   description?: string;
   color: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface UserStatus {
+  id: string;
+  status_name: string;
+  status_display_name: string;
+  status_description?: string;
+  status_color: string;
   is_active: boolean;
   sort_order: number;
   created_at: Date;
