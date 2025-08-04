@@ -358,7 +358,7 @@ const PlatformAdminDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Écoles</h2>
         <button 
-          onClick={handleAddSchool}
+          onClick={openAddSchoolModal}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center sm:justify-start"
         >
           <Plus className="h-4 w-4 mr-2" />
