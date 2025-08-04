@@ -3,13 +3,41 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  role: UserRole;
+  role: UserRole; // Keep for backward compatibility
+  role_id?: string;
+  roleData?: Role; // Joined role data
+  user_status_id?: string;
+  status?: Status; // Joined status data
   schoolId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export type UserRole = 'platform_admin' | 'school_admin' | 'teacher' | 'parent' | 'pending';
+
+export interface Status {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  color: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  permissions: Record<string, string[]>;
+  level: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
 
 export interface School {
   id: string;

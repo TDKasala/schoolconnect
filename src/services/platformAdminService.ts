@@ -581,12 +581,14 @@ export class PlatformAdminService {
       // Wait a moment for the trigger to complete
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Fetch the created user with school information
+      // Fetch the created user with school, status, and role information
       const { data: user, error: userError } = await supabase
         .from('users')
         .select(`
           *,
-          schools(name)
+          schools(name),
+          status:user_status_id(id, name, display_name, color),
+          roleData:role_id(id, name, display_name, level)
         `)
         .eq('id', authData.user.id)
         .single();
@@ -608,7 +610,7 @@ export class PlatformAdminService {
         role: user.role,
         schoolId: user.school_id,
         schoolName: user.schools?.name,
-        status: 'active',
+        status: user.status?.name || 'active',
         createdAt: new Date(user.created_at),
         updatedAt: new Date(user.updated_at)
       };
