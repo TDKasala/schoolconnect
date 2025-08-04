@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
 import AddUserModal, { UserForm } from './AddUserModal';
@@ -92,18 +92,19 @@ const PlatformAdminDashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  // Quick action handlers
-  const openAddSchoolModal = () => {
+  // Add school handlers with useCallback for stability
+  const openAddSchoolModal = useCallback(() => {
+    console.log('Opening add school modal');
     setAddSchoolError('');
     setAddSchoolOpen(true);
-  };
+  }, []);
 
-  const closeAddSchoolModal = () => {
+  const closeAddSchoolModal = useCallback(() => {
     setAddSchoolOpen(false);
     setAddSchoolError('');
-  };
+  }, []);
 
-  const handleAddSchoolSubmit = async (form: SchoolForm) => {
+  const handleAddSchoolSubmit = useCallback(async (form: SchoolForm) => {
     setAddSchoolLoading(true);
     setAddSchoolError('');
     try {
@@ -118,20 +119,21 @@ const PlatformAdminDashboard: React.FC = () => {
     } finally {
       setAddSchoolLoading(false);
     }
-  };
+  }, [closeAddSchoolModal]);
 
-  // Edit school handlers
-  const openEditSchoolModal = (school: any) => {
+  // Edit school handlers with useCallback for stability
+  const openEditSchoolModal = useCallback((school: any) => {
+    console.log('Opening edit modal for school:', school);
     setSelectedSchool(school);
     setEditSchoolError('');
     setEditSchoolOpen(true);
-  };
+  }, []);
 
-  const closeEditSchoolModal = () => {
+  const closeEditSchoolModal = useCallback(() => {
     setEditSchoolOpen(false);
     setEditSchoolError('');
     setSelectedSchool(null);
-  };
+  }, []);
 
   const handleEditSchoolSubmit = async (form: SchoolForm) => {
     if (!selectedSchool) return;
@@ -151,8 +153,9 @@ const PlatformAdminDashboard: React.FC = () => {
     }
   };
 
-  // Delete school handler
-  const handleDeleteSchool = async (school: any) => {
+  // Delete school handler with useCallback for stability
+  const handleDeleteSchool = useCallback(async (school: any) => {
+    console.log('Attempting to delete school:', school);
     if (!confirm(`Êtes-vous sûr de vouloir supprimer l'école "${school.name}" ? Cette action est irréversible.`)) {
       return;
     }
@@ -165,18 +168,19 @@ const PlatformAdminDashboard: React.FC = () => {
       console.error('Erreur lors de la suppression de l\'école:', error);
       alert('Erreur lors de la suppression de l\'école. Veuillez réessayer.');
     }
-  };
+  }, []);
 
-  // Add user handlers
-  const openAddUserModal = () => {
+  // Add user handlers with useCallback for stability
+  const openAddUserModal = useCallback(() => {
+    console.log('Opening add user modal');
     setAddUserError('');
     setAddUserOpen(true);
-  };
+  }, []);
 
-  const closeAddUserModal = () => {
+  const closeAddUserModal = useCallback(() => {
     setAddUserOpen(false);
     setAddUserError('');
-  };
+  }, []);
 
   const handleAddUserSubmit = async (form: UserForm) => {
     setAddUserLoading(true);
