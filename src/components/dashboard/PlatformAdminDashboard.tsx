@@ -54,6 +54,10 @@ const PlatformAdminDashboard: React.FC = () => {
   const [addUserOpen, setAddUserOpen] = useState(false);
   const [addUserLoading, setAddUserLoading] = useState(false);
   const [addUserError, setAddUserError] = useState('');
+  const [editUserOpen, setEditUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithSchool | null>(null);
+  const [editUserLoading, setEditUserLoading] = useState(false);
+  const [editUserError, setEditUserError] = useState('');
 
   useEffect(() => {
     if (dashboardError) {
@@ -174,7 +178,21 @@ const PlatformAdminDashboard: React.FC = () => {
   const openAddUserModal = useCallback(() => {
     console.log('Opening add user modal');
     setAddUserError('');
+    setSelectedUser(null);
     setAddUserOpen(true);
+  }, []);
+
+  const openEditUserModal = useCallback((user: UserWithSchool) => {
+    console.log('Opening edit user modal for user:', user);
+    setEditUserError('');
+    setSelectedUser(user);
+    setEditUserOpen(true);
+  }, []);
+
+  const closeEditUserModal = useCallback(() => {
+    setEditUserOpen(false);
+    setEditUserError('');
+    setSelectedUser(null);
   }, []);
 
   const closeAddUserModal = useCallback(() => {
@@ -196,6 +214,53 @@ const PlatformAdminDashboard: React.FC = () => {
       setAddUserError(error.message || 'Erreur lors de la création de l\'utilisateur. Veuillez réessayer.');
     } finally {
       setAddUserLoading(false);
+    }
+  };
+
+  const handleEditUserSubmit = async (form: UserForm) => {
+    if (!selectedUser) return;
+    
+    setEditUserLoading(true);
+    setEditUserError('');
+    try {
+      await PlatformAdminService.updateUser(selectedUser.id, form);
+      console.log('Utilisateur mis à jour avec succès');
+      const updatedUsers = await PlatformAdminService.getUsersWithSchool();
+      setUsers(updatedUsers);
+      closeEditUserModal();
+    } catch (error: any) {
+      console.error('Erreur lors de la mise à jour de l\'utilisateur:', error);
+      setEditUserError(error.message || 'Erreur lors de la mise à jour de l\'utilisateur. Veuillez réessayer.');
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) {
+      return;
+    }
+    
+    try {
+      await PlatformAdminService.deleteUser(userId);
+      console.log('Utilisateur supprimé avec succès');
+      const updatedUsers = await PlatformAdminService.getUsersWithSchool();
+      setUsers(updatedUsers);
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+      alert('Erreur lors de la suppression de l\'utilisateur. Veuillez réessayer.');
+    }
+  };
+
+  const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+      await PlatformAdminService.updateUserStatus(userId, newStatus);
+      const updatedUsers = await PlatformAdminService.getUsersWithSchool();
+      setUsers(updatedUsers);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut de l\'utilisateur:', error);
+      alert('Erreur lors de la mise à jour du statut de l\'utilisateur. Veuillez réessayer.');
     }
   };
 
@@ -533,7 +598,7 @@ const PlatformAdminDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h2>
         <div className="flex flex-col sm:flex-row gap-2">
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center">
+          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
             <UserCheck className="h-4 w-4 mr-2" />
             Approuver En Attente
           </button>
@@ -552,6 +617,18 @@ const PlatformAdminDashboard: React.FC = () => {
             error={addUserError}
             schools={schools.map(school => ({ id: school.id, name: school.name }))}
           />
+          
+          {selectedUser && (
+            <EditUserModal
+              isOpen={editUserOpen}
+              onClose={closeEditUserModal}
+              onSubmit={handleEditUserSubmit}
+              loading={editUserLoading}
+              error={editUserError}
+              user={selectedUser}
+              schools={schools.map(school => ({ id: school.id, name: school.name }))}
+            />
+          )}
         </div>
       </div>
 
@@ -596,26 +673,37 @@ const PlatformAdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex justify-end space-x-3">
-                  <button className="text-blue-600 hover:text-blue-900">
+                  <button 
+                    className="text-blue-600 hover:text-blue-900"
+                    onClick={() => openEditUserModal(user)}
+                    title="Voir les détails"
+                  >
                     <Eye className="h-4 w-4" />
-                  </button>
-                  <button className="text-green-600 hover:text-green-900">
-                    <Edit className="h-4 w-4" />
                   </button>
                   <button 
                     className="text-green-600 hover:text-green-900"
-                    onClick={async () => {
-                      try {
-                        await PlatformAdminService.updateUserStatus(user.id, user.status === 'active' ? 'suspended' : 'active');
-                        // Refresh data
-                        const usersData = await PlatformAdminService.getUsersWithSchool();
-                        setUsers(usersData);
-                      } catch (error) {
-                        console.error('Failed to update user status:', error);
-                      }
-                    }}
+                    onClick={() => openEditUserModal(user)}
+                    title="Modifier l'utilisateur"
                   >
-                    <UserCheck className="h-4 w-4" />
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button 
+                    className={`${user.status === 'active' ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                    onClick={() => handleToggleUserStatus(user.id, user.status)}
+                    title={user.status === 'active' ? 'Suspendre l\'utilisateur' : 'Activer l\'utilisateur'}
+                  >
+                    {user.status === 'active' ? (
+                      <UserX className="h-4 w-4" />
+                    ) : (
+                      <UserCheck className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button 
+                    className="text-red-600 hover:text-red-900"
+                    onClick={() => handleDeleteUser(user.id)}
+                    title="Supprimer l'utilisateur"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -668,26 +756,37 @@ const PlatformAdminDashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">
+                        <button 
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => openEditUserModal(user)}
+                          title="Voir les détails"
+                        >
                           <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="text-green-600 hover:text-green-900 mr-3">
-                          <Edit className="h-4 w-4" />
                         </button>
                         <button 
                           className="text-green-600 hover:text-green-900 mr-3"
-                          onClick={async () => {
-                            try {
-                              await PlatformAdminService.updateUserStatus(user.id, user.status === 'active' ? 'suspended' : 'active');
-                              // Refresh data
-                              const usersData = await PlatformAdminService.getUsersWithSchool();
-                              setUsers(usersData);
-                            } catch (error) {
-                              console.error('Failed to update user status:', error);
-                            }
-                          }}
+                          onClick={() => openEditUserModal(user)}
+                          title="Modifier l'utilisateur"
                         >
-                          <UserCheck className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button 
+                          className={`${user.status === 'active' ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'} mr-3`}
+                          onClick={() => handleToggleUserStatus(user.id, user.status)}
+                          title={user.status === 'active' ? 'Suspendre l\'utilisateur' : 'Activer l\'utilisateur'}
+                        >
+                          {user.status === 'active' ? (
+                            <UserX className="h-4 w-4" />
+                          ) : (
+                            <UserCheck className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button 
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDeleteUser(user.id)}
+                          title="Supprimer l'utilisateur"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>

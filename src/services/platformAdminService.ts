@@ -619,6 +619,152 @@ export class PlatformAdminService {
       throw new Error('Failed to create user: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
+
+  /**
+   * Update user information
+   */
+  static async updateUser(
+    userId: string, 
+    updates: {
+      email?: string;
+      name?: string;
+      role?: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
+      schoolId?: string;
+    }
+  ): Promise<UserWithSchool> {
+    try {
+      // Update user in auth if email is being changed
+      if (updates.email) {
+        const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
+          email: updates.email,
+        });
+        if (authError) throw authError;
+      }
+
+      // Update user profile in database
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .update({
+          email: updates.email,
+          full_name: updates.name,
+          role: updates.role,
+          school_id: updates.schoolId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .select('*, schools(name)')
+        .single();
+
+      if (userError) throw userError;
+
+      // Log the activity
+      await this.logActivity({
+        action: 'User Updated',
+        description: `User ${user.full_name} (${user.email}) was updated`,
+        userId: userId,
+        type: 'user' as const,
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: user.role,
+        schoolId: user.school_id,
+        schoolName: user.schools?.name,
+        status: user.status as 'active' | 'pending' | 'suspended' || 'active',
+        createdAt: new Date(user.created_at),
+        updatedAt: new Date(user.updated_at)
+      };
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw new Error('Failed to update user');
+    }
+  }
+
+  /**
+   * Delete a user
+   */
+  static async deleteUser(userId: string): Promise<void> {
+    try {
+      // First, get user data for logging before deletion
+      const { data: user, error: fetchError } = await supabase
+        .from('users')
+        .select('email, full_name')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete user from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) throw authError;
+
+      // Delete user from database (should be handled by trigger, but just in case)
+      const { error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (userError) throw userError;
+
+      // Log the activity
+      await this.logActivity({
+        action: 'User Deleted',
+        description: `User ${user.full_name} (${user.email}) was deleted`,
+        userId: userId,
+        type: 'user' as const,
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error('Failed to delete user');
+    }
+  }
+
+  /**
+   * Update user status
+   */
+  static async updateUserStatus(
+    userId: string, 
+    status: 'active' | 'pending' | 'suspended'
+  ): Promise<UserWithSchool> {
+    try {
+      const { data: user, error } = await supabase
+        .from('users')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', userId)
+        .select('*, schools(name)')
+        .single();
+
+      if (error) throw error;
+
+      // Log the activity
+      await this.logActivity({
+        action: 'User Status Updated',
+        description: `Status for user ${user.full_name} (${user.email}) was set to ${status}`,
+        userId: userId,
+        type: 'user' as const,
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: user.role,
+        schoolId: user.school_id,
+        schoolName: user.schools?.name,
+        status,
+        createdAt: new Date(user.created_at),
+        updatedAt: new Date(user.updated_at)
+      };
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      throw new Error('Failed to update user status');
+    }
+  }
 }
 
 export default PlatformAdminService;
