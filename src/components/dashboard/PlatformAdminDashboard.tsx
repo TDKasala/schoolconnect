@@ -357,22 +357,18 @@ const PlatformAdminDashboard: React.FC = () => {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
             </div>
           ) : recentActivities && recentActivities.length > 0 ? (
-            recentActivities.slice(0, 5).map((activity: ActivityLog, index: number) => (
+            recentActivities.slice(0, 5).map((activity, index) => (
               <div key={index} className="flex items-start space-x-3 py-2 border-b border-gray-100 last:border-0">
-                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                  activity.action === 'create' ? 'bg-green-500' :
-                  activity.action === 'update' ? 'bg-blue-500' :
-                  activity.action === 'delete' ? 'bg-red-500' :
-                  'bg-gray-500'
-                }`}></div>
+                <div className="flex-shrink-0 w-2 h-2 rounded-full mt-2 bg-blue-500"></div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900">
-                    <span className="font-medium">{activity.userName}</span> {activity.description}
+                    <span className="font-medium">{activity.userName}</span> a {activity.action} {activity.target}
                   </p>
                   <p className="text-xs text-gray-500">
                     {new Date(activity.timestamp).toLocaleDateString('fr-FR', {
                       day: 'numeric',
                       month: 'short',
+                      year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
@@ -841,6 +837,33 @@ const PlatformAdminDashboard: React.FC = () => {
             {activeTab === 'settings' && renderSettings()}
           </div>
         </div>
+        
+        {/* Modals - Always rendered to maintain state across tab switches */}
+        <AddSchoolModal
+          isOpen={addSchoolOpen}
+          onClose={closeAddSchoolModal}
+          onSubmit={handleAddSchoolSubmit}
+          loading={addSchoolLoading}
+          error={addSchoolError}
+        />
+        
+        <EditSchoolModal
+          isOpen={editSchoolOpen}
+          onClose={closeEditSchoolModal}
+          onSubmit={handleEditSchoolSubmit}
+          loading={editSchoolLoading}
+          error={editSchoolError}
+          school={selectedSchool}
+        />
+        
+        <AddUserModal
+          isOpen={addUserOpen}
+          onClose={closeAddUserModal}
+          onSubmit={handleAddUserSubmit}
+          loading={addUserLoading}
+          error={addUserError}
+          schools={schools.map(school => ({ id: school.id, name: school.name }))}
+        />
       </div>
     </div>
   );
