@@ -198,7 +198,7 @@ export class PlatformAdminService {
         role: user.role,
         schoolId: user.school_id,
         schoolName: user.schools?.name,
-        status: 'active', // Mock status - replace with actual status logic
+        status: user.is_active ? 'active' : 'suspended',
         createdAt: new Date(user.created_at),
         updatedAt: new Date(user.updated_at)
       })) || [];
@@ -299,15 +299,22 @@ export class PlatformAdminService {
   }
 
   /**
-   * Update user status (approve, suspend, activate)
+   * Update user status (active/suspended)
+   * @param userId The ID of the user to update
+   * @param status The new status ('active' or 'suspended')
    */
   static async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<void> {
     try {
-      // For now, we'll use a custom field or handle this in the application logic
-      // since the current schema doesn't have a status field
+      // Convert status to boolean for is_active field
+      const isActive = status === 'active';
+      
+      // Update the user's is_active status
       const { error } = await supabase
         .from('users')
-        .update({ updated_at: new Date().toISOString() })
+        .update({ 
+          is_active: isActive,
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', userId);
 
       if (error) throw error;
@@ -718,51 +725,6 @@ export class PlatformAdminService {
     } catch (error) {
       console.error('Error deleting user:', error);
       throw new Error('Failed to delete user');
-    }
-  }
-
-  /**
-   * Update user status
-   */
-  static async updateUserStatus(
-    userId: string, 
-    status: 'active' | 'pending' | 'suspended'
-  ): Promise<UserWithSchool> {
-    try {
-      const { data: user, error } = await supabase
-        .from('users')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', userId)
-        .select('*, schools(name)')
-        .single();
-
-      if (error) throw error;
-
-      // Log the activity
-      await this.logActivity({
-        action: 'User Status Updated',
-        description: `Status for user ${user.full_name} (${user.email}) was set to ${status}`,
-        userId: userId,
-        type: 'user' as const,
-      });
-
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.full_name,
-        role: user.role,
-        schoolId: user.school_id,
-        schoolName: user.schools?.name,
-        status,
-        createdAt: new Date(user.created_at),
-        updatedAt: new Date(user.updated_at)
-      };
-    } catch (error) {
-      console.error('Error updating user status:', error);
-      throw new Error('Failed to update user status');
     }
   }
 }
