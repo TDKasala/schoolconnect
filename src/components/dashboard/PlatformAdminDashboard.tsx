@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
 import AddUserModal, { UserForm } from './AddUserModal';
+import EditUserModal from './EditUserModal';
 import {
   Users,
   BarChart3,
