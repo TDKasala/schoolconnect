@@ -11,6 +11,7 @@ import {
   Edit,
   Trash2,
   UserCheck,
+  UserX,
   Download,
   TrendingUp,
   DollarSign,
