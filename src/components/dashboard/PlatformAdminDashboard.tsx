@@ -3,6 +3,7 @@ import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
 import AddUserModal, { UserForm } from './AddUserModal';
 import EditUserModal from './EditUserModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 import {
   Users,
   BarChart3,
@@ -58,6 +59,9 @@ const PlatformAdminDashboard: React.FC = () => {
   const [addUserError, setAddUserError] = useState('');
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithSchool | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{id: string, name: string} | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [editUserLoading, setEditUserLoading] = useState(false);
   const [editUserError, setEditUserError] = useState('');
 
@@ -224,34 +228,87 @@ const PlatformAdminDashboard: React.FC = () => {
     
     setEditUserLoading(true);
     setEditUserError('');
+    
     try {
-      await PlatformAdminService.updateUser(selectedUser.id, form);
-      console.log('Utilisateur mis à jour avec succès');
+      // Ensure required fields are included
+      const userData = {
+        ...form,
+        full_name: form.full_name || '',
+        password: form.password || undefined // Make password optional for updates
+      };
+      
+      await PlatformAdminService.updateUser(selectedUser.id, userData);
       const updatedUsers = await PlatformAdminService.getUsersWithSchool();
       setUsers(updatedUsers);
-      closeEditUserModal();
-    } catch (error: any) {
-      console.error('Erreur lors de la mise à jour de l\'utilisateur:', error);
-      setEditUserError(error.message || 'Erreur lors de la mise à jour de l\'utilisateur. Veuillez réessayer.');
+      setEditUserOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      setEditUserError('Failed to update user. Please try again.');
     } finally {
       setEditUserLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) {
-      return;
-    }
+  const handleDeleteClick = (userId: string, userName: string) => {
+    setUserToDelete({ id: userId, name: userName });
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setDeleteLoading(true);
+    setEditUserError('');
     
     try {
-      await PlatformAdminService.deleteUser(userId);
-      console.log('Utilisateur supprimé avec succès');
+      console.log(`Attempting to delete user with ID: ${userToDelete.id}`);
+      await PlatformAdminService.deleteUser(userToDelete.id);
+      
+      console.log('User deleted successfully, refreshing user list...');
       const updatedUsers = await PlatformAdminService.getUsersWithSchool();
       setUsers(updatedUsers);
-    } catch (error) {
-      console.error('Erreur lors de la suppression de l\'utilisateur:', error);
-      alert('Erreur lors de la suppression de l\'utilisateur. Veuillez réessayer.');
+      
+      // Show success message
+      alert(`L'utilisateur ${userToDelete.name} a été supprimé avec succès.`);
+      
+      // Close the modal and reset state
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
+      
+    } catch (error: any) {
+      console.error('Error in handleDeleteUser:', error);
+      
+      // More specific error handling
+      let errorMessage = 'Une erreur est survenue lors de la suppression de l\'utilisateur.';
+      
+      if (error.message.includes('Auth deletion failed')) {
+        errorMessage = 'Erreur lors de la suppression du compte utilisateur. ';
+        if (error.message.includes('insufficient permissions')) {
+          errorMessage += 'Permissions insuffisantes pour effectuer cette action.';
+        } else {
+          errorMessage += 'Veuillez vérifier vos droits d\'administration.';
+        }
+      } else if (error.message.includes('Database deletion failed')) {
+        errorMessage = 'Erreur lors de la suppression des données utilisateur. ';
+        errorMessage += 'Veuillez contacter le support technique.';
+      } else if (error.message.includes('Failed to fetch user data')) {
+        errorMessage = 'Impossible de trouver l\'utilisateur à supprimer. ';
+        errorMessage += 'L\'utilisateur a peut-être déjà été supprimé.';
+      }
+      
+      // Show error message to user
+      setEditUserError(errorMessage);
+      
+      // Keep the modal open to show the error message
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setUserToDelete(null);
   };
 
   const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
@@ -702,8 +759,9 @@ const PlatformAdminDashboard: React.FC = () => {
                   </button>
                   <button 
                     className="text-red-600 hover:text-red-900"
-                    onClick={() => handleDeleteUser(user.id)}
+                    onClick={() => handleDeleteClick(user.id, user.name || user.email)}
                     title="Supprimer l'utilisateur"
+                    disabled={deleteLoading}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -785,8 +843,9 @@ const PlatformAdminDashboard: React.FC = () => {
                         </button>
                         <button 
                           className="text-red-600 hover:text-red-900"
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => handleDeleteClick(user.id, user.name || user.email)}
                           title="Supprimer l'utilisateur"
+                          disabled={deleteLoading}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -422,14 +422,26 @@ export class PlatformAdminService {
         .select('role')
         .not('role', 'is', null);
 
-      const roleCounts = usersByRole?.reduce((acc, user) => {
-        acc[user.role] = (acc[user.role] || 0) + 1;
-        return acc;
-      }, {} as Record<UserRole, number>) || {};
+      // Initialize with all possible roles set to 0
+      const roleCounts: Record<string, number> = {
+        platform_admin: 0,
+        school_admin: 0,
+        teacher: 0,
+        parent: 0,
+        student: 0
+      };
 
+      // Count users by role
+      usersByRole?.forEach(user => {
+        if (user.role && roleCounts.hasOwnProperty(user.role)) {
+          roleCounts[user.role]++;
+        }
+      });
+
+      // Convert to array of { role, count } objects
       const usersByRoleArray = Object.entries(roleCounts).map(([role, count]) => ({
         role: role as UserRole,
-        count
+        count: count as number
       }));
 
       return {
@@ -694,37 +706,68 @@ export class PlatformAdminService {
    */
   static async deleteUser(userId: string): Promise<void> {
     try {
+      console.log(`Starting deletion of user with ID: ${userId}`);
+      
       // First, get user data for logging before deletion
       const { data: user, error: fetchError } = await supabase
         .from('users')
-        .select('email, full_name')
+        .select('email, full_name, role')
         .eq('id', userId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching user data before deletion:', fetchError);
+        throw new Error(`Failed to fetch user data: ${fetchError.message}`);
+      }
 
+      console.log(`Deleting user from auth: ${user.email} (${user.full_name})`);
+      
       // Delete user from auth
       const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Error deleting user from auth:', authError);
+        // If auth deletion fails, we might still want to delete the user from the database
+        // to prevent orphaned records, but we'll rethrow the original error
+        if (authError.message.includes('User not found')) {
+          console.log('User not found in auth, proceeding with database cleanup');
+        } else {
+          throw new Error(`Auth deletion failed: ${authError.message}`);
+        }
+      }
 
+      console.log('Deleting user from database...');
+      
       // Delete user from database (should be handled by trigger, but just in case)
       const { error: userError } = await supabase
         .from('users')
         .delete()
         .eq('id', userId);
 
-      if (userError) throw userError;
+      if (userError) {
+        console.error('Error deleting user from database:', userError);
+        throw new Error(`Database deletion failed: ${userError.message}`);
+      }
 
+      console.log('User deleted successfully, logging activity...');
+      
       // Log the activity
-      await this.logActivity({
-        action: 'User Deleted',
-        description: `User ${user.full_name} (${user.email}) was deleted`,
-        userId: userId,
-        type: 'user' as const,
-      });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      throw new Error('Failed to delete user');
+      try {
+        await this.logActivity({
+          action: 'User Deleted',
+          description: `User ${user.full_name} (${user.email}) with role ${user.role} was deleted`,
+          userId: userId,
+          type: 'user' as const,
+        });
+        console.log('Activity logged successfully');
+      } catch (logError) {
+        // Don't fail the entire operation if logging fails
+        console.error('Error logging user deletion activity:', logError);
+      }
+      
+    } catch (error: any) {
+      console.error('Error in deleteUser:', error);
+      // Include the original error message in the thrown error
+      throw new Error(error.message || 'Failed to delete user');
     }
   }
 }
