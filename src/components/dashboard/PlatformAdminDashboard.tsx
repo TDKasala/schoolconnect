@@ -676,7 +676,16 @@ const PlatformAdminDashboard: React.FC = () => {
             error={addUserError}
             schools={schools.map(school => ({ id: school.id, name: school.name }))}
           />
-          
+          <DeleteConfirmationModal
+            isOpen={deleteModalOpen}
+            onClose={closeDeleteModal}
+            onConfirm={handleDeleteUser}
+            title="Supprimer l'utilisateur"
+            description={`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userToDelete?.name || ''} ? Cette action est irréversible.`}
+            confirmText={deleteLoading ? 'Suppression en cours...' : 'Supprimer'}
+            cancelText="Annuler"
+            error={editUserError}
+          />
           {selectedUser && (
             <EditUserModal
               isOpen={editUserOpen}
