@@ -702,72 +702,51 @@ export class PlatformAdminService {
   }
 
   /**
-   * Delete a user
+   * Delete a user using Edge Function with service role permissions
    */
   static async deleteUser(userId: string): Promise<void> {
     try {
       console.log(`Starting deletion of user with ID: ${userId}`);
       
-      // First, get user data for logging before deletion
-      const { data: user, error: fetchError } = await supabase
-        .from('users')
-        .select('email, full_name, role')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching user data before deletion:', fetchError);
-        throw new Error(`Failed to fetch user data: ${fetchError.message}`);
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
       }
 
-      console.log(`Deleting user from auth: ${user.email} (${user.full_name})`);
-      
-      // Delete user from auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) {
-        console.error('Error deleting user from auth:', authError);
-        // If auth deletion fails, we might still want to delete the user from the database
-        // to prevent orphaned records, but we'll rethrow the original error
-        if (authError.message.includes('User not found')) {
-          console.log('User not found in auth, proceeding with database cleanup');
-        } else {
-          throw new Error(`Auth deletion failed: ${authError.message}`);
-        }
+      // Call the Edge Function for secure user deletion
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Error calling delete-user function:', error);
+        throw new Error(`Failed to delete user: ${error.message}`);
       }
 
-      console.log('Deleting user from database...');
-      
-      // Delete user from database (should be handled by trigger, but just in case)
-      const { error: userError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
-
-      if (userError) {
-        console.error('Error deleting user from database:', userError);
-        throw new Error(`Database deletion failed: ${userError.message}`);
+      if (!data.success) {
+        console.error('Delete user function returned error:', data.error);
+        throw new Error(data.error || 'Failed to delete user');
       }
 
-      console.log('User deleted successfully, logging activity...');
-      
-      // Log the activity
-      try {
-        await this.logActivity({
-          action: 'User Deleted',
-          description: `User ${user.full_name} (${user.email}) with role ${user.role} was deleted`,
-          userId: userId,
-          type: 'user' as const,
-        });
-        console.log('Activity logged successfully');
-      } catch (logError) {
-        // Don't fail the entire operation if logging fails
-        console.error('Error logging user deletion activity:', logError);
-      }
+      console.log('User deleted successfully:', data.message);
       
     } catch (error: any) {
       console.error('Error in deleteUser:', error);
-      // Include the original error message in the thrown error
-      throw new Error(error.message || 'Failed to delete user');
+      
+      // Provide more specific error messages based on the error
+      if (error.message.includes('Insufficient permissions')) {
+        throw new Error('Permissions insuffisantes pour effectuer cette action.');
+      } else if (error.message.includes('User not found')) {
+        throw new Error('Utilisateur introuvable. Il a peut-être déjà été supprimé.');
+      } else if (error.message.includes('No active session')) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      } else {
+        throw new Error(error.message || 'Erreur lors de la suppression de l\'utilisateur.');
+      }
     }
   }
 }
