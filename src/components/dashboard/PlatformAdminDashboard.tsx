@@ -22,7 +22,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { PlatformAdminService, type SchoolWithStats, type UserWithSchool, type ActivityLog } from '../../services/platformAdminService';
+import { PlatformAdminService, type SchoolWithStats, type UserWithSchool } from '../../services/platformAdminService';
 import { useOverview } from '../../hooks/useOverview';
 
 const PlatformAdminDashboard: React.FC = () => {
@@ -668,35 +668,7 @@ const PlatformAdminDashboard: React.FC = () => {
             <Plus className="h-4 w-4 mr-2" />
             Ajouter Utilisateur
           </button>
-          <AddUserModal
-            isOpen={addUserOpen}
-            onClose={closeAddUserModal}
-            onSubmit={handleAddUserSubmit}
-            loading={addUserLoading}
-            error={addUserError}
-            schools={schools.map(school => ({ id: school.id, name: school.name }))}
-          />
-          <DeleteConfirmationModal
-            isOpen={deleteModalOpen}
-            onClose={closeDeleteModal}
-            onConfirm={handleDeleteUser}
-            title="Supprimer l'utilisateur"
-            description={`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userToDelete?.name || ''} ? Cette action est irréversible.`}
-            confirmText={deleteLoading ? 'Suppression en cours...' : 'Supprimer'}
-            cancelText="Annuler"
-            error={editUserError}
-          />
-          {selectedUser && (
-            <EditUserModal
-              isOpen={editUserOpen}
-              onClose={closeEditUserModal}
-              onSubmit={handleEditUserSubmit}
-              loading={editUserLoading}
-              error={editUserError}
-              user={selectedUser}
-              schools={schools.map(school => ({ id: school.id, name: school.name }))}
-            />
-          )}
+
         </div>
       </div>
 
@@ -1032,6 +1004,29 @@ const PlatformAdminDashboard: React.FC = () => {
           loading={addUserLoading}
           error={addUserError}
           schools={schools.map(school => ({ id: school.id, name: school.name }))}
+        />
+        
+{selectedUser && (
+          <EditUserModal
+            isOpen={editUserOpen}
+            onClose={closeEditUserModal}
+            onSubmit={handleEditUserSubmit}
+            loading={editUserLoading}
+            error={editUserError}
+            user={selectedUser}
+            schools={schools.map(school => ({ id: school.id, name: school.name }))}
+          />
+        )}
+        
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={handleDeleteUser}
+          title="Supprimer l'utilisateur"
+          description={`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userToDelete?.name || ''} ? Cette action est irréversible.`}
+          confirmText={deleteLoading ? 'Suppression en cours...' : 'Supprimer'}
+          cancelText="Annuler"
+          error={editUserError}
         />
       </div>
     </div>
