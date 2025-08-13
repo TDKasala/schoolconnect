@@ -4,6 +4,7 @@ import EditSchoolModal from './EditSchoolModal';
 import AddUserModal, { UserForm } from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import DeleteSuccessModal from './DeleteSuccessModal';
 import {
   Users,
   BarChart3,
@@ -64,6 +65,10 @@ const PlatformAdminDashboard: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editUserLoading, setEditUserLoading] = useState(false);
   const [editUserError, setEditUserError] = useState('');
+  
+  // State for delete success modal
+  const [deleteSuccessOpen, setDeleteSuccessOpen] = useState(false);
+  const [deletedUserName, setDeletedUserName] = useState('');
 
   useEffect(() => {
     if (dashboardError) {
@@ -255,6 +260,11 @@ const PlatformAdminDashboard: React.FC = () => {
     setDeleteModalOpen(true);
   };
 
+  const closeDeleteSuccessModal = () => {
+    setDeleteSuccessOpen(false);
+    setDeletedUserName('');
+  };
+
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
     
@@ -269,10 +279,11 @@ const PlatformAdminDashboard: React.FC = () => {
       const updatedUsers = await PlatformAdminService.getUsersWithSchool();
       setUsers(updatedUsers);
       
-      // Show success message
-      alert(`L'utilisateur ${userToDelete.name} a été supprimé avec succès.`);
+      // Show success modal instead of alert popup
+      setDeletedUserName(userToDelete.name);
+      setDeleteSuccessOpen(true);
       
-      // Close the modal and reset state
+      // Close the confirmation modal and reset state
       setDeleteModalOpen(false);
       setUserToDelete(null);
       
@@ -1020,13 +1031,19 @@ const PlatformAdminDashboard: React.FC = () => {
         
         <DeleteConfirmationModal
           isOpen={deleteModalOpen}
-          onClose={closeDeleteModal}
+          onClose={() => setDeleteModalOpen(false)}
           onConfirm={handleDeleteUser}
           title="Supprimer l'utilisateur"
           description={`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userToDelete?.name || ''} ? Cette action est irréversible.`}
           confirmText={deleteLoading ? 'Suppression en cours...' : 'Supprimer'}
           cancelText="Annuler"
           error={editUserError}
+        />
+        
+        <DeleteSuccessModal
+          isOpen={deleteSuccessOpen}
+          onClose={closeDeleteSuccessModal}
+          userName={deletedUserName}
         />
       </div>
     </div>
