@@ -5,6 +5,8 @@ import AddUserModal, { UserForm } from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import DeleteSuccessModal from './DeleteSuccessModal';
+import SchoolDetailsModal from './SchoolDetailsModal';
+import SchoolDeleteSuccessModal from './SchoolDeleteSuccessModal';
 import {
   Users,
   BarChart3,
@@ -69,6 +71,14 @@ const PlatformAdminDashboard: React.FC = () => {
   // State for delete success modal
   const [deleteSuccessOpen, setDeleteSuccessOpen] = useState(false);
   const [deletedUserName, setDeletedUserName] = useState('');
+  
+  // State for school modals
+  const [schoolDetailsOpen, setSchoolDetailsOpen] = useState(false);
+  const [selectedSchoolDetails, setSelectedSchoolDetails] = useState<any>(null);
+  const [schoolToDelete, setSchoolToDelete] = useState<{id: string, name: string} | null>(null);
+  const [schoolDeleteModalOpen, setSchoolDeleteModalOpen] = useState(false);
+  const [schoolDeleteSuccessOpen, setSchoolDeleteSuccessOpen] = useState(false);
+  const [deletedSchoolName, setDeletedSchoolName] = useState('');
 
   useEffect(() => {
     if (dashboardError) {
@@ -168,22 +178,55 @@ const PlatformAdminDashboard: React.FC = () => {
     }
   };
 
-  // Delete school handler with useCallback for stability
-  const handleDeleteSchool = useCallback(async (school: any) => {
-    console.log('Attempting to delete school:', school);
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'école "${school.name}" ? Cette action est irréversible.`)) {
-      return;
-    }
+  // View school details handler
+  const handleViewSchoolDetails = useCallback((school: any) => {
+    setSelectedSchoolDetails(school);
+    setSchoolDetailsOpen(true);
+  }, []);
+
+  // Close school details modal
+  const closeSchoolDetailsModal = useCallback(() => {
+    setSchoolDetailsOpen(false);
+    setSelectedSchoolDetails(null);
+  }, []);
+
+  // Handle school delete click
+  const handleDeleteSchoolClick = useCallback((school: any) => {
+    setSchoolToDelete({ id: school.id, name: school.name });
+    setSchoolDeleteModalOpen(true);
+  }, []);
+
+  // Close school delete success modal
+  const closeSchoolDeleteSuccessModal = useCallback(() => {
+    setSchoolDeleteSuccessOpen(false);
+    setDeletedSchoolName('');
+  }, []);
+
+  // Delete school handler with modal confirmation
+  const handleDeleteSchool = useCallback(async () => {
+    if (!schoolToDelete) return;
+    
     try {
-      await PlatformAdminService.deleteSchool(school.id);
+      await PlatformAdminService.deleteSchool(schoolToDelete.id);
       console.log('École supprimée avec succès');
+      
+      // Refresh schools list
       const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
       setSchools(updatedSchools);
+      
+      // Show success modal
+      setDeletedSchoolName(schoolToDelete.name);
+      setSchoolDeleteSuccessOpen(true);
+      
+      // Close confirmation modal
+      setSchoolDeleteModalOpen(false);
+      setSchoolToDelete(null);
     } catch (error: any) {
       console.error('Erreur lors de la suppression de l\'école:', error);
+      // The error will be shown in the confirmation modal
       alert('Erreur lors de la suppression de l\'école. Veuillez réessayer.');
     }
-  }, []);
+  }, [schoolToDelete]);
 
   // Add user handlers with useCallback for stability
   const openAddUserModal = useCallback(() => {
@@ -570,7 +613,10 @@ const PlatformAdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex justify-end space-x-3">
-                  <button className="text-blue-600 hover:text-blue-900">
+                  <button 
+                    onClick={() => handleViewSchoolDetails(school)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
                     <Eye className="h-4 w-4" />
                   </button>
                   <button 
@@ -580,7 +626,7 @@ const PlatformAdminDashboard: React.FC = () => {
                     <Edit className="h-4 w-4" />
                   </button>
                   <button 
-                    onClick={() => handleDeleteSchool(school)}
+                    onClick={() => handleDeleteSchoolClick(school)}
                     className="text-red-600 hover:text-red-900"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -630,7 +676,10 @@ const PlatformAdminDashboard: React.FC = () => {
                         {school.plan}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">
+                        <button 
+                          onClick={() => handleViewSchoolDetails(school)}
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                        >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button 
@@ -640,7 +689,7 @@ const PlatformAdminDashboard: React.FC = () => {
                           <Edit className="h-4 w-4" />
                         </button>
                         <button 
-                          onClick={() => handleDeleteSchool(school)}
+                          onClick={() => handleDeleteSchoolClick(school)}
                           className="text-red-600 hover:text-red-900"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1039,6 +1088,33 @@ const PlatformAdminDashboard: React.FC = () => {
           cancelText="Annuler"
           error={editUserError}
         />
+        
+        {/* School Modals */}
+        {selectedSchoolDetails && (
+          <SchoolDetailsModal
+            isOpen={schoolDetailsOpen}
+            onClose={closeSchoolDetailsModal}
+            school={selectedSchoolDetails}
+          />
+        )}
+        
+        <DeleteConfirmationModal
+          isOpen={schoolDeleteModalOpen}
+          onClose={() => setSchoolDeleteModalOpen(false)}
+          onConfirm={handleDeleteSchool}
+          title="Supprimer l'école"
+          description={`Êtes-vous sûr de vouloir supprimer l'école "${schoolToDelete?.name || ''}" ? Cette action est irréversible.`}
+          confirmText="Supprimer"
+          cancelText="Annuler"
+        />
+        
+        {deletedSchoolName && (
+          <SchoolDeleteSuccessModal
+            isOpen={schoolDeleteSuccessOpen}
+            onClose={closeSchoolDeleteSuccessModal}
+            schoolName={deletedSchoolName}
+          />
+        )}
         
         <DeleteSuccessModal
           isOpen={deleteSuccessOpen}
