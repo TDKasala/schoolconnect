@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
-import AddUserModal, { UserForm } from './AddUserModal';
+import AddUserModal, { UserForm as AddUserForm } from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import DeleteSuccessModal from './DeleteSuccessModal';
 import SchoolDetailsModal from './SchoolDetailsModal';
 import SchoolDeleteSuccessModal from './SchoolDeleteSuccessModal';
 import PendingUsersModal from './PendingUsersModal';
+import AnalyticsCharts from './AnalyticsCharts';
+import RecentActivities from './RecentActivities';
 import {
   Users,
   BarChart3,
@@ -31,6 +33,16 @@ import { useOverview } from '../../hooks/useOverview';
 
 const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  
+  // Helper: map activity action to type for `RecentActivities`
+  const getActivityType = (action: string): 'user' | 'school' | 'system' | 'payment' | 'auth' => {
+    const a = (action || '').toLowerCase();
+    if (a.includes('user')) return 'user';
+    if (a.includes('school')) return 'school';
+    if (a.includes('login') || a.includes('logout') || a.includes('auth')) return 'auth';
+    if (a.includes('payment') || a.includes('subscription') || a.includes('invoice')) return 'payment';
+    return 'system';
+  };
   
   // Use the overview hook for basic stats and activity logs
   const {
@@ -258,7 +270,9 @@ const PlatformAdminDashboard: React.FC = () => {
     setAddUserError('');
   }, []);
 
-  const handleAddUserSubmit = async (form: UserForm) => {
+  type EditUserForm = { name: string; email: string; role: string; schoolId: string };
+
+  const handleAddUserSubmit = async (form: AddUserForm) => {
     setAddUserLoading(true);
     setAddUserError('');
     try {
@@ -275,7 +289,7 @@ const PlatformAdminDashboard: React.FC = () => {
     }
   };
 
-  const handleEditUserSubmit = async (form: UserForm) => {
+  const handleEditUserSubmit = async (form: EditUserForm) => {
     if (!selectedUser) return;
     
     setEditUserLoading(true);
@@ -283,10 +297,18 @@ const PlatformAdminDashboard: React.FC = () => {
     
     try {
       // Ensure required fields are included
-      const userData = {
-        ...form,
-        full_name: form.full_name || '',
-        password: form.password || undefined // Make password optional for updates
+      const allowedRoles = ['platform_admin', 'school_admin', 'teacher', 'parent'] as const;
+      const role = allowedRoles.includes(form.role as any) ? form.role as typeof allowedRoles[number] : 'teacher';
+      const userData: {
+        email?: string;
+        name?: string;
+        role?: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
+        schoolId?: string;
+      } = {
+        email: form.email,
+        name: form.name,
+        role,
+        schoolId: form.schoolId || undefined,
       };
       
       await PlatformAdminService.updateUser(selectedUser.id, userData);
@@ -532,38 +554,15 @@ const PlatformAdminDashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Activité Récente</h3>
-        <div className="space-y-4">
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            </div>
-          ) : recentActivities && recentActivities.length > 0 ? (
-            recentActivities.slice(0, 5).map((activity, index) => (
-              <div key={index} className="flex items-start space-x-3 py-2 border-b border-gray-100 last:border-0">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full mt-2 bg-blue-500"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">
-                    <span className="font-medium">{activity.userName}</span> a {activity.action} {activity.target}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-4 text-gray-500">
-              Aucune activité récente
-            </div>
-          )}
-        </div>
+        <RecentActivities 
+          activities={(recentActivities || []).map((activity) => ({
+            ...activity,
+            description: `${activity.userName || 'Un utilisateur'} a effectué l'action: ${activity.action}${activity.target ? ` sur ${activity.target}` : ''}`,
+            type: getActivityType(activity.action),
+            timestamp: new Date((activity as any).timestamp)
+          }))}
+          loading={loading}
+        />
       </div>
     </div>
   );
@@ -919,39 +918,14 @@ const PlatformAdminDashboard: React.FC = () => {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Analytiques de la Plateforme</h2>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Croissance des Utilisateurs</h3>
-          <div className="text-center py-8 text-gray-500">
-            Graphique de croissance des utilisateurs
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenus par École</h3>
-          <div className="text-center py-8 text-gray-500">
-            Graphique des revenus par école
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance du Système</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats?.totalSchools || 0}</div>
-            <div className="text-sm text-gray-500">Écoles Actives</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{stats?.totalStudents || 0}</div>
-            <div className="text-sm text-gray-500">Élèves Inscrits</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats?.totalTeachers || 0}</div>
-            <div className="text-sm text-gray-500">Enseignants</div>
-          </div>
-        </div>
-      </div>
+      <AnalyticsCharts 
+        stats={{
+          totalSchools: stats?.totalSchools || 0,
+          totalStudents: stats?.totalStudents || 0,
+          totalTeachers: stats?.totalTeachers || 0,
+          totalUsers: (stats?.activeUsers || 0) + (stats?.pendingUsers || 0)
+        }}
+      />
     </div>
   );
 
@@ -1077,7 +1051,7 @@ const PlatformAdminDashboard: React.FC = () => {
           <EditUserModal
             isOpen={editUserOpen}
             onClose={closeEditUserModal}
-            onSubmit={handleEditUserSubmit}
+            onSubmit={(form) => { void handleEditUserSubmit(form as any); }}
             loading={editUserLoading}
             error={editUserError}
             user={selectedUser}
@@ -1087,7 +1061,7 @@ const PlatformAdminDashboard: React.FC = () => {
         
         <DeleteConfirmationModal
           isOpen={deleteModalOpen}
-          onClose={() => setDeleteModalOpen(false)}
+          onClose={closeDeleteModal}
           onConfirm={handleDeleteUser}
           title="Supprimer l'utilisateur"
           description={`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userToDelete?.name || ''} ? Cette action est irréversible.`}
