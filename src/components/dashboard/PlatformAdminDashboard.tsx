@@ -7,6 +7,7 @@ import DeleteConfirmationModal from './DeleteConfirmationModal';
 import DeleteSuccessModal from './DeleteSuccessModal';
 import SchoolDetailsModal from './SchoolDetailsModal';
 import SchoolDeleteSuccessModal from './SchoolDeleteSuccessModal';
+import PendingUsersModal from './PendingUsersModal';
 import {
   Users,
   BarChart3,
@@ -75,10 +76,13 @@ const PlatformAdminDashboard: React.FC = () => {
   // State for school modals
   const [schoolDetailsOpen, setSchoolDetailsOpen] = useState(false);
   const [selectedSchoolDetails, setSelectedSchoolDetails] = useState<any>(null);
-  const [schoolToDelete, setSchoolToDelete] = useState<{id: string, name: string} | null>(null);
+  const [schoolToDelete, setSchoolToDelete] = useState<{ id: string; name: string } | null>(null);
   const [schoolDeleteModalOpen, setSchoolDeleteModalOpen] = useState(false);
   const [schoolDeleteSuccessOpen, setSchoolDeleteSuccessOpen] = useState(false);
   const [deletedSchoolName, setDeletedSchoolName] = useState('');
+  
+  // Pending users modal state
+  const [pendingUsersModalOpen, setPendingUsersModalOpen] = useState(false);
 
   useEffect(() => {
     if (dashboardError) {
@@ -717,7 +721,10 @@ const PlatformAdminDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h2>
         <div className="flex flex-col sm:flex-row gap-2">
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+          <button 
+            onClick={() => setPendingUsersModalOpen(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
+          >
             <UserCheck className="h-4 w-4 mr-2" />
             Approuver En Attente
           </button>
@@ -1115,6 +1122,16 @@ const PlatformAdminDashboard: React.FC = () => {
             schoolName={deletedSchoolName}
           />
         )}
+        
+        {/* Pending Users Modal */}
+        <PendingUsersModal
+          isOpen={pendingUsersModalOpen}
+          onClose={() => setPendingUsersModalOpen(false)}
+          onUserApproved={() => {
+            // Refresh users list when a user is approved
+            PlatformAdminService.getUsersWithSchool().then(setUsers).catch(console.error);
+          }}
+        />
         
         <DeleteSuccessModal
           isOpen={deleteSuccessOpen}
