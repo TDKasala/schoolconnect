@@ -9,6 +9,7 @@ import SchoolDetailsModal from './SchoolDetailsModal';
 import SchoolDeleteSuccessModal from './SchoolDeleteSuccessModal';
 import PendingUsersModal from './PendingUsersModal';
 import AnalyticsCharts from './AnalyticsCharts';
+import { useSettings } from '../../hooks/useSettings';
 import RecentActivities from './RecentActivities';
 import {
   Users,
@@ -33,6 +34,8 @@ import { useOverview } from '../../hooks/useOverview';
 
 const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { settings, setSettings, loading: settingsLoading, saving: settingsSaving, error: settingsError, updateSettings, runSecurityChecks } = useSettings();
+  const [securityReport, setSecurityReport] = useState<{ checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; details?: string }>; passed: boolean } | null>(null);
   
   // Helper: map activity action to type for `RecentActivities`
   const getActivityType = (action: string): 'user' | 'school' | 'system' | 'payment' | 'auth' => {
@@ -935,30 +938,92 @@ const PlatformAdminDashboard: React.FC = () => {
       
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration Générale</h3>
+        {settingsError && <div className="text-red-600 text-sm mb-3">{settingsError}</div>}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Nom de la Plateforme</label>
-            <input type="text" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" defaultValue="SchoolConnect" />
+            <input
+              type="text"
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+              value={settings?.platform_name || ''}
+              onChange={(e) => setSettings(s => (s ? { ...s, platform_name: e.target.value } : s))}
+              disabled={settingsLoading || settingsSaving}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Email de Contact</label>
-            <input type="email" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" defaultValue="contact@schoolconnect.cd" />
+            <input
+              type="email"
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+              value={settings?.contact_email || ''}
+              onChange={(e) => setSettings(s => (s ? { ...s, contact_email: e.target.value } : s))}
+              disabled={settingsLoading || settingsSaving}
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={async () => { if (settings) await updateSettings({ platform_name: settings.platform_name, contact_email: settings.contact_email }); }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              disabled={settingsLoading || settingsSaving}
+            >
+              {settingsSaving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
           </div>
         </div>
       </div>
       
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Système</h3>
-        <div className="space-y-4">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <button
+            onClick={async () => {
+              try {
+                const blob = await PlatformAdminService.exportData('analytics');
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-analytics-${new Date().toISOString()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+              } catch (e) {
+                alert('Échec de la sauvegarde.');
+              }
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
+          >
             <Download className="h-4 w-4 mr-2" />
             Sauvegarder la Base de Données
           </button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+          <button
+            onClick={async () => {
+              const report = await runSecurityChecks();
+              setSecurityReport(report);
+            }}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center"
+          >
             <Shield className="h-4 w-4 mr-2" />
             Vérifier la Sécurité
           </button>
         </div>
+        {securityReport && (
+          <div className="mt-4 border-t pt-4">
+            <h4 className="text-md font-semibold mb-2">Rapport de Sécurité</h4>
+            <ul className="space-y-2">
+              {securityReport.checks.map((c, idx) => (
+                <li key={idx} className="text-sm flex items-start">
+                  <span className={`mr-2 mt-0.5 inline-block h-2 w-2 rounded-full ${c.status === 'ok' ? 'bg-green-500' : c.status === 'warn' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
+                  <span className="text-gray-700">
+                    <strong>{c.name}:</strong> {c.status}
+                    {c.details ? ` – ${c.details}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className={`mt-2 text-sm ${securityReport.passed ? 'text-green-600' : 'text-yellow-600'}`}>{securityReport.passed ? 'Tous les contrôles critiques sont OK.' : 'Certaines vérifications nécessitent votre attention.'}</div>
+          </div>
+        )}
       </div>
     </div>
   );
