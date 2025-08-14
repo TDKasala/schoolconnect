@@ -6,6 +6,11 @@ export type PlatformSettings = {
   contact_email: string;
   primary_color?: string | null;
   support_url?: string | null;
+  feature_flags?: {
+    messaging?: boolean;
+    ubank?: boolean;
+    posp?: boolean;
+  } | null;
   updated_at?: string;
 };
 

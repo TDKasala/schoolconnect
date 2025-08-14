@@ -36,6 +36,7 @@ const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const { settings, setSettings, loading: settingsLoading, saving: settingsSaving, error: settingsError, updateSettings, runSecurityChecks } = useSettings();
   const [securityReport, setSecurityReport] = useState<{ checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; details?: string }>; passed: boolean } | null>(null);
+  const [exportType, setExportType] = useState<'schools' | 'users' | 'analytics'>('analytics');
   
   // Helper: map activity action to type for `RecentActivities`
   const getActivityType = (action: string): 'user' | 'school' | 'system' | 'payment' | 'auth' => {
@@ -960,9 +961,40 @@ const PlatformAdminDashboard: React.FC = () => {
               disabled={settingsLoading || settingsSaving}
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Couleur Principale</label>
+            <div className="mt-1 flex items-center gap-3">
+              <input
+                type="color"
+                className="h-10 w-14 p-0 border-gray-300 rounded-md shadow-sm"
+                value={settings?.primary_color || '#2563eb'}
+                onChange={(e) => setSettings(s => (s ? { ...s, primary_color: e.target.value } : s))}
+                disabled={settingsLoading || settingsSaving}
+              />
+              <input
+                type="text"
+                className="flex-1 border-gray-300 rounded-md shadow-sm"
+                value={settings?.primary_color || ''}
+                onChange={(e) => setSettings(s => (s ? { ...s, primary_color: e.target.value } : s))}
+                placeholder="#2563eb"
+                disabled={settingsLoading || settingsSaving}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">URL de Support</label>
+            <input
+              type="url"
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+              value={settings?.support_url || ''}
+              onChange={(e) => setSettings(s => (s ? { ...s, support_url: e.target.value } : s))}
+              placeholder="https://schoolconnect.cd/support"
+              disabled={settingsLoading || settingsSaving}
+            />
+          </div>
           <div className="flex justify-end">
             <button
-              onClick={async () => { if (settings) await updateSettings({ platform_name: settings.platform_name, contact_email: settings.contact_email }); }}
+              onClick={async () => { if (settings) await updateSettings({ platform_name: settings.platform_name, contact_email: settings.contact_email, primary_color: settings.primary_color, support_url: settings.support_url }); }}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               disabled={settingsLoading || settingsSaving}
             >
@@ -975,14 +1007,26 @@ const PlatformAdminDashboard: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Système</h3>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-700">Type d'Export</label>
+            <select
+              className="border-gray-300 rounded-md shadow-sm"
+              value={exportType}
+              onChange={(e) => setExportType(e.target.value as any)}
+            >
+              <option value="analytics">Analytics</option>
+              <option value="schools">Écoles</option>
+              <option value="users">Utilisateurs</option>
+            </select>
+          </div>
           <button
             onClick={async () => {
               try {
-                const blob = await PlatformAdminService.exportData('analytics');
+                const blob = await PlatformAdminService.exportData(exportType);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `backup-analytics-${new Date().toISOString()}.json`;
+                a.download = `backup-${exportType}-${new Date().toISOString()}.json`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -1024,6 +1068,76 @@ const PlatformAdminDashboard: React.FC = () => {
             <div className={`mt-2 text-sm ${securityReport.passed ? 'text-green-600' : 'text-yellow-600'}`}>{securityReport.passed ? 'Tous les contrôles critiques sont OK.' : 'Certaines vérifications nécessitent votre attention.'}</div>
           </div>
         )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fonctionnalités (Feature Toggles)</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-gray-900">Messaging</div>
+              <div className="text-xs text-gray-500">Activer la messagerie en temps réel</div>
+            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={Boolean(settings?.feature_flags?.messaging)}
+                onChange={(e) => setSettings(s => (s ? { ...s, feature_flags: { ...(s.feature_flags || {}), messaging: e.target.checked } } : s))}
+              />
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
+                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5" />
+              </div>
+            </label>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-gray-900">UBank</div>
+              <div className="text-xs text-gray-500">Paiements et gestion financière</div>
+            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={Boolean(settings?.feature_flags?.ubank)}
+                onChange={(e) => setSettings(s => (s ? { ...s, feature_flags: { ...(s.feature_flags || {}), ubank: e.target.checked } } : s))}
+              />
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
+                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5" />
+              </div>
+            </label>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-gray-900">POSP</div>
+              <div className="text-xs text-gray-500">Gestion pédagogique</div>
+            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={Boolean(settings?.feature_flags?.posp)}
+                onChange={(e) => setSettings(s => (s ? { ...s, feature_flags: { ...(s.feature_flags || {}), posp: e.target.checked } } : s))}
+              />
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
+                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5" />
+              </div>
+            </label>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={async () => {
+                if (settings) {
+                  await updateSettings({ feature_flags: settings.feature_flags || { messaging: false, ubank: false, posp: false } });
+                }
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              disabled={settingsLoading || settingsSaving}
+            >
+              {settingsSaving ? 'Enregistrement...' : 'Enregistrer les fonctionnalités'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
