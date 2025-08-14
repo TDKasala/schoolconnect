@@ -89,6 +89,12 @@ import UbankSection from './pages/dashboard/UbankSection';
 import ParentPortalSection from './pages/dashboard/ParentPortalSection';
 import MessagerieSection from './pages/dashboard/MessagerieSection';
 import CalendarSection from './pages/dashboard/CalendarSection';
+import StudentsPage from './pages/dashboard/StudentsPage';
+import ClassesPage from './pages/dashboard/ClassesPage';
+import AttendancePage from './pages/dashboard/AttendancePage';
+import GradesPage from './pages/dashboard/GradesPage';
+import BulletinsPage from './pages/dashboard/BulletinsPage';
+import ReportsPage from './pages/dashboard/ReportsPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -142,6 +148,48 @@ const AppContent: React.FC = () => {
               <PrivateRoute>
                 <DashboardLayout>
                   {typedUser?.profile?.role === 'platform_admin' ? <PlatformAdminDashboard /> : <DashboardPage />}
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/students" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <StudentsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/classes" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ClassesPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/attendance" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <AttendancePage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/grades" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <GradesPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/bulletins" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <BulletinsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/reports" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ReportsPage />
                 </DashboardLayout>
               </PrivateRoute>
             } />

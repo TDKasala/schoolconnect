@@ -10,7 +10,11 @@ import {
   MessageSquare, 
   Calendar,
   LogOut,
-  Bell
+  Bell,
+  CheckSquare,
+  Edit3,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
@@ -31,6 +35,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Administration', href: '/dashboard', icon: Home },
   ] : [
     { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
+    { name: 'Élèves', href: '/dashboard/students', icon: Users },
+    { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
+    { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
+    { name: 'Notes', href: '/dashboard/grades', icon: Edit3 },
+    { name: 'Bulletins', href: '/dashboard/bulletins', icon: FileText },
+    { name: 'Rapports', href: '/dashboard/reports', icon: BarChart3 },
     { name: 'Pédagogie', href: '/dashboard/pedagogie', icon: BookOpen },
     { name: 'Finances', href: '/dashboard/finances', icon: DollarSign },
     { name: 'Parents', href: '/dashboard/parents', icon: Users },
@@ -142,13 +152,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="flex-shrink-0">
                     <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
                       <span className="text-sm font-medium text-white">
-                        {user?.name?.charAt(0).toUpperCase()}
+                        {(typedUser?.profile?.full_name || typedUser?.email)?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   </div>
                   <div className="hidden md:block">
-                    <div className="text-sm font-medium text-gray-700">{user?.name}</div>
-                    <div className="text-xs text-gray-500">{user?.email}</div>
+                    <div className="text-sm font-medium text-gray-700">{typedUser?.profile?.full_name || typedUser?.email}</div>
+                    <div className="text-xs text-gray-500">{typedUser?.email}</div>
                   </div>
                 </div>
               </div>
