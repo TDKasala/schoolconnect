@@ -18,6 +18,39 @@ export type PlatformSettings = {
 const SETTINGS_TABLE = 'platform_settings';
 
 export const settingsService = {
+  validateSettings(partial: Partial<PlatformSettings>): PlatformSettings {
+    const email = partial.contact_email?.trim();
+    const name = partial.platform_name?.trim();
+    const color = partial.primary_color?.trim();
+    const url = partial.support_url?.trim();
+
+    // basic validators
+    const emailOk = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const colorOk = !color || /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
+    const urlOk = !url || /^(https?:\/\/)[\w.-]+(\:[0-9]+)?(\/.*)?$/.test(url);
+
+    if (email && !emailOk) throw new Error('Email de contact invalide');
+    if (color && !colorOk) throw new Error('Couleur principale invalide (utilisez un hex comme #2563eb)');
+    if (url && !urlOk) throw new Error('URL de support invalide (doit commencer par http:// ou https://)');
+
+    const feature_flags = partial.feature_flags || {};
+    const normalizedFlags = {
+      messaging: Boolean(feature_flags.messaging),
+      ubank: Boolean(feature_flags.ubank),
+      posp: Boolean(feature_flags.posp),
+    };
+
+    return {
+      id: 'platform',
+      platform_name: name || partial.platform_name || 'SchoolConnect',
+      contact_email: email || partial.contact_email || 'contact@schoolconnect.cd',
+      primary_color: color ?? partial.primary_color ?? '#2563eb',
+      support_url: url ?? partial.support_url ?? 'https://schoolconnect.cd/support',
+      feature_flags: normalizedFlags,
+      updated_at: new Date().toISOString(),
+    };
+  },
+
   async getSettings(): Promise<PlatformSettings | null> {
     try {
       const { data, error } = await supabase
@@ -36,8 +69,8 @@ export const settingsService = {
 
   async upsertSettings(partial: Partial<PlatformSettings>): Promise<PlatformSettings> {
     try {
-      // Ensure singleton row with id = 'platform'
-      const payload = { id: 'platform', ...partial, updated_at: new Date().toISOString() } as any;
+      // Validate and normalize payload; ensure singleton row with id = 'platform'
+      const payload = settingsService.validateSettings(partial) as any;
       const { data, error } = await supabase
         .from(SETTINGS_TABLE)
         .upsert(payload, { onConflict: 'id' })

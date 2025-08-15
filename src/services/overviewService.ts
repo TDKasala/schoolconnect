@@ -24,6 +24,9 @@ export interface Activity {
   userName: string;
   action: string;
   target: string;
+  description?: string;
+  targetType?: string;
+  targetId?: string;
   timestamp: Date;
 }
 
@@ -271,7 +274,12 @@ export class OverviewService {
         userId: activity.user_id,
         userName: activity.users?.full_name || 'Unknown User',
         action: activity.action,
-        target: activity.target,
+        // Prefer explicit target if present; fall back to target_type string
+        target: activity.target || activity.target_type || '',
+        // Include rich fields if present on the row
+        description: activity.description || undefined,
+        targetType: activity.target_type || undefined,
+        targetId: activity.target_id || undefined,
         timestamp: new Date(activity.created_at)
       })) || [];
     } catch (error) {

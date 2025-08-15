@@ -561,7 +561,7 @@ const PlatformAdminDashboard: React.FC = () => {
         <RecentActivities 
           activities={(recentActivities || []).map((activity) => ({
             ...activity,
-            description: `${activity.userName || 'Un utilisateur'} a effectué l'action: ${activity.action}${activity.target ? ` sur ${activity.target}` : ''}`,
+            description: activity.description || `${activity.userName || 'Un utilisateur'} a effectué l'action: ${activity.action}${activity.target ? ` sur ${activity.target}` : ''}`,
             type: getActivityType(activity.action),
             timestamp: new Date((activity as any).timestamp)
           }))}
