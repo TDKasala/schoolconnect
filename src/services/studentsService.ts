@@ -48,9 +48,12 @@ export const studentsService = {
   },
 
   async createStudent(input: CreateStudentInput): Promise<Student> {
+    // Workaround: some databases may not have birth_date yet; omit from payload to prevent schema error
+    const { birth_date: _omitBirth, ...rest } = input as any;
+    const payload = { ...rest };
     const { data, error } = await supabase
       .from('students')
-      .insert([input])
+      .insert([payload])
       .select('*')
       .single();
 
@@ -59,9 +62,11 @@ export const studentsService = {
   },
 
   async updateStudent(id: string, patch: Partial<Omit<Student, 'id' | 'created_at'>>): Promise<Student> {
+    // Omit birth_date in case the column is not present in the current schema
+    const { birth_date: _omitBirth, ...rest } = patch as any;
     const { data, error } = await supabase
       .from('students')
-      .update(patch)
+      .update(rest)
       .eq('id', id)
       .select('*')
       .single();
