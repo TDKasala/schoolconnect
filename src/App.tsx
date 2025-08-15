@@ -96,6 +96,7 @@ import AttendancePage from './pages/dashboard/AttendancePage';
 import GradesPage from './pages/dashboard/GradesPage';
 import BulletinsPage from './pages/dashboard/BulletinsPage';
 import ReportsPage from './pages/dashboard/ReportsPage';
+import PaymentsPage from './pages/dashboard/PaymentsPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -202,6 +203,15 @@ const AppContent: React.FC = () => {
                 <RoleRoute allowedRoles={['school_admin']}>
                   <DashboardLayout>
                     <ReportsPage />
+                  </DashboardLayout>
+                </RoleRoute>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/payments" element={
+              <PrivateRoute>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <PaymentsPage />
                   </DashboardLayout>
                 </RoleRoute>
               </PrivateRoute>
