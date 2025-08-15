@@ -13,48 +13,67 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react';
+import { useAuth, type UserWithProfile } from '../../contexts/AuthContext';
+import { useOverview } from '../../hooks/useOverview';
 
 const AdminPospView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('classes');
-  
-  const classes = [
-    { id: '1', name: '6ème A', teacher: 'Marie Kabongo', students: 28, subjects: 8, avgGrade: 14.5 },
-    { id: '2', name: '5ème B', teacher: 'Jean Mukendi', students: 31, subjects: 9, avgGrade: 13.2 },
-    { id: '3', name: '4ème C', teacher: 'Sarah Mbuyi', students: 28, subjects: 10, avgGrade: 15.8 },
-    { id: '4', name: '3ème A', teacher: 'Paul Tshimanga', students: 25, subjects: 11, avgGrade: 12.9 }
-  ];
+  const { user } = useAuth();
+  const typedUser = user as UserWithProfile | null;
+  const schoolId = typedUser?.profile?.school_id as string | undefined;
+  const userId = typedUser?.id ?? '';
+  const role = typedUser?.profile?.role ?? 'school_admin';
 
-  const teachers = [
-    { id: '1', name: 'Marie Kabongo', subject: 'Mathématiques', classes: 3, students: 87, avgGrade: 14.2 },
-    { id: '2', name: 'Jean Mukendi', subject: 'Français', classes: 2, students: 59, avgGrade: 13.8 },
-    { id: '3', name: 'Sarah Mbuyi', subject: 'Sciences', classes: 4, students: 112, avgGrade: 15.1 },
-    { id: '4', name: 'Paul Tshimanga', subject: 'Histoire', classes: 3, students: 78, avgGrade: 13.5 }
-  ];
-
-  const stats = [
-    { name: 'Total Classes', value: '12', icon: BookOpen, color: 'bg-blue-500' },
-    { name: 'Total Élèves', value: '336', icon: Users, color: 'bg-green-500' },
-    { name: 'Enseignants Actifs', value: '18', icon: GraduationCap, color: 'bg-purple-500' },
-    { name: 'Moyenne Générale', value: '14.1/20', icon: BarChart3, color: 'bg-orange-500' }
-  ];
+  const { stats, classPerformance, loading, error } = useOverview(userId, role, schoolId);
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
+      {/* Stats (live) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className={`${stat.color} rounded-lg p-3`}>
-                <stat.icon className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-blue-500 rounded-lg p-3">
+              <BookOpen className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Classes</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : stats?.totalClasses ?? 0}</p>
             </div>
           </div>
-        ))}
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-green-500 rounded-lg p-3">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Élèves</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : stats?.totalStudents ?? 0}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-purple-500 rounded-lg p-3">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Enseignants Actifs</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : stats?.totalTeachers ?? 0}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-orange-500 rounded-lg p-3">
+              <BarChart3 className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Utilisateurs actifs</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : stats?.activeUsers ?? 0}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -125,61 +144,40 @@ const AdminPospView: React.FC = () => {
                 </button>
               </div>
 
-              {/* Classes Table */}
+              {/* Classes Performance (live) */}
               <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                 <table className="min-w-full divide-y divide-gray-300">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Classe
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Enseignant Principal
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Élèves
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Matières
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Moyenne
-                      </th>
-                      <th className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classe</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Élèves</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moyenne</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Présence</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {classes.map((classe) => (
-                      <tr key={classe.id} className="hover:bg-gray-50">
+                    {loading && (
+                      <tr><td colSpan={4} className="px-6 py-4 text-sm text-gray-500">Chargement…</td></tr>
+                    )}
+                    {error && !loading && (
+                      <tr><td colSpan={4} className="px-6 py-4 text-sm text-red-600">{error}</td></tr>
+                    )}
+                    {!loading && !error && classPerformance.length === 0 && (
+                      <tr><td colSpan={4} className="px-6 py-4 text-sm text-gray-500">Aucune classe trouvée</td></tr>
+                    )}
+                    {classPerformance.map((cp) => (
+                      <tr key={cp.classId} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{classe.name}</div>
+                          <div className="text-sm font-medium text-gray-900">{cp.className}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{classe.teacher}</div>
+                          <div className="text-sm text-gray-900">{cp.studentCount}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{classe.students}</div>
+                          <div className="text-sm text-gray-900">{cp.averageGrade}/100</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{classe.subjects}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{classe.avgGrade}/20</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <button className="text-primary-600 hover:text-primary-900">
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button className="text-gray-600 hover:text-gray-900">
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button className="text-red-600 hover:text-red-900">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <div className="text-sm text-gray-900">{cp.attendanceRate}%</div>
                         </td>
                       </tr>
                     ))}
@@ -202,44 +200,8 @@ const AdminPospView: React.FC = () => {
                   Nouvel Enseignant
                 </button>
               </div>
-
-              {/* Teachers Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teachers.map((teacher) => (
-                  <div key={teacher.id} className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 bg-primary-600 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-white">
-                            {teacher.name.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">{teacher.name}</h4>
-                          <p className="text-xs text-gray-500">{teacher.subject}</p>
-                        </div>
-                      </div>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div className="text-lg font-semibold text-gray-900">{teacher.classes}</div>
-                        <div className="text-xs text-gray-500">Classes</div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-semibold text-gray-900">{teacher.students}</div>
-                        <div className="text-xs text-gray-500">Élèves</div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-semibold text-gray-900">{teacher.avgGrade}/20</div>
-                        <div className="text-xs text-gray-500">Moyenne</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-600">
+                Section en cours d'intégration aux APIs (liste des enseignants). Les actions seront activées une fois les endpoints disponibles.
               </div>
             </div>
           )}
