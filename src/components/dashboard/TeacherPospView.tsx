@@ -12,64 +12,18 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
+import { useAuth, type UserWithProfile } from '../../contexts/AuthContext';
+import { useOverview } from '../../hooks/useOverview';
 
 const TeacherPospView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('classes');
-  
-  const myClasses = [
-    { 
-      id: '1', 
-      name: '6ème A', 
-      subject: 'Mathématiques', 
-      students: 28, 
-      nextClass: 'Aujourd\'hui 14:00',
-      attendance: 92,
-      avgGrade: 14.5,
-      recentActivity: 'Notes ajoutées il y a 2h'
-    },
-    { 
-      id: '2', 
-      name: '5ème B', 
-      subject: 'Mathématiques', 
-      students: 31, 
-      nextClass: 'Demain 08:00',
-      attendance: 88,
-      avgGrade: 13.2,
-      recentActivity: 'Présences marquées il y a 4h'
-    },
-    { 
-      id: '3', 
-      name: '4ème C', 
-      subject: 'Sciences', 
-      students: 28, 
-      nextClass: 'Vendredi 10:00',
-      attendance: 95,
-      avgGrade: 15.8,
-      recentActivity: 'Devoir créé il y a 1j'
-    }
-  ];
+  const { user } = useAuth();
+  const typedUser = user as UserWithProfile | null;
+  const schoolId = typedUser?.profile?.school_id as string | undefined;
+  const userId = typedUser?.id ?? '';
+  const role = typedUser?.profile?.role ?? 'teacher';
 
-  const students = [
-    { id: '1', name: 'Marie Tshala', class: '6ème A', avgGrade: 16.5, attendance: 98, status: 'excellent' },
-    { id: '2', name: 'Jean Kabila', class: '6ème A', avgGrade: 12.3, attendance: 85, status: 'attention' },
-    { id: '3', name: 'Sarah Mukendi', class: '5ème B', avgGrade: 14.8, attendance: 92, status: 'good' },
-    { id: '4', name: 'Paul Mbuyi', class: '5ème B', avgGrade: 11.2, attendance: 78, status: 'attention' },
-    { id: '5', name: 'Grace Kasala', class: '4ème C', avgGrade: 17.2, attendance: 100, status: 'excellent' },
-    { id: '6', name: 'David Tshimanga', class: '4ème C', avgGrade: 13.5, attendance: 90, status: 'good' }
-  ];
-
-  const assignments = [
-    { id: '1', title: 'Contrôle de Mathématiques', class: '6ème A', dueDate: 'Demain', submitted: 25, total: 28, status: 'pending' },
-    { id: '2', title: 'Exercices de géométrie', class: '5ème B', dueDate: 'Vendredi', submitted: 31, total: 31, status: 'completed' },
-    { id: '3', title: 'Expérience de Sciences', class: '4ème C', dueDate: 'Lundi prochain', submitted: 15, total: 28, status: 'in_progress' }
-  ];
-
-  const stats = [
-    { name: 'Mes Classes', value: '3', icon: BookOpen, color: 'bg-blue-500' },
-    { name: 'Total Élèves', value: '87', icon: Users, color: 'bg-green-500' },
-    { name: 'Devoirs en cours', value: '12', icon: ClipboardCheck, color: 'bg-orange-500' },
-    { name: 'Moyenne générale', value: '14.5/20', icon: BarChart3, color: 'bg-purple-500' }
-  ];
+  const { stats, classPerformance, events, messages, loading, error } = useOverview(userId, role, schoolId);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -91,22 +45,57 @@ const TeacherPospView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
+      {/* Stats (live) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className={`${stat.color} rounded-lg p-3`}>
-                <stat.icon className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-blue-500 rounded-lg p-3">
+              <BookOpen className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Mes Classes</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : stats?.totalClasses ?? 0}</p>
             </div>
           </div>
-        ))}
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-green-500 rounded-lg p-3">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Élèves</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : stats?.totalStudents ?? 0}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-orange-500 rounded-lg p-3">
+              <ClipboardCheck className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Messages récents</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : messages.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-purple-500 rounded-lg p-3">
+              <BarChart3 className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Événements à venir</p>
+              <p className="text-2xl font-semibold text-gray-900">{loading ? '—' : events.length}</p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {error && (
+        <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded">{error}</div>
+      )}
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -175,41 +164,37 @@ const TeacherPospView: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900">Mes Classes</h3>
                 <p className="text-sm text-gray-500">Gérez vos classes et suivez les progrès</p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myClasses.map((classe) => (
-                  <div key={classe.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                {loading && (
+                  <div className="col-span-full text-sm text-gray-500">Chargement…</div>
+                )}
+                {!loading && classPerformance.length === 0 && (
+                  <div className="col-span-full text-sm text-gray-500">Aucune classe trouvée</div>
+                )}
+                {classPerformance.map((cp) => (
+                  <div key={cp.classId} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h4 className="text-lg font-semibold text-gray-900">{classe.name}</h4>
-                        <p className="text-sm text-gray-500">{classe.subject}</p>
+                        <h4 className="text-lg font-semibold text-gray-900">{cp.className}</h4>
+                        <p className="text-sm text-gray-500">{cp.subjects?.join(', ') || '—'}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-primary-600">{classe.students}</div>
+                        <div className="text-2xl font-bold text-primary-600">{cp.studentCount}</div>
                         <div className="text-xs text-gray-500">élèves</div>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-green-600">{classe.attendance}%</div>
+                        <div className="text-lg font-semibold text-green-600">{cp.attendanceRate}%</div>
                         <div className="text-xs text-gray-500">Présence</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-primary-600">{classe.avgGrade}/20</div>
+                        <div className="text-lg font-semibold text-primary-600">{cp.averageGrade}/100</div>
                         <div className="text-xs text-gray-500">Moyenne</div>
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <div className="text-sm text-gray-600 mb-1">Prochain cours:</div>
-                      <div className="text-sm font-medium text-gray-900">{classe.nextClass}</div>
-                    </div>
-
-                    <div className="mb-4">
-                      <div className="text-xs text-gray-500">{classe.recentActivity}</div>
-                    </div>
-                    
                     <div className="flex space-x-2">
                       <button className="flex-1 bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors text-sm">
                         Gérer la classe
@@ -226,90 +211,12 @@ const TeacherPospView: React.FC = () => {
 
           {activeTab === 'students' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">Mes Élèves</h3>
-                  <p className="text-sm text-gray-500">Suivez les performances individuelles</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher un élève..."
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Mes Élèves</h3>
+                <p className="text-sm text-gray-500">La liste détaillée des élèves sera disponible prochainement.</p>
               </div>
-
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Élève
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Classe
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Moyenne
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Présence
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Statut
-                      </th>
-                      <th className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {students.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center">
-                              <span className="text-xs font-medium text-white">
-                                {student.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{student.class}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{student.avgGrade}/20</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{student.attendance}%</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(student.status)}`}>
-                            {getStatusText(student.status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <button className="text-primary-600 hover:text-primary-900">
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button className="text-gray-600 hover:text-gray-900">
-                              <Edit className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-600">
+                Section en cours d'intégration aux APIs (liste des élèves et performances).
               </div>
             </div>
           )}
@@ -319,60 +226,15 @@ const TeacherPospView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">Devoirs & Évaluations</h3>
-                  <p className="text-sm text-gray-500">Gérez vos devoirs et évaluations</p>
+                  <p className="text-sm text-gray-500">Gestion des devoirs prochainement disponible.</p>
                 </div>
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-400 cursor-not-allowed" disabled>
                   <Plus className="h-4 w-4 mr-2" />
                   Nouveau Devoir
                 </button>
               </div>
-
-              <div className="space-y-4">
-                {assignments.map((assignment) => (
-                  <div key={assignment.id} className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <h4 className="text-lg font-medium text-gray-900">{assignment.title}</h4>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {assignment.class}
-                          </span>
-                        </div>
-                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            Échéance: {assignment.dueDate}
-                          </div>
-                          <div className="flex items-center">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            {assignment.submitted}/{assignment.total} rendus
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="text-primary-600 hover:text-primary-900">
-                          <Eye className="h-5 w-5" />
-                        </button>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <Edit className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Progression</span>
-                        <span className="text-gray-900">{Math.round((assignment.submitted / assignment.total) * 100)}%</span>
-                      </div>
-                      <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-primary-600 h-2 rounded-full" 
-                          style={{ width: `${(assignment.submitted / assignment.total) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-600">
+                Section en cours d'intégration aux APIs (création et suivi des devoirs).
               </div>
             </div>
           )}
