@@ -20,12 +20,14 @@ const StudentsPage: React.FC = () => {
   const [showEdit, setShowEdit] = useState(false);
   const [selected, setSelected] = useState<Student | null>(null);
   const [classMap, setClassMap] = useState<Record<string, string>>({});
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
-    matricule: '',
+    student_id: '',
     gender: '' as '' | 'M' | 'F',
-    birth_date: ''
+    date_of_birth: '',
+    class_id: ''
   });
 
   const fetchStudents = async () => {
@@ -53,9 +55,10 @@ const StudentsPage: React.FC = () => {
     setForm({
       first_name: s.first_name || '',
       last_name: s.last_name || '',
-      matricule: s.matricule || '',
+      student_id: s.student_id || '',
       gender: (s.gender as 'M' | 'F' | '') || '',
-      birth_date: s.birth_date ? s.birth_date.substring(0,10) : ''
+      date_of_birth: s.date_of_birth ? s.date_of_birth.substring(0,10) : '',
+      class_id: s.class_id || ''
     });
     setShowEdit(true);
   };
@@ -69,9 +72,10 @@ const StudentsPage: React.FC = () => {
       await studentsService.updateStudent(selected.id, {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
-        matricule: form.matricule?.trim() || null,
+        student_id: form.student_id?.trim() || undefined as any,
         gender: form.gender || null,
-        birth_date: form.birth_date || null,
+        date_of_birth: form.date_of_birth || null,
+        class_id: form.class_id,
       });
       setShowEdit(false);
       setSelected(null);
@@ -110,6 +114,7 @@ const StudentsPage: React.FC = () => {
         const { data } = await classesService.listClasses({ schoolId, limit: 1000, offset: 0 });
         const map: Record<string, string> = {};
         (data as SchoolClass[]).forEach((c) => { if (c.id) map[c.id] = c.name; });
+        setClasses((data as SchoolClass[]) || []);
         setClassMap(map);
       } catch {}
     };
@@ -128,11 +133,13 @@ const StudentsPage: React.FC = () => {
         school_id: schoolId,
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
+        student_id: form.student_id.trim(),
         gender: form.gender || null,
-        birth_date: form.birth_date || null,
+        date_of_birth: form.date_of_birth || null,
+        class_id: form.class_id,
       });
       setShowCreate(false);
-      setForm({ first_name: '', last_name: '', matricule: '', gender: '', birth_date: '' });
+      setForm({ first_name: '', last_name: '', student_id: '', gender: '', date_of_birth: '', class_id: '' });
       setPage(1);
       await fetchStudents();
     } catch (e: any) {
@@ -152,7 +159,7 @@ const StudentsPage: React.FC = () => {
               type="text"
               value={search}
               onChange={(e) => { setPage(1); setSearch(e.target.value); }}
-              placeholder="Rechercher par nom ou matricule..."
+              placeholder="Rechercher par nom ou ID élève..."
               className="w-full sm:w-80 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <button
@@ -172,7 +179,7 @@ const StudentsPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Élève</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classe</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
@@ -193,12 +200,12 @@ const StudentsPage: React.FC = () => {
               ) : (
                 students.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.matricule || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.student_id || '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.class_id ? (classMap[s.class_id] || '-') : '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{s.last_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{s.first_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.gender || '-'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.birth_date ? new Date(s.birth_date).toLocaleDateString() : '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                       <div className="inline-flex gap-2">
                         <button onClick={() => openEdit(s)} className="px-2 py-1 text-blue-600 hover:text-blue-800">Modifier</button>
@@ -243,7 +250,7 @@ const StudentsPage: React.FC = () => {
                 <button onClick={() => setShowCreate(false)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
               <form onSubmit={handleCreate} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Nom</label>
                     <input
@@ -262,8 +269,31 @@ const StudentsPage: React.FC = () => {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">ID Élève</label>
+                    <input
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      value={form.student_id}
+                      onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Classe</label>
+                    <select
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      value={form.class_id}
+                      onChange={(e) => setForm({ ...form, class_id: e.target.value })}
+                      required
+                    >
+                      <option value="">Sélectionner</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Sexe</label>
                     <select
@@ -282,8 +312,8 @@ const StudentsPage: React.FC = () => {
                   <input
                     type="date"
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={form.birth_date}
-                    onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+                    value={form.date_of_birth}
+                    onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
@@ -328,11 +358,12 @@ const StudentsPage: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Matricule</label>
+                    <label className="block text-sm text-gray-700 mb-1">ID Élève</label>
                     <input
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
-                      value={form.matricule}
-                      onChange={(e) => setForm({ ...form, matricule: e.target.value })}
+                      value={form.student_id}
+                      onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                      required
                     />
                   </div>
                   <div>
@@ -353,8 +384,8 @@ const StudentsPage: React.FC = () => {
                   <input
                     type="date"
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={form.birth_date}
-                    onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+                    value={form.date_of_birth}
+                    onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
