@@ -4,6 +4,7 @@ import './index.css'
 import { registerServiceWorker, initializeInstallPrompt } from './utils/serviceWorker'
 import initializeAnalytics from './lib/analytics'
 import './lib/sentry'
+import { ToastProvider } from './contexts/ToastContext'
 
 // Initialize error monitoring and analytics
 initializeAnalytics();
@@ -13,5 +14,7 @@ registerServiceWorker();
 initializeInstallPrompt();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <App />
+  <ToastProvider>
+    <App />
+  </ToastProvider>
 )

@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { classesService, type SchoolClass } from '../../services/classesService';
 import { studentsService, type Student } from '../../services/studentsService';
 import { attendanceService, type AttendanceStatus } from '../../services/attendanceService';
+import { useToast } from '../../contexts/ToastContext';
 
 type StatusMap = Record<string, AttendanceStatus | undefined>; // key: student_id
 
@@ -10,6 +11,7 @@ const formatDate = (d: Date) => d.toISOString().slice(0, 10);
 
 const AttendancePage: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const schoolId = (user as any)?.profile?.school_id as string | undefined;
   const teacherId = (user as any)?.id as string | undefined;
 
@@ -91,6 +93,7 @@ const AttendancePage: React.FC = () => {
   const handleSave = async () => {
     if (!rowsToSave.length) {
       setMessage('Aucun changement à enregistrer.');
+      toast.info('Aucun changement à enregistrer');
       return;
     }
     try {
@@ -101,9 +104,11 @@ const AttendancePage: React.FC = () => {
         entries: rowsToSave as any,
       });
       setMessage('Présences enregistrées avec succès.');
+      toast.success('Présences enregistrées');
     } catch (e) {
       console.error('Save attendance failed', e);
       setMessage("Erreur lors de l'enregistrement des présences.");
+      toast.error("Erreur lors de l'enregistrement des présences");
     } finally {
       setSaving(false);
       // Refresh existing to reflect DB state

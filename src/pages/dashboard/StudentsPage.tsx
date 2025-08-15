@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { studentsService, type Student } from '../../services/studentsService';
 import { classesService, type SchoolClass } from '../../services/classesService';
+import { useToast } from '../../contexts/ToastContext';
 
 const StudentsPage: React.FC = () => {
   const { user } = useAuth();
   const typedUser = user as UserWithProfile | null;
   const schoolId = useMemo(() => typedUser?.profile?.school_id as string | undefined, [typedUser]);
+  const toast = useToast();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +47,7 @@ const StudentsPage: React.FC = () => {
       setCount(count);
     } catch (e: any) {
       setError(e?.message || 'Erreur lors du chargement des élèves');
+      toast.error('Erreur lors du chargement des élèves');
     } finally {
       setLoading(false);
     }
@@ -80,8 +83,10 @@ const StudentsPage: React.FC = () => {
       setShowEdit(false);
       setSelected(null);
       await fetchStudents();
+      toast.success("Élève mis à jour");
     } catch (e: any) {
       setError(e?.message || 'Erreur lors de la mise à jour');
+      toast.error('Erreur lors de la mise à jour');
     } finally {
       setLoading(false);
     }
@@ -94,8 +99,10 @@ const StudentsPage: React.FC = () => {
     try {
       await studentsService.deleteStudent(s.id);
       await fetchStudents();
+      toast.success('Élève supprimé');
     } catch (e: any) {
       setError(e?.message || 'Erreur lors de la suppression');
+      toast.error('Erreur lors de la suppression');
     } finally {
       setLoading(false);
     }
@@ -142,8 +149,10 @@ const StudentsPage: React.FC = () => {
       setForm({ first_name: '', last_name: '', student_id: '', gender: '', date_of_birth: '', class_id: '' });
       setPage(1);
       await fetchStudents();
+      toast.success('Élève créé');
     } catch (e: any) {
       setError(e?.message || 'Erreur lors de la création');
+      toast.error('Erreur lors de la création');
     } finally {
       setLoading(false);
     }

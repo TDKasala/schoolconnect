@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { classesService, type SchoolClass } from '../../services/classesService';
 import { studentsService, type Student } from '../../services/studentsService';
 import { gradesService, type EvaluationType, type GradeRow } from '../../services/gradesService';
+import { useToast } from '../../contexts/ToastContext';
 
 type GradeMap = Record<string, number | undefined>; // student_id -> grade
 
@@ -10,6 +11,7 @@ const formatDate = (d: Date) => d.toISOString().slice(0, 10);
 
 const GradesPage: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const schoolId = (user as any)?.profile?.school_id as string | undefined;
   const teacherId = (user as any)?.id as string | undefined;
 
@@ -97,6 +99,7 @@ const GradesPage: React.FC = () => {
   const handleSave = async () => {
     if (!rowsToSave.length) {
       setMessage('Aucune note à enregistrer.');
+      toast.info('Aucune note à enregistrer');
       return;
     }
     try {
@@ -108,9 +111,11 @@ const GradesPage: React.FC = () => {
         entries: rowsToSave as any,
       });
       setMessage('Notes enregistrées avec succès.');
+      toast.success('Notes enregistrées');
     } catch (e) {
       console.error('Save grades failed', e);
       setMessage("Erreur lors de l'enregistrement des notes.");
+      toast.error("Erreur lors de l'enregistrement des notes");
     } finally {
       setSaving(false);
     }
