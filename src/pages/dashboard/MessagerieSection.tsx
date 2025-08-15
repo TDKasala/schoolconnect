@@ -22,6 +22,8 @@ const MessagerieSection: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [peers, setPeers] = useState<AppUser[]>([]);
   const [search, setSearch] = useState('');
+  const [summaries, setSummaries] = useState<Record<string, { unread: number; last?: Message | null }>>({});
+  const [peerTyping, setPeerTyping] = useState(false);
 
   // Load peers from DB
   useEffect(() => {
@@ -31,6 +33,11 @@ const MessagerieSection: React.FC = () => {
         setLoading(true);
         const list = await usersService.listPeers({ schoolId: (user as any)?.profile?.school_id ?? null, excludeUserId: user.id, search });
         setPeers(list);
+        // Load thread summaries
+        const th = await messagesService.listThreadSummaries({ userId: user.id });
+        const map: Record<string, { unread: number; last?: Message | null }> = {};
+        for (const t of th) map[t.peer_id] = { unread: t.unread_count, last: t.last_message };
+        setSummaries(map);
       } catch (e: any) {
         error(`Erreur de chargement des utilisateurs: ${e.message || e}`);
       } finally {
@@ -48,6 +55,9 @@ const MessagerieSection: React.FC = () => {
         setLoading(true);
         const data = await messagesService.listBetween({ userId: user.id, peerId: receiverId });
         setMessages(data);
+        // Mark as read when opening
+        await messagesService.markRead({ userId: user.id, peerId: receiverId });
+        setSummaries((prev) => ({ ...prev, [receiverId]: { ...(prev[receiverId] || {}), unread: 0 } }));
       } catch (e: any) {
         error(`Erreur de chargement des messages: ${e.message || e}`);
       } finally {
@@ -76,6 +86,26 @@ const MessagerieSection: React.FC = () => {
           (row.sender_id === peerId && row.receiver_id === user.id)
         ) {
           setMessages((prev) => [...prev, row]);
+          // Update last message and unread
+          setSummaries((prev) => ({
+            ...prev,
+            [peerId]: {
+              unread: row.sender_id === user.id ? (prev[peerId]?.unread || 0) : (peerId === selectedPeerId ? 0 : (prev[peerId]?.unread || 0) + 1),
+              last: row,
+            },
+          }));
+          // If message is from peer and current thread open, mark read
+          if (row.sender_id === peerId && row.receiver_id === user.id) {
+            messagesService.markRead({ userId: user.id, peerId }).catch(() => {});
+          }
+        }
+      })
+      .on('broadcast', { event: 'typing' }, (payload: any) => {
+        const { from, to } = payload.payload || {};
+        if (from === peerId && to === user.id) {
+          setPeerTyping(true);
+          // Reset after short delay
+          setTimeout(() => setPeerTyping(false), 1500);
         }
       })
       .subscribe();
@@ -114,12 +144,31 @@ const MessagerieSection: React.FC = () => {
       // Replace optimistic with saved
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
       success('Message envoyé');
+      // Update summaries immediately
+      setSummaries((prev) => ({ ...prev, [receiverId]: { unread: prev[receiverId]?.unread || 0, last: saved } }));
     } catch (e: any) {
       // Revert optimistic
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       error(`Échec d\'envoi: ${e.message || e}`);
     }
   };
+
+  // Send typing broadcast when user types
+  useEffect(() => {
+    if (!user || !selectedPeerId) return;
+    if (!message) return;
+    const peerId = selectedPeerId;
+    const channel = supabase.channel(`typing-${user.id}-${peerId}`);
+    const send = async () => {
+      try {
+        await channel.send({ type: 'broadcast', event: 'typing', payload: { from: user.id, to: peerId } });
+      } catch {}
+    };
+    send();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedPeerId, message]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
@@ -145,7 +194,9 @@ const MessagerieSection: React.FC = () => {
           </div>
           
           <div className="overflow-y-auto">
-            {peers.map((peer) => (
+            {peers.map((peer) => {
+              const summary = summaries[peer.id];
+              return (
               <div
                 key={peer.id}
                 onClick={() => setSelectedPeerId(peer.id)}
@@ -164,10 +215,21 @@ const MessagerieSection: React.FC = () => {
                       </p>
                       <p className="text-xs text-gray-500">{peer.role}</p>
                     </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-sm text-gray-500 truncate">
+                        {summary?.last?.content || '—'}
+                      </p>
+                      {!!summary?.unread && (
+                        <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+                          {summary.unread}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -180,8 +242,8 @@ const MessagerieSection: React.FC = () => {
                 P
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">Parents 6ème A</p>
-                <p className="text-xs text-gray-500">5 participants</p>
+                <p className="text-sm font-medium text-gray-900">{peers.find(p => p.id === selectedPeerId)?.full_name || '—'}</p>
+                <p className="text-xs text-gray-500">{peerTyping ? 'En train d\'écrire…' : 'Direct'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">

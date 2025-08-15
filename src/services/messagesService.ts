@@ -13,6 +13,12 @@ export type Message = {
   updated_at?: string;
 };
 
+export type ThreadSummary = {
+  peer_id: string;
+  last_message: Message | null;
+  unread_count: number;
+};
+
 export const messagesService = {
   async listBetween(params: { userId: string; peerId: string; limit?: number }): Promise<Message[]> {
     const { userId, peerId, limit = 200 } = params;
@@ -37,5 +43,47 @@ export const messagesService = {
       .single();
     if (error) throw error;
     return data as Message;
+  },
+
+  async markRead(params: { userId: string; peerId: string }): Promise<void> {
+    const { userId, peerId } = params;
+    const { error } = await supabase
+      .from('messages')
+      .update({ read: true })
+      .eq('receiver_id', userId)
+      .eq('sender_id', peerId)
+      .eq('read', false);
+    if (error) throw error;
+  },
+
+  async listThreadSummaries(params: { userId: string; limit?: number }): Promise<ThreadSummary[]> {
+    const { userId, limit = 200 } = params;
+    // Fetch recent messages involving the user and compute summaries client-side (MVP)
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    const rows = (data as Message[]) || [];
+
+    const map = new Map<string, ThreadSummary>();
+    for (const m of rows) {
+      const peer = m.sender_id === userId ? m.receiver_id : m.sender_id;
+      const existing = map.get(peer);
+      const unreadInc = m.receiver_id === userId && !m.read ? 1 : 0;
+      if (!existing) {
+        map.set(peer, {
+          peer_id: peer,
+          last_message: m,
+          unread_count: unreadInc,
+        });
+      } else {
+        // last_message already the most recent due to ordering; just accumulate unread
+        existing.unread_count += unreadInc;
+      }
+    }
+    return Array.from(map.values());
   },
 };
