@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Send,
   Search,
@@ -7,14 +7,21 @@ import {
   Video,
   MoreVertical
 } from 'lucide-react';
+import { messagesService, Message } from '../../services/messagesService';
+import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MessagerieSection: React.FC = () => {
-  const [selectedChat, setSelectedChat] = useState('1');
+  const { user } = useAuth();
+  const { success, error } = useToast();
+  const [selectedPeerId, setSelectedPeerId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const conversations = [
     {
-      id: '1',
+      id: 'peer-parent-1',
       name: 'Parents 6ème A',
       type: 'group',
       lastMessage: 'Bonjour, j\'ai une question concernant le devoir...',
@@ -23,7 +30,7 @@ const MessagerieSection: React.FC = () => {
       avatar: 'bg-blue-500'
     },
     {
-      id: '2',
+      id: 'user-marie',
       name: 'Marie Tshala',
       type: 'individual',
       lastMessage: 'Merci pour l\'information',
@@ -32,7 +39,7 @@ const MessagerieSection: React.FC = () => {
       avatar: 'bg-green-500'
     },
     {
-      id: '3',
+      id: 'user-jean',
       name: 'Jean Kabila',
       type: 'individual',
       lastMessage: 'Oui, j\'ai bien reçu le message',
@@ -42,34 +49,68 @@ const MessagerieSection: React.FC = () => {
     }
   ];
 
-  const messages = [
-    {
-      id: '1',
-      sender: 'Marie Tshala',
-      content: 'Bonjour, j\'ai une question concernant le devoir de mathématiques',
-      time: '10:30',
-      isOwn: false
-    },
-    {
-      id: '2',
-      sender: 'Moi',
-      content: 'Bonjour Marie! Quelle est votre question?',
-      time: '10:32',
-      isOwn: true
-    },
-    {
-      id: '3',
-      sender: 'Marie Tshala',
-      content: 'Mon fils ne comprend pas l\'exercice 3 sur les fractions',
-      time: '10:35',
-      isOwn: false
-    }
-  ];
+  // Map our demo ids to actual receiver ids (in a real app, these should come from DB)
+  const idMap = useMemo(() => ({
+    'user-marie': 'user_marie_id',
+    'user-jean': 'user_jean_id',
+    // For now, we will not send to group in this MVP
+    'peer-parent-1': null as string | null,
+  }), []);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      // In real app, this would send to backend
-      setMessage('');
+  useEffect(() => {
+    const fetch = async () => {
+      if (!user || !selectedPeerId) return;
+      const receiverId = idMap[selectedPeerId as keyof typeof idMap];
+      if (!receiverId) {
+        setMessages([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await messagesService.listBetween({ userId: user.id, peerId: receiverId });
+        setMessages(data);
+      } catch (e: any) {
+        error(`Erreur de chargement des messages: ${e.message || e}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [user, selectedPeerId, idMap, error]);
+
+  const handleSendMessage = async () => {
+    if (!user) {
+      error("Vous devez être connecté pour envoyer un message");
+      return;
+    }
+    if (!message.trim()) return;
+    const receiverId = selectedPeerId ? idMap[selectedPeerId as keyof typeof idMap] : null;
+    if (!receiverId) {
+      error("Sélectionnez une conversation (message direct) pour envoyer");
+      return;
+    }
+    const content = message.trim();
+    // Optimistic append
+    const optimistic: Message = {
+      id: `tmp_${Date.now()}`,
+      sender_id: user.id,
+      receiver_id: receiverId,
+      content,
+      type: 'direct',
+      read: true,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setMessage('');
+    try {
+      const saved = await messagesService.sendDirect({ senderId: user.id, receiverId, content });
+      // Replace optimistic with saved
+      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
+      success('Message envoyé');
+    } catch (e: any) {
+      // Revert optimistic
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      error(`Échec d\'envoi: ${e.message || e}`);
     }
   };
 
@@ -98,9 +139,9 @@ const MessagerieSection: React.FC = () => {
             {conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                onClick={() => setSelectedChat(conversation.id)}
+                onClick={() => setSelectedPeerId(conversation.id)}
                 className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                  selectedChat === conversation.id ? 'bg-gray-50' : ''
+                  selectedPeerId === conversation.id ? 'bg-gray-50' : ''
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -159,21 +200,27 @@ const MessagerieSection: React.FC = () => {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  msg.isOwn ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'
-                }`}>
-                  {!msg.isOwn && (
-                    <p className="text-xs font-medium mb-1">{msg.sender}</p>
-                  )}
-                  <p className="text-sm">{msg.content}</p>
-                  <p className={`text-xs mt-1 ${msg.isOwn ? 'text-primary-100' : 'text-gray-500'}`}>
-                    {msg.time}
-                  </p>
+            {loading && (
+              <div className="text-sm text-gray-500">Chargement des messages…</div>
+            )}
+            {!loading && messages.length === 0 && (
+              <div className="text-sm text-gray-500">Aucun message</div>
+            )}
+            {!loading && messages.map((msg) => {
+              const isOwn = user?.id === msg.sender_id;
+              return (
+                <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    isOwn ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'
+                  }`}>
+                    <p className="text-sm">{msg.content}</p>
+                    <p className={`text-xs mt-1 ${isOwn ? 'text-primary-100' : 'text-gray-500'}`}>
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Message Input */}
