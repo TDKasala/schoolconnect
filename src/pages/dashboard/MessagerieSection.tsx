@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Send,
   Search,
@@ -8,8 +8,10 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { messagesService, Message } from '../../services/messagesService';
+import { usersService, AppUser } from '../../services/usersService';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 const MessagerieSection: React.FC = () => {
   const { user } = useAuth();
@@ -18,53 +20,30 @@ const MessagerieSection: React.FC = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [peers, setPeers] = useState<AppUser[]>([]);
+  const [search, setSearch] = useState('');
 
-  const conversations = [
-    {
-      id: 'peer-parent-1',
-      name: 'Parents 6ème A',
-      type: 'group',
-      lastMessage: 'Bonjour, j\'ai une question concernant le devoir...',
-      time: '10:30',
-      unread: 3,
-      avatar: 'bg-blue-500'
-    },
-    {
-      id: 'user-marie',
-      name: 'Marie Tshala',
-      type: 'individual',
-      lastMessage: 'Merci pour l\'information',
-      time: '09:15',
-      unread: 0,
-      avatar: 'bg-green-500'
-    },
-    {
-      id: 'user-jean',
-      name: 'Jean Kabila',
-      type: 'individual',
-      lastMessage: 'Oui, j\'ai bien reçu le message',
-      time: 'Hier',
-      unread: 1,
-      avatar: 'bg-purple-500'
-    }
-  ];
-
-  // Map our demo ids to actual receiver ids (in a real app, these should come from DB)
-  const idMap = useMemo(() => ({
-    'user-marie': 'user_marie_id',
-    'user-jean': 'user_jean_id',
-    // For now, we will not send to group in this MVP
-    'peer-parent-1': null as string | null,
-  }), []);
+  // Load peers from DB
+  useEffect(() => {
+    const run = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const list = await usersService.listPeers({ schoolId: (user as any)?.profile?.school_id ?? null, excludeUserId: user.id, search });
+        setPeers(list);
+      } catch (e: any) {
+        error(`Erreur de chargement des utilisateurs: ${e.message || e}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+  }, [user, search, error]);
 
   useEffect(() => {
     const fetch = async () => {
       if (!user || !selectedPeerId) return;
-      const receiverId = idMap[selectedPeerId as keyof typeof idMap];
-      if (!receiverId) {
-        setMessages([]);
-        return;
-      }
+      const receiverId = selectedPeerId;
       try {
         setLoading(true);
         const data = await messagesService.listBetween({ userId: user.id, peerId: receiverId });
@@ -76,7 +55,35 @@ const MessagerieSection: React.FC = () => {
       }
     };
     fetch();
-  }, [user, selectedPeerId, idMap, error]);
+  }, [user, selectedPeerId, error]);
+
+  // Realtime messages subscription for the selected peer
+  useEffect(() => {
+    if (!user || !selectedPeerId) return;
+    const peerId = selectedPeerId;
+    const channel = supabase
+      .channel(`messages-thread-${user.id}-${peerId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `or(and(sender_id.eq.${peerId},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${peerId}))`
+      }, (payload: any) => {
+        const row = payload.new as Message;
+        // Append only if it belongs to this thread
+        if (
+          (row.sender_id === user.id && row.receiver_id === peerId) ||
+          (row.sender_id === peerId && row.receiver_id === user.id)
+        ) {
+          setMessages((prev) => [...prev, row]);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedPeerId]);
 
   const handleSendMessage = async () => {
     if (!user) {
@@ -84,7 +91,7 @@ const MessagerieSection: React.FC = () => {
       return;
     }
     if (!message.trim()) return;
-    const receiverId = selectedPeerId ? idMap[selectedPeerId as keyof typeof idMap] : null;
+    const receiverId = selectedPeerId;
     if (!receiverId) {
       error("Sélectionnez une conversation (message direct) pour envoyer");
       return;
@@ -130,40 +137,32 @@ const MessagerieSection: React.FC = () => {
               <input
                 type="text"
                 placeholder="Rechercher..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 outline-none text-sm"
               />
             </div>
           </div>
           
           <div className="overflow-y-auto">
-            {conversations.map((conversation) => (
+            {peers.map((peer) => (
               <div
-                key={conversation.id}
-                onClick={() => setSelectedPeerId(conversation.id)}
+                key={peer.id}
+                onClick={() => setSelectedPeerId(peer.id)}
                 className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                  selectedPeerId === conversation.id ? 'bg-gray-50' : ''
+                  selectedPeerId === peer.id ? 'bg-gray-50' : ''
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-full ${conversation.avatar} flex items-center justify-center text-white text-sm font-medium`}>
-                    {conversation.name.charAt(0)}
+                  <div className={`w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium`}>
+                    {peer.full_name?.charAt(0) || peer.email?.charAt(0) || '?'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {conversation.name}
+                        {peer.full_name || peer.email}
                       </p>
-                      <p className="text-xs text-gray-500">{conversation.time}</p>
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.lastMessage}
-                      </p>
-                      {conversation.unread > 0 && (
-                        <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
-                          {conversation.unread}
-                        </span>
-                      )}
+                      <p className="text-xs text-gray-500">{peer.role}</p>
                     </div>
                   </div>
                 </div>
