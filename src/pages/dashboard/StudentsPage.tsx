@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { studentsService, type Student } from '../../services/studentsService';
+import { classesService, type SchoolClass } from '../../services/classesService';
 
 const StudentsPage: React.FC = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const StudentsPage: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [selected, setSelected] = useState<Student | null>(null);
+  const [classMap, setClassMap] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -100,6 +102,20 @@ const StudentsPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schoolId, search, page]);
 
+  // Fetch classes list once for mapping class_id -> name
+  useEffect(() => {
+    const run = async () => {
+      if (!schoolId) return;
+      try {
+        const { data } = await classesService.listClasses({ schoolId, limit: 1000, offset: 0 });
+        const map: Record<string, string> = {};
+        (data as SchoolClass[]).forEach((c) => { if (c.id) map[c.id] = c.name; });
+        setClassMap(map);
+      } catch {}
+    };
+    run();
+  }, [schoolId]);
+
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -158,6 +174,7 @@ const StudentsPage: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classe</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sexe</th>
@@ -168,16 +185,17 @@ const StudentsPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">Chargement...</td>
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">Chargement...</td>
                 </tr>
               ) : students.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">Aucun élève trouvé</td>
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">Aucun élève trouvé</td>
                 </tr>
               ) : (
                 students.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.matricule || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.class_id ? (classMap[s.class_id] || '-') : '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{s.last_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{s.first_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{s.gender || '-'}</td>

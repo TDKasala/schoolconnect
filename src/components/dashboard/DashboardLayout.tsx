@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, 
@@ -29,6 +29,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const typedUser = user as UserWithProfile | null;
   const location = useLocation();
   const navigate = useNavigate();
+  const [unauthAlert, setUnauthAlert] = useState(false);
+
+  // Show a small banner if redirected for unauthorized access
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.unauthorized) {
+      setUnauthAlert(true);
+      // clear the flag from history state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   // Role-specific navigation
   let navigation: Array<{ name: string; href: string; icon: any }> = [];
@@ -184,6 +196,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
           <div className="py-6">
+            {unauthAlert && (
+              <div className="mx-4 sm:mx-6 lg:mx-8 mb-4">
+                <div className="flex items-start justify-between rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                  <div>
+                    Accès non autorisé: vous n'avez pas la permission d'ouvrir cette page.
+                  </div>
+                  <button
+                    onClick={() => setUnauthAlert(false)}
+                    className="ml-4 text-yellow-800 hover:text-yellow-900"
+                    aria-label="Fermer l'alerte"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
             {children}
           </div>
         </main>

@@ -64,5 +64,24 @@ export const classesService = {
 
     if (error) throw error;
     return (data as Teacher[]) || [];
+  },
+
+  async updateClass(id: string, patch: Partial<Omit<SchoolClass, 'id' | 'created_at' | 'school_id'>>): Promise<SchoolClass> {
+    const { data, error } = await supabase
+      .from('classes')
+      .update(patch)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data as SchoolClass;
+  },
+
+  async deleteClass(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('classes')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   }
 };

@@ -17,6 +17,8 @@ const ClassesPage: React.FC = () => {
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [selected, setSelected] = useState<SchoolClass | null>(null);
   const [form, setForm] = useState({
     name: '',
     level: '',
@@ -38,6 +40,51 @@ const ClassesPage: React.FC = () => {
       setCount(count);
     } catch (e: any) {
       setError(e?.message || 'Erreur lors du chargement des classes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEdit = (c: SchoolClass) => {
+    setSelected(c);
+    setForm({
+      name: c.name || '',
+      level: c.level || '',
+      teacher_id: c.teacher_id || ''
+    });
+    setShowEdit(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await classesService.updateClass(selected.id, {
+        name: form.name.trim(),
+        level: form.level?.trim() || null,
+        teacher_id: form.teacher_id || null,
+      });
+      setShowEdit(false);
+      setSelected(null);
+      await fetchClasses();
+    } catch (e: any) {
+      setError(e?.message || 'Erreur lors de la mise à jour de la classe');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (c: SchoolClass) => {
+    if (!confirm('Supprimer cette classe ?')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await classesService.deleteClass(c.id);
+      await fetchClasses();
+    } catch (e: any) {
+      setError(e?.message || 'Erreur lors de la suppression de la classe');
     } finally {
       setLoading(false);
     }
@@ -121,6 +168,7 @@ const ClassesPage: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Niveau</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titulaire</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -140,6 +188,12 @@ const ClassesPage: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{c.name}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{c.level || '-'}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{teacher?.full_name || '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        <div className="inline-flex gap-2">
+                          <button onClick={() => openEdit(c)} className="px-2 py-1 text-blue-600 hover:text-blue-800">Modifier</button>
+                          <button onClick={() => handleDelete(c)} className="px-2 py-1 text-red-600 hover:text-red-800">Supprimer</button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
@@ -213,6 +267,56 @@ const ClassesPage: React.FC = () => {
                   <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-md">Annuler</button>
                   <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-md disabled:opacity-50" disabled={loading}>
                     {loading ? 'Enregistrement...' : 'Créer'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEdit && selected && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Modifier la classe</h2>
+                <button onClick={() => { setShowEdit(false); setSelected(null); }} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              <form onSubmit={handleEdit} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Nom de la classe</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Niveau</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={form.level}
+                    onChange={(e) => setForm({ ...form, level: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Titulaire (enseignant)</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={form.teacher_id}
+                    onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                  >
+                    <option value="">Non assigné</option>
+                    {teachers.map(t => (
+                      <option key={t.id} value={t.id}>{t.full_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => { setShowEdit(false); setSelected(null); }} className="px-4 py-2 border rounded-md">Annuler</button>
+                  <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-md disabled:opacity-50" disabled={loading}>
+                    {loading ? 'Enregistrement...' : 'Sauvegarder'}
                   </button>
                 </div>
               </form>
