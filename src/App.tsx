@@ -4,6 +4,7 @@ import { AuthProvider, useAuth, UserWithProfile } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import PrivateRoute from './components/auth/PrivateRoute';
+import RoleRoute from './components/auth/RoleRoute';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import ScrollToTop from './components/ScrollToTop';
 import Spinner from './components/Spinner';
@@ -153,44 +154,56 @@ const AppContent: React.FC = () => {
             } />
             <Route path="/dashboard/students" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <StudentsPage />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <StudentsPage />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/classes" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <ClassesPage />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <ClassesPage />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/attendance" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <AttendancePage />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <AttendancePage />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/grades" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <GradesPage />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <GradesPage />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/bulletins" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <BulletinsPage />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <BulletinsPage />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/reports" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <ReportsPage />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <ReportsPage />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/pedagogie" element={
@@ -202,16 +215,20 @@ const AppContent: React.FC = () => {
             } />
             <Route path="/dashboard/finances" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <UbankSection />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <UbankSection />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/parents" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <ParentPortalSection />
-                </DashboardLayout>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <ParentPortalSection />
+                  </DashboardLayout>
+                </RoleRoute>
               </PrivateRoute>
             } />
             <Route path="/dashboard/messagerie" element={

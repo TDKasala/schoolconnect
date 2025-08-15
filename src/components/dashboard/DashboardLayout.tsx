@@ -30,23 +30,38 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Platform admin gets different navigation
-  const navigation = typedUser?.profile?.role === 'platform_admin' ? [
-    { name: 'Administration', href: '/dashboard', icon: Home },
-  ] : [
-    { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
-    { name: 'Élèves', href: '/dashboard/students', icon: Users },
-    { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
-    { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
-    { name: 'Notes', href: '/dashboard/grades', icon: Edit3 },
-    { name: 'Bulletins', href: '/dashboard/bulletins', icon: FileText },
-    { name: 'Rapports', href: '/dashboard/reports', icon: BarChart3 },
-    { name: 'Pédagogie', href: '/dashboard/pedagogie', icon: BookOpen },
-    { name: 'Finances', href: '/dashboard/finances', icon: DollarSign },
-    { name: 'Parents', href: '/dashboard/parents', icon: Users },
-    { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
-    { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
-  ];
+  // Role-specific navigation
+  let navigation: Array<{ name: string; href: string; icon: any }> = [];
+  if (typedUser?.profile?.role === 'platform_admin') {
+    navigation = [
+      { name: 'Administration', href: '/dashboard', icon: Home },
+    ];
+  } else if (typedUser?.profile?.role === 'teacher') {
+    navigation = [
+      { name: 'Overview', href: '/dashboard', icon: Home },
+      { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
+      { name: 'Attendance', href: '/dashboard/attendance', icon: CheckSquare },
+      { name: 'Grades', href: '/dashboard/grades', icon: Edit3 },
+      { name: 'Messaging', href: '/dashboard/messagerie', icon: MessageSquare },
+      { name: 'Calendar', href: '/dashboard/calendrier', icon: Calendar },
+    ];
+  } else {
+    // Default: school_admin
+    navigation = [
+      { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
+      { name: 'Élèves', href: '/dashboard/students', icon: Users },
+      { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
+      { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
+      { name: 'Notes', href: '/dashboard/grades', icon: Edit3 },
+      { name: 'Bulletins', href: '/dashboard/bulletins', icon: FileText },
+      { name: 'Rapports', href: '/dashboard/reports', icon: BarChart3 },
+      { name: 'Pédagogie', href: '/dashboard/pedagogie', icon: BookOpen },
+      { name: 'Finances', href: '/dashboard/finances', icon: DollarSign },
+      { name: 'Parents', href: '/dashboard/parents', icon: Users },
+      { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
+      { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+    ];
+  }
 
   const handleLogout = () => {
     logout();
