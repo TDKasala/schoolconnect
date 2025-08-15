@@ -56,5 +56,25 @@ export const studentsService = {
 
     if (error) throw error;
     return data as Student;
+  },
+
+  async updateStudent(id: string, patch: Partial<Omit<Student, 'id' | 'created_at'>>): Promise<Student> {
+    const { data, error } = await supabase
+      .from('students')
+      .update(patch)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data as Student;
+  },
+
+  async deleteStudent(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('students')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   }
 };
