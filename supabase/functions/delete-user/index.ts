@@ -66,9 +66,15 @@ serve(async (req) => {
       )
     }
 
-    // Get the user ID to delete from the request body
-    const { userId } = await req.json()
-    if (!userId) {
+    // Get the user ID to delete from the request body (safe parse)
+    let userId: string | undefined
+    try {
+      const body = await req.json()
+      userId = body?.userId
+    } catch (_e) {
+      // fallthrough to error below
+    }
+    if (!userId || typeof userId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Missing userId in request body' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -105,7 +111,29 @@ serve(async (req) => {
       }
     }
 
-    // Delete user from database (this should cascade delete related records)
+    // Explicit cleanup for related data (in case FKs are not cascading)
+    // 1) Delete direct messages where user is sender or receiver
+    const { error: msgDelError } = await supabaseAdmin
+      .from('messages')
+      .delete()
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+
+    if (msgDelError) {
+      console.error('Error deleting user messages:', msgDelError)
+      return new Response(
+        JSON.stringify({ error: `Message cleanup failed: ${msgDelError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 2) Delete profile row if your schema has it
+    try {
+      await supabaseAdmin.from('profiles').delete().eq('user_id', userId)
+    } catch (profErr) {
+      console.warn('Profile cleanup warning (continuing):', profErr)
+    }
+
+    // 3) Delete user row (if not already cascaded)
     const { error: dbDeleteError } = await supabaseAdmin
       .from('users')
       .delete()
