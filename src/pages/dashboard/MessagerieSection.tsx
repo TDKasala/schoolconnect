@@ -12,6 +12,7 @@ import { usersService, AppUser } from '../../services/usersService';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useLiveThread } from '../../hooks/useLiveThread';
 
 const MessagerieSection: React.FC = () => {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ const MessagerieSection: React.FC = () => {
   const [selectedPeerId, setSelectedPeerId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages, setMessages } = useLiveThread(user?.id ?? null, selectedPeerId);
   const [peers, setPeers] = useState<AppUser[]>([]);
   const [search, setSearch] = useState('');
   const [summaries, setSummaries] = useState<Record<string, { unread: number; last?: Message | null }>>({});
@@ -47,59 +48,19 @@ const MessagerieSection: React.FC = () => {
     run();
   }, [user, search, error]);
 
+  // When thread messages change, update summary for the selected peer
   useEffect(() => {
-    const fetch = async () => {
-      if (!user || !selectedPeerId) return;
-      const receiverId = selectedPeerId;
-      try {
-        setLoading(true);
-        const data = await messagesService.listBetween({ userId: user.id, peerId: receiverId });
-        setMessages(data);
-        // Mark as read when opening
-        await messagesService.markRead({ userId: user.id, peerId: receiverId });
-        setSummaries((prev) => ({ ...prev, [receiverId]: { ...(prev[receiverId] || {}), unread: 0 } }));
-      } catch (e: any) {
-        error(`Erreur de chargement des messages: ${e.message || e}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, [user, selectedPeerId, error]);
+    if (!selectedPeerId || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    setSummaries((prev) => ({ ...prev, [selectedPeerId]: { unread: 0, last } }));
+  }, [messages, selectedPeerId]);
 
-  // Realtime messages subscription for the selected peer
+  // Typing indicator via broadcast
   useEffect(() => {
     if (!user || !selectedPeerId) return;
     const peerId = selectedPeerId;
     const channel = supabase
-      .channel(`messages-thread-${user.id}-${peerId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `or(and(sender_id.eq.${peerId},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${peerId}))`
-      }, (payload: any) => {
-        const row = payload.new as Message;
-        // Append only if it belongs to this thread
-        if (
-          (row.sender_id === user.id && row.receiver_id === peerId) ||
-          (row.sender_id === peerId && row.receiver_id === user.id)
-        ) {
-          setMessages((prev) => [...prev, row]);
-          // Update last message and unread
-          setSummaries((prev) => ({
-            ...prev,
-            [peerId]: {
-              unread: row.sender_id === user.id ? (prev[peerId]?.unread || 0) : (peerId === selectedPeerId ? 0 : (prev[peerId]?.unread || 0) + 1),
-              last: row,
-            },
-          }));
-          // If message is from peer and current thread open, mark read
-          if (row.sender_id === peerId && row.receiver_id === user.id) {
-            messagesService.markRead({ userId: user.id, peerId }).catch(() => {});
-          }
-        }
-      })
+      .channel(`typing-${user.id}-${peerId}`)
       .on('broadcast', { event: 'typing' }, (payload: any) => {
         const { from, to } = payload.payload || {};
         if (from === peerId && to === user.id) {
