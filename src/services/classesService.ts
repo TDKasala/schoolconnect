@@ -28,7 +28,7 @@ export const classesService = {
 
     let query = supabase
       .from('classes')
-      .select('*', { count: 'exact' })
+      .select('id, school_id, name, level, teacher_id, created_at', { count: 'exact' })
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -47,7 +47,7 @@ export const classesService = {
     const { data, error } = await supabase
       .from('classes')
       .insert([input])
-      .select('*')
+      .select('id, school_id, name, level, teacher_id, created_at')
       .single();
 
     if (error) throw error;
@@ -71,7 +71,7 @@ export const classesService = {
       .from('classes')
       .update(patch)
       .eq('id', id)
-      .select('*')
+      .select('id, school_id, name, level, teacher_id, created_at')
       .single();
     if (error) throw error;
     return data as SchoolClass;
