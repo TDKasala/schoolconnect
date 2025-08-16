@@ -247,7 +247,7 @@ export class TeacherService {
 
       return studentsWithGrades;
     } catch (error) {
-      console.error('Error fetching students:', error);
+      logger.error('Error fetching students:', error);
       throw new Error('Failed to fetch students');
     }
   }
