@@ -89,7 +89,7 @@ export class PedagogyService {
       const { data, error } = await supabase
         .from('classes')
         .select(`
-          *,
+          id, name, teacher_id, school_id, grade_level, academic_year, capacity, created_at, updated_at,
           students:students(class_id,count)
         `)
         .eq('school_id', this.schoolId)
@@ -122,7 +122,7 @@ export class PedagogyService {
     try {
       const { data, error } = await supabase
         .from('students')
-        .select('*')
+        .select('id, first_name, last_name, class_id, date_of_birth, gender, parent_id, enrollment_date, status, created_at, updated_at')
         .eq('class_id', classId)
         .eq('school_id', this.schoolId)
         .order('last_name', { ascending: true });
@@ -156,7 +156,7 @@ export class PedagogyService {
       const { data, error } = await supabase
         .from('grades')
         .select(`
-          *,
+          id, student_id, class_id, subject, score, max_score, grade_type, description, created_at, updated_at,
           student:students!grades_student_id_fkey(first_name, last_name)
         `)
         .eq('class_id', classId)
@@ -190,7 +190,7 @@ export class PedagogyService {
       let query = supabase
         .from('attendance')
         .select(`
-          *,
+          id, student_id, class_id, date, status, notes, created_at, updated_at,
           student:students!attendance_student_id_fkey(first_name, last_name)
         `)
         .eq('class_id', classId);
@@ -228,7 +228,7 @@ export class PedagogyService {
     try {
       const { data, error } = await supabase
         .from('grades')
-        .select('*')
+        .select('id, student_id, class_id, subject, score, max_score, grade_type, description, created_at, updated_at')
         .eq('student_id', studentId)
         .order('created_at', { ascending: false });
 
@@ -259,7 +259,7 @@ export class PedagogyService {
     try {
       const { data, error } = await supabase
         .from('attendance')
-        .select('*')
+        .select('id, student_id, class_id, date, status, notes, created_at, updated_at')
         .eq('student_id', studentId)
         .order('date', { ascending: false });
 
@@ -297,7 +297,7 @@ export class PedagogyService {
           grade_type: gradeData.gradeType,
           description: gradeData.description
         })
-        .select()
+        .select('id, student_id, class_id, subject, score, max_score, grade_type, description, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -335,7 +335,7 @@ export class PedagogyService {
           updated_at: new Date().toISOString()
         })
         .eq('id', gradeId)
-        .select()
+        .select('id, student_id, class_id, subject, score, max_score, grade_type, description, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -366,7 +366,7 @@ export class PedagogyService {
       // Check if attendance record already exists for this student on this date
       const { data: existingData, error: fetchError } = await supabase
         .from('attendance')
-        .select('*')
+        .select('id')
         .eq('student_id', attendanceData.studentId)
         .eq('class_id', attendanceData.classId)
         .eq('date', attendanceData.date.toISOString().split('T')[0]);
@@ -383,7 +383,7 @@ export class PedagogyService {
             updated_at: new Date().toISOString()
           })
           .eq('id', existingData[0].id)
-          .select()
+          .select('id, student_id, class_id, date, status, notes, created_at, updated_at')
           .single();
 
         if (error) throw error;
@@ -409,7 +409,7 @@ export class PedagogyService {
             status: attendanceData.status,
             notes: attendanceData.notes
           })
-          .select()
+          .select('id, student_id, class_id, date, status, notes, created_at, updated_at')
           .single();
 
         if (error) throw error;
@@ -606,7 +606,7 @@ export class PedagogyService {
     try {
       const { data, error } = await supabase
         .from('students')
-        .select('*')
+        .select('id, first_name, last_name, class_id, date_of_birth, gender, parent_id, enrollment_date, status, created_at, updated_at')
         .eq('school_id', this.schoolId)
         .order('last_name', { ascending: true });
 
@@ -638,7 +638,7 @@ export class PedagogyService {
     try {
       const { data, error } = await supabase
         .from('students')
-        .select('*')
+        .select('id, first_name, last_name, class_id, date_of_birth, gender, parent_id, enrollment_date, status, created_at, updated_at')
         .eq('id', studentId)
         .single();
 
