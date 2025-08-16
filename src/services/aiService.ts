@@ -84,7 +84,8 @@ export class AIService {
     const startTime = Date.now();
     
     try {
-      const [classData, students, grades] = await Promise.all([
+      // Fetch class and students first
+      const [classData, studentsRes] = await Promise.all([
         supabase
           .from('classes')
           .select('id, name, school_id, level, teacher_id, created_at, schools(name)')
@@ -93,18 +94,22 @@ export class AIService {
         supabase
           .from('students')
           .select('id')
-          .eq('class_id', classId),
-        supabase
-          .from('grades')
-          .select('id, student_id, grade, max_grade, created_at')
-          .in('student_id', 
-            (await supabase.from('students').select('id').eq('class_id', classId)).data?.map(s => s.id) || []
-          )
+          .eq('class_id', classId)
       ]);
+
+      const studentIds = studentsRes.data?.map(s => s.id) || [];
+
+      // Fetch grades only if we have students
+      const grades = studentIds.length
+        ? await supabase
+            .from('grades')
+            .select('id, student_id, grade, max_grade, created_at')
+            .in('student_id', studentIds)
+        : { data: [], error: null } as any;
 
       const context = {
         class: classData.data,
-        students: students.data,
+        students: studentsRes.data,
         grades: grades.data,
         language: options.language || 'fr'
       };

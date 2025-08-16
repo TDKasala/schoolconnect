@@ -367,43 +367,43 @@ export class OverviewService {
    */
   async getFinancialSummary(): Promise<FinancialSummary> {
     try {
-      let query = supabase
-        .from('payments')
-        .select('amount, status');
-
-      if (this.schoolId && this.userRole !== 'platform_admin') {
-        query = query.eq('school_id', this.schoolId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Calculate totals
-      let totalRevenue = 0;
-      let pendingPayments = 0;
-      let completedPayments = 0;
-      let overduePayments = 0;
-
-      data?.forEach(payment => {
-        if (payment.status === 'completed') {
-          totalRevenue += payment.amount;
-          completedPayments += 1;
-        } else if (payment.status === 'pending') {
-          pendingPayments += 1;
-          
-          // In a real app, you would check due date here
-          // For now, we'll just increment overduePayments for demo purposes
-          overduePayments += 1;
+      // Build base filters by role for re-use
+      const baseFilter = (q: any) => {
+        if (this.schoolId && this.userRole !== 'platform_admin') {
+          return q.eq('school_id', this.schoolId);
         }
-      });
-
-      return {
-        totalRevenue,
-        pendingPayments,
-        completedPayments,
-        overduePayments
+        return q;
       };
+
+      // Count pending and completed without fetching rows
+      const [pendingRes, completedRes] = await Promise.all([
+        baseFilter(
+          supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+        ),
+        baseFilter(
+          supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'completed')
+        )
+      ]);
+
+      if (pendingRes.error) throw pendingRes.error;
+      if (completedRes.error) throw completedRes.error;
+
+      const pendingPayments = pendingRes.count || 0;
+      const completedPayments = completedRes.count || 0;
+
+      // Fetch only completed payment amounts to compute revenue client-side
+      const completedAmountsQuery = baseFilter(
+        supabase.from('payments').select('amount').eq('status', 'completed')
+      );
+      const { data: completedAmounts, error: completedAmountsError } = await completedAmountsQuery;
+      if (completedAmountsError) throw completedAmountsError;
+
+      const totalRevenue = (completedAmounts || []).reduce((sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0);
+
+      // Overdue calculation: placeholder until due dates are modeled
+      const overduePayments = pendingPayments; // TODO: replace with due-date based logic
+
+      return { totalRevenue, pendingPayments, completedPayments, overduePayments };
     } catch (error) {
       logger.error('Error fetching financial summary:', error);
       throw new Error('Failed to fetch financial summary');

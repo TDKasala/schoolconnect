@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase, hasSupabase } from '../lib/supabase';
 
 export interface AIRequest {
