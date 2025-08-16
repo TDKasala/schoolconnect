@@ -68,17 +68,17 @@ export class PlatformAdminService {
       // Get total schools
       const { count: totalSchools } = await supabase
         .from('schools')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
 
       // Get total students
       const { count: totalStudents } = await supabase
         .from('students')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
 
       // Get total teachers
       const { count: totalTeachers } = await supabase
         .from('users')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('role', 'teacher');
 
       // Calculate revenue (mock calculation - replace with actual revenue logic)
@@ -123,9 +123,7 @@ export class PlatformAdminService {
       const { data: schools, error } = await supabase
         .from('schools')
         .select(`
-          *,
-          students(count),
-          users!users_school_id_fkey(count)
+          id, name, address, city, province, phone, email, subscription_type, max_students, created_at, updated_at
         `);
 
       if (error) throw error;
@@ -135,13 +133,13 @@ export class PlatformAdminService {
           // Get student count
           const { count: studentCount } = await supabase
             .from('students')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('school_id', school.id);
 
           // Get teacher count
           const { count: teacherCount } = await supabase
             .from('users')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('school_id', school.id)
             .eq('role', 'teacher');
 
@@ -186,7 +184,7 @@ export class PlatformAdminService {
       const { data: users, error } = await supabase
         .from('users')
         .select(`
-          *,
+          id, email, full_name, role, school_id, is_active, created_at, updated_at,
           schools(name)
         `);
 
@@ -226,7 +224,7 @@ export class PlatformAdminService {
       const { data, error } = await supabase
         .from('schools')
         .insert([schoolData])
-        .select()
+        .select('id, name, address, phone, email, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -262,7 +260,7 @@ export class PlatformAdminService {
         .from('schools')
         .update(updates)
         .eq('id', schoolId)
-        .select()
+        .select('id, name, address, phone, email, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -493,7 +491,7 @@ export class PlatformAdminService {
     try {
       const { data: schools, error } = await supabase
         .from('schools')
-        .select('*')
+        .select('id, name, address, city, province, phone, email, subscription_type, max_students, created_at, updated_at')
         .or(`name.ilike.%${query}%,address.ilike.%${query}%`);
 
       if (error) throw error;
@@ -503,12 +501,12 @@ export class PlatformAdminService {
         schools?.map(async (school) => {
           const { count: studentCount } = await supabase
             .from('students')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('school_id', school.id);
 
           const { count: teacherCount } = await supabase
             .from('users')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('school_id', school.id)
             .eq('role', 'teacher');
 
@@ -544,7 +542,7 @@ export class PlatformAdminService {
       const { data: users, error } = await supabase
         .from('users')
         .select(`
-          *,
+          id, email, full_name, role, school_id, is_active, created_at, updated_at,
           schools(name)
         `)
         .gte('created_at', yesterday);
@@ -605,7 +603,7 @@ export class PlatformAdminService {
       const { data: user, error: userError } = await supabase
         .from('users')
         .select(`
-          *,
+          id, email, full_name, role, school_id, is_active, created_at, updated_at,
           schools(name),
           status:user_status_id(id, name, display_name, color),
           roleData:role_id(id, name, display_name, level)
@@ -672,7 +670,7 @@ export class PlatformAdminService {
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId)
-        .select('*, schools(name)')
+        .select('id, email, full_name, role, school_id, is_active, created_at, updated_at, schools(name)')
         .single();
 
       if (userError) throw userError;
