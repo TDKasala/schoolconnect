@@ -56,7 +56,7 @@ export const settingsService = {
     try {
       const { data, error } = await supabase
         .from(SETTINGS_TABLE)
-        .select('*')
+        .select('id, platform_name, contact_email, primary_color, support_url, feature_flags, updated_at')
         .eq('id', 'platform')
         .maybeSingle();
 
@@ -75,7 +75,7 @@ export const settingsService = {
       const { data, error } = await supabase
         .from(SETTINGS_TABLE)
         .upsert(payload, { onConflict: 'id' })
-        .select('*')
+        .select('id, platform_name, contact_email, primary_color, support_url, feature_flags, updated_at')
         .single();
 
       if (error) throw error;
@@ -97,7 +97,7 @@ export const settingsService = {
     const sensitiveTables = ['users', 'activity_logs'];
     for (const table of sensitiveTables) {
       try {
-        const { error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        const { error } = await supabase.from(table).select('id', { count: 'exact', head: true });
         if (!error) {
           checks.push({ name: `RLS ${table}`, status: 'warn', details: `Lecture possible sur ${table} sans erreur. Vérifiez les politiques.` });
         } else {
