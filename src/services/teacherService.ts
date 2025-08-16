@@ -117,7 +117,7 @@ export class TeacherService {
     try {
       const { data: classes, error } = await supabase
         .from('classes')
-        .select('*')
+        .select('id, school_id, name, level, teacher_id, created_at')
         .eq('teacher_id', this.teacherId);
 
       if (error) throw error;
@@ -128,7 +128,7 @@ export class TeacherService {
           // Get student count
           const { count: studentCount } = await supabase
             .from('students')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('class_id', cls.id);
 
           // Mock data for other stats
@@ -257,7 +257,7 @@ export class TeacherService {
     try {
       const { data: students, error } = await supabase
         .from('students')
-        .select('*')
+        .select('id, first_name, last_name, date_of_birth, school_id, class_id, created_at, updated_at')
         .eq('class_id', classId);
 
       if (error) throw error;
