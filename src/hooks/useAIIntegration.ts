@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, hasSupabase } from '../lib/supabase';
 
 export interface AIRequest {
   prompt: string;
@@ -217,34 +217,42 @@ export const useAIIntegration = (options: UseAIIntegrationOptions = {}) => {
 async function prepareContextData(context?: Record<string, any>): Promise<Record<string, any>> {
   if (!context) return {};
 
+  // If Supabase isn't initialized, return context as-is to avoid runtime errors
+  if (!hasSupabase) return { ...context };
+
   const enrichedContext: Record<string, any> = { ...context };
 
-  // Fetch additional data from Supabase based on context
-  if (context.studentId) {
-    const { data: student } = await supabase
-      .from('students')
-      .select('id, first_name, last_name, class_id, school_id, created_at, updated_at, classes(name)')
-      .eq('id', context.studentId)
-      .single();
-    enrichedContext.student = student;
-  }
+  try {
+    // Fetch additional data from Supabase based on context
+    if (context.studentId) {
+      const { data: student } = await supabase
+        .from('students')
+        .select('id, first_name, last_name, class_id, school_id, created_at, updated_at, classes(name)')
+        .eq('id', context.studentId)
+        .single();
+      enrichedContext.student = student;
+    }
 
-  if (context.classId) {
-    const { data: classData } = await supabase
-      .from('classes')
-      .select('id, name, school_id, level, teacher_id, created_at, schools(name)')
-      .eq('id', context.classId)
-      .single();
-    enrichedContext.class = classData;
-  }
+    if (context.classId) {
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('id, name, school_id, level, teacher_id, created_at, schools(name)')
+        .eq('id', context.classId)
+        .single();
+      enrichedContext.class = classData;
+    }
 
-  if (context.teacherId) {
-    const { data: teacher } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', context.teacherId)
-      .single();
-    enrichedContext.teacher = teacher;
+    if (context.teacherId) {
+      const { data: teacher } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', context.teacherId)
+        .single();
+      enrichedContext.teacher = teacher;
+    }
+  } catch (_err) {
+    // Swallow errors in context enrichment to avoid breaking AI flows
+    // The AI response generators work with partial context
   }
 
   return enrichedContext;
