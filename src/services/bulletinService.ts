@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import logger from '../utils/logger';
 
 export interface GradeData {
   id: string;
@@ -86,8 +87,8 @@ export class BulletinService {
 
       return bulletin;
     } catch (error) {
-      console.error('Error generating bulletin:', error);
-      throw error;
+      logger.error('Error generating bulletin:', error);
+      throw new Error('Failed to generate bulletin');
     }
   }
 
@@ -260,7 +261,7 @@ export class BulletinService {
 
       return bulletins;
     } catch (error) {
-      console.error('Error generating class bulletins:', error);
+      logger.error('Error generating class bulletins:', error);
       throw error;
     }
   }
