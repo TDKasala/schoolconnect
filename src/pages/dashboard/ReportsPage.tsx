@@ -1,6 +1,7 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth, type UserWithProfile } from '../../contexts/AuthContext';
 import ReportService, { type StudentReportData } from '../../services/reportService';
+import { supabase } from '../../lib/supabase';
 
 const ReportsPage: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +18,88 @@ const ReportsPage: React.FC = () => {
   const service = useMemo(() => {
     return typedUser ? new ReportService(typedUser) : null;
   }, [typedUser]);
+
+  // Role-aware selectors
+  const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([]);
+  const [classId, setClassId] = useState<string>('');
+  const [students, setStudents] = useState<Array<{ id: string; first_name: string; last_name: string }>>([]);
+  const [loadingLists, setLoadingLists] = useState(false);
+
+  // Load lists based on role
+  useEffect(() => {
+    const loadForParent = async () => {
+      if (!typedUser) return;
+      setLoadingLists(true);
+      try {
+        const { data, error: err } = await supabase
+          .from('students')
+          .select('id, first_name, last_name')
+          .eq('parent_id', typedUser.id)
+          .order('last_name', { ascending: true });
+        if (err) throw err;
+        const list = data || [];
+        setStudents(list as any);
+        if (list.length === 1) {
+          setStudentId(list[0].id);
+        }
+      } catch (e: any) {
+        setError(e?.message || 'Impossible de charger les élèves');
+      } finally {
+        setLoadingLists(false);
+      }
+    };
+
+    const loadForTeacherOrAdmin = async () => {
+      if (!typedUser) return;
+      setLoadingLists(true);
+      try {
+        let query = supabase
+          .from('classes')
+          .select('id, name')
+          .order('name', { ascending: true });
+        if (role === 'teacher') {
+          query = query.eq('teacher_id', typedUser.id);
+        } else if (role === 'school_admin' && typedUser.profile?.school_id) {
+          query = query.eq('school_id', typedUser.profile.school_id);
+        }
+        const { data, error: err } = await query;
+        if (err) throw err;
+        setClasses((data as any) || []);
+      } catch (e: any) {
+        setError(e?.message || 'Impossible de charger les classes');
+      } finally {
+        setLoadingLists(false);
+      }
+    };
+
+    setClasses([]);
+    setStudents([]);
+    setClassId('');
+    if (role === 'parent') loadForParent();
+    else if (role === 'teacher' || role === 'school_admin') loadForTeacherOrAdmin();
+  }, [role, typedUser]);
+
+  // When class changes, load students
+  useEffect(() => {
+    const loadStudents = async () => {
+      if (!classId) { setStudents([]); return; }
+      setLoadingLists(true);
+      try {
+        const { data, error: err } = await supabase
+          .from('students')
+          .select('id, first_name, last_name')
+          .eq('class_id', classId)
+          .order('last_name', { ascending: true });
+        if (err) throw err;
+        setStudents((data as any) || []);
+      } catch (e: any) {
+        setError(e?.message || 'Impossible de charger les élèves');
+      } finally {
+        setLoadingLists(false);
+      }
+    };
+    loadStudents();
+  }, [classId]);
 
   const calculateAverage = (grades: StudentReportData['grades']) => {
     if (!grades || grades.length === 0) return 0;
@@ -138,23 +221,67 @@ const ReportsPage: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">ID Élève</label>
-            <input
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              placeholder="Entrez l'ID de l'élève"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Rôles: {role === 'school_admin' ? 'Administrateur École' : role === 'teacher' ? 'Enseignant' : role === 'parent' ? 'Parent' : role}
+          <div className="md:col-span-2 space-y-3">
+            <p className="text-xs text-gray-500">
+              Rôle: {role === 'school_admin' ? 'Administrateur École' : role === 'teacher' ? 'Enseignant' : role === 'parent' ? 'Parent' : role}
             </p>
+
+            {role === 'parent' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Élève</label>
+                {students.length > 0 ? (
+                  <select
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  >
+                    <option value="">Sélectionnez un élève…</option>
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.last_name} {s.first_name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-gray-500">Aucun élève associé.</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Classe</label>
+                  <select
+                    value={classId}
+                    onChange={(e) => { setClassId(e.target.value); setStudentId(''); }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  >
+                    <option value="">Sélectionnez une classe…</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Élève</label>
+                  <select
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    disabled={!classId}
+                  >
+                    <option value="">{classId ? 'Sélectionnez un élève…' : 'Sélectionnez d’abord une classe'}</option>
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.last_name} {s.first_name}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
+
           <div className="flex space-x-2">
             <button
               onClick={onGenerate}
-              disabled={loading || !studentId}
-              className={`px-4 py-2 rounded-md text-white ${loading || !studentId ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
+              disabled={loading || loadingLists || !studentId}
+              className={`px-4 py-2 rounded-md text-white ${loading || loadingLists || !studentId ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
             >
               {loading ? 'Génération…' : 'Générer le rapport'}
             </button>
