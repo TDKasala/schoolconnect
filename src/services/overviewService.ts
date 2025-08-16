@@ -411,7 +411,8 @@ export class OverviewService {
    */
   async getClassPerformance(limit: number = 5): Promise<ClassPerformance[]> {
     try {
-      let query = supabase
+      // 1) Fetch classes (scoped by school where applicable)
+      let classesQuery = supabase
         .from('classes')
         .select(`
           id,
@@ -422,22 +423,65 @@ export class OverviewService {
         .limit(limit);
 
       if (this.schoolId && this.userRole !== 'platform_admin') {
-        query = query.eq('school_id', this.schoolId);
+        classesQuery = classesQuery.eq('school_id', this.schoolId);
       }
 
-      const { data, error } = await query;
+      const { data: classes, error: classesError } = await classesQuery as any;
+      if (classesError) throw classesError;
 
-      if (error) throw error;
+      if (!classes || classes.length === 0) return [];
 
-      // This is a simplified implementation
-      // In a real app, you would calculate actual performance metrics
-      return data?.map(cls => ({
+      // 2) Fetch students for these classes
+      const classIds = classes.map((c: any) => c.id);
+      const { data: students, error: studentsError } = await supabase
+        .from('students')
+        .select('id, class_id')
+        .in('class_id', classIds);
+
+      if (studentsError) throw studentsError;
+
+      const studentIds = (students || []).map(s => s.id);
+
+      // 3) Fetch all grades for these students
+      let gradesByStudent = new Map<string, number[]>();
+      if (studentIds.length > 0) {
+        const { data: grades, error: gradesError } = await supabase
+          .from('grades')
+          .select('student_id, grade');
+
+        if (gradesError) throw gradesError;
+
+        (grades || []).forEach(g => {
+          if (!gradesByStudent.has(g.student_id)) gradesByStudent.set(g.student_id, []);
+          gradesByStudent.get(g.student_id)!.push(g.grade);
+        });
+      }
+
+      // 4) Compute per-class aggregates
+      const avgByClass = new Map<string, number>();
+      const countByClass = new Map<string, number>();
+
+      (students || []).forEach(s => {
+        const arr = gradesByStudent.get(s.id) || [];
+        const sum = arr.reduce((acc, x) => acc + x, 0);
+        const prevSum = (avgByClass.get(s.class_id) || 0) * (countByClass.get(s.class_id) || 0);
+        const prevCount = countByClass.get(s.class_id) || 0;
+        const newCount = prevCount + (arr.length > 0 ? arr.length : 0);
+        const newSum = prevSum + sum;
+        if (newCount > 0) avgByClass.set(s.class_id, Math.round((newSum / newCount) * 10) / 10);
+        countByClass.set(s.class_id, (countByClass.get(s.class_id) || 0) + 1);
+      });
+
+      // 5) Build result list
+      const result: ClassPerformance[] = classes.map((cls: any) => ({
         classId: cls.id,
         className: cls.name,
-        averageGrade: Math.floor(Math.random() * 40) + 60, // Random grade between 60-100 for demo
-        attendanceRate: Math.floor(Math.random() * 30) + 70, // Random attendance between 70-100% for demo
+        averageGrade: avgByClass.get(cls.id) || 0,
+        attendanceRate: 0, // TODO: compute when attendance table is available
         studentCount: cls.students?.[0]?.count || 0
-      })) || [];
+      }));
+
+      return result;
     } catch (error) {
       logger.error('Error fetching class performance:', error);
       throw new Error('Failed to fetch class performance');

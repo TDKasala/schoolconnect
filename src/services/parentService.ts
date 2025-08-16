@@ -223,6 +223,7 @@ export class ParentService {
         timestamp: new Date(m.created_at),
         teacherName: m.users?.full_name || 'Enseignant',
         subject: 'Message',
+        read: !!m.read,
         isRead: !!m.read,
         isNew: !m.read
       }));
@@ -284,7 +285,7 @@ export class ParentService {
   /**
    * Get attendance records for a specific child
    */
-  async getChildAttendance(childId: string): Promise<AttendanceRecord[]> {
+  async getChildAttendance(_childId: string): Promise<AttendanceRecord[]> {
     try {
       // Mock attendance records
       const mockAttendance: AttendanceRecord[] = [
