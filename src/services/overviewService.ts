@@ -296,7 +296,7 @@ export class OverviewService {
     try {
       let query = supabase
         .from('events')
-        .select('*')
+        .select('id, title, start_date, end_date, location, event_type')
         .gte('start_date', new Date().toISOString())
         .order('start_date', { ascending: true })
         .limit(limit);
@@ -330,9 +330,7 @@ export class OverviewService {
     try {
       let query = supabase
         .from('messages')
-        .select(`
-          *
-        `)
+        .select('id, sender_id, content, created_at, is_read')
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -443,33 +441,35 @@ export class OverviewService {
       const studentIds = (students || []).map(s => s.id);
 
       // 3) Fetch all grades for these students
-      let gradesByStudent = new Map<string, number[]>();
+      // Build student->class map for quick lookup
+      const studentToClass = new Map<string, string>();
+      (students || []).forEach(s => studentToClass.set(s.id, s.class_id));
+
+      // 3) Fetch grades only for relevant students
+      const sumByClass = new Map<string, number>();
+      const gradeCountByClass = new Map<string, number>();
+
       if (studentIds.length > 0) {
         const { data: grades, error: gradesError } = await supabase
           .from('grades')
-          .select('student_id, grade');
+          .select('student_id, grade')
+          .in('student_id', studentIds);
 
         if (gradesError) throw gradesError;
 
         (grades || []).forEach(g => {
-          if (!gradesByStudent.has(g.student_id)) gradesByStudent.set(g.student_id, []);
-          gradesByStudent.get(g.student_id)!.push(g.grade);
+          const clsId = studentToClass.get(g.student_id);
+          if (!clsId) return;
+          sumByClass.set(clsId, (sumByClass.get(clsId) || 0) + g.grade);
+          gradeCountByClass.set(clsId, (gradeCountByClass.get(clsId) || 0) + 1);
         });
       }
 
-      // 4) Compute per-class aggregates
+      // 4) Compute per-class average
       const avgByClass = new Map<string, number>();
-      const countByClass = new Map<string, number>();
-
-      (students || []).forEach(s => {
-        const arr = gradesByStudent.get(s.id) || [];
-        const sum = arr.reduce((acc, x) => acc + x, 0);
-        const prevSum = (avgByClass.get(s.class_id) || 0) * (countByClass.get(s.class_id) || 0);
-        const prevCount = countByClass.get(s.class_id) || 0;
-        const newCount = prevCount + (arr.length > 0 ? arr.length : 0);
-        const newSum = prevSum + sum;
-        if (newCount > 0) avgByClass.set(s.class_id, Math.round((newSum / newCount) * 10) / 10);
-        countByClass.set(s.class_id, (countByClass.get(s.class_id) || 0) + 1);
+      Array.from(sumByClass.entries()).forEach(([clsId, sum]) => {
+        const cnt = gradeCountByClass.get(clsId) || 0;
+        if (cnt > 0) avgByClass.set(clsId, Math.round((sum / cnt) * 10) / 10);
       });
 
       // 5) Build result list

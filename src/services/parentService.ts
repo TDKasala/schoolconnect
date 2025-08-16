@@ -361,7 +361,7 @@ export class ParentService {
     try {
       const { data: parent, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, full_name, role, school_id, created_at, updated_at')
         .eq('id', this.parentId)
         .single();
 
