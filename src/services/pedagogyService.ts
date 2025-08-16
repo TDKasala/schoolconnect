@@ -528,7 +528,7 @@ export class PedagogyService {
       // Get recent grades
       const { data: gradesData, error: gradesError } = await supabase
         .from('grades')
-        .select('*')
+        .select('id, student_id, class_id, subject, score, max_score, grade_type, description, created_at, updated_at')
         .eq('student_id', studentId)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -561,7 +561,7 @@ export class PedagogyService {
       // Get recent attendance
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
-        .select('*')
+        .select('id, student_id, class_id, date, status, notes, created_at, updated_at')
         .eq('student_id', studentId)
         .order('date', { ascending: false })
         .limit(10);
