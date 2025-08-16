@@ -9,6 +9,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import ScrollToTop from './components/ScrollToTop';
 import Spinner from './components/Spinner';
 import AnalyticsTracker from './components/AnalyticsTracker';
+import { hasSupabase, supabaseInitError } from './lib/supabase';
 
 // Error Boundary Component
 interface ErrorBoundaryProps {
@@ -110,6 +111,24 @@ const AppContent: React.FC = () => {
         <div className="text-center">
           <Spinner />
           <p className="mt-4 text-gray-600">Chargement de l'application...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Config error: Supabase not initialized
+  if (!hasSupabase) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-red-50 p-6">
+        <div className="max-w-xl bg-white border border-red-200 rounded-lg p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-red-700 mb-2">Configuration manquante</h2>
+          <p className="text-gray-700 mb-4">
+            {supabaseInitError || 'Les variables d\'environnement Supabase ne sont pas définies.'}
+          </p>
+          <pre className="bg-gray-100 p-3 rounded text-sm text-gray-800 overflow-auto">
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+          </pre>
         </div>
       </div>
     );

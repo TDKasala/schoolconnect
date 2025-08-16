@@ -1,16 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Require environment variables; never fallback to hardcoded credentials in production
+// Environment variables for Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    '[Config] Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.'
-  )
-}
+// Non-fatal initialization: do not throw at module import to avoid blank page
+export const supabaseInitError = !supabaseUrl || !supabaseAnonKey
+  ? '[Config] Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.'
+  : null
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const hasSupabase = !supabaseInitError
+
+// Only create the client when credentials are present
+export const supabase = hasSupabase
+  ? createClient(supabaseUrl as string, supabaseAnonKey as string)
+  : undefined as unknown as ReturnType<typeof createClient>
 
 // Database types
 export interface Database {

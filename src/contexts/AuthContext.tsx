@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, hasSupabase, supabaseInitError } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import logger from '../utils/logger';
 
@@ -92,6 +92,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let isMounted = true;
     
     const checkUser = async () => {
+      if (!hasSupabase) {
+        logger.error('AuthProvider: Supabase not initialized', supabaseInitError);
+        if (isMounted) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
       try {
         logger.log('AuthProvider: checking session');
         const { data: { session } } = await supabase.auth.getSession();
@@ -130,6 +138,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkUser();
+
+    if (!hasSupabase) {
+      return () => {
+        logger.log('AuthProvider: cleanup without Supabase');
+        isMounted = false;
+        if (loading) setLoading(false);
+      };
+    }
 
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       logger.log('AuthProvider: onAuthStateChange triggered', _event, session?.user?.id);
