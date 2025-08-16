@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Class, Student, Grade, Homework, User } from '../types';
+import { Class, Student, User } from '../types';
 import logger from '../utils/logger';
 
 export interface TeacherStats {
@@ -32,6 +32,19 @@ export interface UpcomingTask {
   deadline: string;
   priority: 'high' | 'medium' | 'low';
   class: string;
+}
+
+// Local Homework type matching the fields used in this service
+export interface Homework {
+  id: string;
+  class_id: string;
+  title: string;
+  description?: string;
+  due_date: string;
+  subject?: string;
+  teacher_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface StudentWithGrades extends Student {
@@ -141,47 +154,57 @@ export class TeacherService {
    */
   async getRecentActivities(limit: number = 10): Promise<RecentActivity[]> {
     try {
-      // Mock recent activities - replace with actual activity logging system
-      const mockActivities: RecentActivity[] = [
-        { 
-          id: '1', 
-          type: 'grade', 
-          message: 'Notes ajoutées pour le contrôle de Mathématiques - 6ème A', 
-          time: '2h', 
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      // Fetch recent grades given by this teacher
+      const { data: recentGrades, error: gradesError } = await supabase
+        .from('grades')
+        .select('id, subject, created_at')
+        .eq('teacher_id', this.teacherId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (gradesError) throw gradesError;
+
+      // Fetch recently created homework by this teacher
+      const { data: recentHomework, error: hwError } = await supabase
+        .from('homework')
+        .select('id, title, created_at')
+        .eq('teacher_id', this.teacherId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (hwError) throw hwError;
+
+      const activities: RecentActivity[] = [];
+
+      (recentGrades || []).forEach(g => {
+        const ts = new Date(g.created_at);
+        activities.push({
+          id: `grade-${g.id}`,
+          type: 'grade',
+          message: `Notes ajoutées pour ${g.subject}`,
+          time: ts.toLocaleString(),
+          timestamp: ts,
           icon: 'BarChart3',
           color: 'text-primary-600'
-        },
-        { 
-          id: '2', 
-          type: 'attendance', 
-          message: 'Présences marquées pour 5ème B', 
-          time: '4h', 
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-          icon: 'CheckCircle',
-          color: 'text-green-600'
-        },
-        { 
-          id: '3', 
-          type: 'message', 
-          message: 'Nouveau message de parent - Marie Kabongo', 
-          time: '6h', 
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-          icon: 'MessageSquare',
-          color: 'text-secondary-600'
-        },
-        { 
-          id: '4', 
-          type: 'homework', 
-          message: 'Devoir créé: Exercices de géométrie', 
-          time: '1j', 
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        });
+      });
+
+      (recentHomework || []).forEach(h => {
+        const ts = new Date(h.created_at);
+        activities.push({
+          id: `homework-${h.id}`,
+          type: 'homework',
+          message: `Devoir créé: ${h.title}`,
+          time: ts.toLocaleString(),
+          timestamp: ts,
           icon: 'ClipboardCheck',
           color: 'text-purple-600'
-        }
-      ];
+        });
+      });
 
-      return mockActivities.slice(0, limit);
+      // Sort by timestamp desc and limit
+      activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      return activities.slice(0, limit);
     } catch (error) {
       logger.error('Error fetching recent activities:', error);
       throw new Error('Failed to fetch recent activities');
@@ -193,32 +216,34 @@ export class TeacherService {
    */
   async getUpcomingTasks(): Promise<UpcomingTask[]> {
     try {
-      // Mock upcoming tasks
-      const mockTasks: UpcomingTask[] = [
-        { 
-          id: '1', 
-          task: 'Corriger contrôle de Mathématiques', 
-          deadline: 'Demain 16:00', 
-          priority: 'high', 
-          class: '6ème A' 
-        },
-        { 
-          id: '2', 
-          task: 'Préparer cours sur les fractions', 
-          deadline: 'Vendredi 08:00', 
-          priority: 'medium', 
-          class: '5ème B' 
-        },
-        { 
-          id: '3', 
-          task: 'Générer bulletins trimestriels', 
-          deadline: 'Vendredi 17:00', 
-          priority: 'high', 
-          class: 'Toutes classes' 
-        }
-      ];
+      const nowIso = new Date().toISOString();
+      const { data: homework, error } = await supabase
+        .from('homework')
+        .select('id, title, due_date, class_id')
+        .eq('teacher_id', this.teacherId)
+        .gte('due_date', nowIso)
+        .order('due_date', { ascending: true })
+        .limit(50);
 
-      return mockTasks;
+      if (error) throw error;
+
+      const tasks: UpcomingTask[] = (homework || []).map(hw => {
+        const due = new Date(hw.due_date);
+        const hoursLeft = Math.max(0, Math.round((due.getTime() - Date.now()) / (1000 * 60 * 60)));
+        let priority: 'high' | 'medium' | 'low' = 'low';
+        if (hoursLeft <= 24) priority = 'high';
+        else if (hoursLeft <= 72) priority = 'medium';
+
+        return {
+          id: hw.id,
+          task: hw.title,
+          deadline: due.toLocaleString(),
+          priority,
+          class: hw.class_id || '—'
+        };
+      });
+
+      return tasks;
     } catch (error) {
       logger.error('Error fetching upcoming tasks:', error);
       throw new Error('Failed to fetch upcoming tasks');
@@ -237,13 +262,34 @@ export class TeacherService {
 
       if (error) throw error;
 
-      // Enhance students with grades and stats
-      const studentsWithGrades = students?.map(student => ({
-        ...student,
-        latestGrade: 15, // Mock data
-        attendanceRate: 92, // Mock data
-        lastActivity: '2 jours' // Mock data
-      } as StudentWithGrades)) || [];
+      const studentIds = (students || []).map(s => s.id);
+      if (studentIds.length === 0) return [];
+
+      // Fetch latest grade per student
+      const { data: grades, error: gradesError } = await supabase
+        .from('grades')
+        .select('id, student_id, grade, created_at')
+        .in('student_id', studentIds)
+        .order('created_at', { ascending: false });
+
+      if (gradesError) throw gradesError;
+
+      const latestByStudent = new Map<string, { grade: number; created_at: string }>();
+      (grades || []).forEach(g => {
+        if (!latestByStudent.has(g.student_id)) {
+          latestByStudent.set(g.student_id, { grade: g.grade, created_at: g.created_at });
+        }
+      });
+
+      const studentsWithGrades: StudentWithGrades[] = (students || []).map(s => {
+        const latest = latestByStudent.get(s.id);
+        return {
+          ...s,
+          latestGrade: latest?.grade,
+          attendanceRate: 0, // TODO: compute from attendance table when available
+          lastActivity: latest ? new Date(latest.created_at).toLocaleDateString() : '—'
+        } as StudentWithGrades;
+      });
 
       return studentsWithGrades;
     } catch (error) {
