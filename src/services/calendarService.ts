@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Event } from '../types';
+import logger from '../utils/logger';
 
 export interface CalendarEvent extends Event {
   id: string;
@@ -67,7 +68,7 @@ export class CalendarService {
         updatedAt: new Date(event.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching events:', error);
+      logger.error('Error fetching events:', error);
       throw new Error('Failed to fetch events');
     }
   }
@@ -115,7 +116,7 @@ export class CalendarService {
         updatedAt: new Date(event.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching upcoming events:', error);
+      logger.error('Error fetching upcoming events:', error);
       throw new Error('Failed to fetch upcoming events');
     }
   }
@@ -161,7 +162,7 @@ export class CalendarService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error creating event:', error);
+      logger.error('Error creating event:', error);
       throw new Error('Failed to create event');
     }
   }
@@ -208,7 +209,7 @@ export class CalendarService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error updating event:', error);
+      logger.error('Error updating event:', error);
       throw new Error('Failed to update event');
     }
   }
@@ -226,7 +227,7 @@ export class CalendarService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting event:', error);
+      logger.error('Error deleting event:', error);
       throw new Error('Failed to delete event');
     }
   }
@@ -277,7 +278,7 @@ export class CalendarService {
         activities
       };
     } catch (error) {
-      console.error('Error fetching calendar stats:', error);
+      logger.error('Error fetching calendar stats:', error);
       throw new Error('Failed to fetch calendar statistics');
     }
   }
@@ -313,7 +314,7 @@ export class CalendarService {
         updatedAt: new Date(event.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching class events:', error);
+      logger.error('Error fetching class events:', error);
       throw new Error('Failed to fetch class events');
     }
   }
