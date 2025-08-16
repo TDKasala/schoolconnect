@@ -49,31 +49,64 @@ export class ParentService {
    */
   async getParentStats(): Promise<ParentStats> {
     try {
-      // Get children for this parent
+      // Resolve parent email first
+      const { data: parentUser, error: parentError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('id', this.parentId)
+        .single();
+
+      if (parentError) throw parentError;
+
+      // Get children for this parent by parent_email
       const { data: children, error: childrenError } = await supabase
         .from('students')
-        .select('*')
-        .eq('parent_id', this.parentId);
+        .select('id')
+        .eq('parent_email', parentUser.email);
 
       if (childrenError) throw childrenError;
 
-      const childrenCount = children?.length || 0;
+      const childrenIds = (children || []).map(c => c.id);
+      const childrenCount = childrenIds.length;
 
-      // Calculate overall average (mock data)
-      const overallAverage = 15.2;
+      // Calculate overall average from grades table
+      let overallAverage = 0;
+      if (childrenIds.length > 0) {
+        const { data: grades, error: gradesError } = await supabase
+          .from('grades')
+          .select('grade, student_id')
+          .in('student_id', childrenIds);
 
-      // Mock payment status
-      const paymentStatus: 'À jour' | 'En retard' | 'En souffrance' = 'À jour';
+        if (gradesError) throw gradesError;
 
-      // Mock overall attendance
-      const overallAttendance = 95;
+        const gradesArr = grades || [];
+        if (gradesArr.length > 0) {
+          overallAverage =
+            Math.round((gradesArr.reduce((sum, g) => sum + (g.grade || 0), 0) / gradesArr.length) * 10) /
+            10;
+        }
+      }
 
-      return {
-        childrenCount,
-        overallAverage,
-        paymentStatus,
-        overallAttendance
-      };
+      // Payment status derived from payments table
+      let paymentStatus: 'À jour' | 'En retard' | 'En souffrance' = 'À jour';
+      if (childrenIds.length > 0) {
+        const { data: payments, error: payError } = await supabase
+          .from('payments')
+          .select('status, due_date, student_id')
+          .in('student_id', childrenIds);
+
+        if (payError) throw payError;
+
+        const hasOverdue = (payments || []).some(p => p.status === 'overdue');
+        const hasPending = (payments || []).some(p => p.status === 'pending');
+        if (hasOverdue) paymentStatus = 'En retard';
+        else if (hasPending) paymentStatus = 'En souffrance';
+      }
+
+      // Attendance table not defined in schema yet; set placeholder 0 and TODO
+      const overallAttendance = 0;
+
+      return { childrenCount, overallAverage, paymentStatus, overallAttendance };
     } catch (error) {
       logger.error('Error fetching parent stats:', error);
       throw new Error('Failed to fetch parent statistics');
@@ -85,24 +118,81 @@ export class ParentService {
    */
   async getChildren(): Promise<ChildInfo[]> {
     try {
+      // Resolve parent email
+      const { data: parentUser, error: parentError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('id', this.parentId)
+        .single();
+
+      if (parentError) throw parentError;
+
       const { data: children, error: childrenError } = await supabase
         .from('students')
         .select(`
-          *,
+          id, first_name, last_name, class_id, school_id, created_at, updated_at,
           classes(name)
         `)
-        .eq('parent_id', this.parentId);
+        .eq('parent_email', parentUser.email);
 
       if (childrenError) throw childrenError;
 
-      // Enhance children with additional info
-      const childrenWithInfo = children?.map(child => ({
-        ...child,
+      const childIds = (children || []).map(c => c.id);
+
+      // Fetch recent grades for these children
+      let recentGradesByStudent = new Map<string, any[]>();
+      let averagesByStudent = new Map<string, number>();
+      if (childIds.length > 0) {
+        const { data: grades, error: gradesError } = await supabase
+          .from('grades')
+          .select('student_id, subject, grade, created_at')
+          .in('student_id', childIds)
+          .order('created_at', { ascending: false });
+
+        if (gradesError) throw gradesError;
+
+        (grades || []).forEach(g => {
+          const arr = recentGradesByStudent.get(g.student_id) || [];
+          if (arr.length < 5) arr.push(g);
+          recentGradesByStudent.set(g.student_id, arr);
+        });
+
+        // Compute averages per student
+        childIds.forEach(id => {
+          const arr = (grades || []).filter(g => g.student_id === id);
+          const avg = arr.length ? arr.reduce((s, x) => s + x.grade, 0) / arr.length : 0;
+          averagesByStudent.set(id, Math.round(avg * 10) / 10);
+        });
+      }
+
+      const childrenWithInfo: ChildInfo[] = (children || []).map((child: any) => ({
+        id: child.id,
+        firstName: child.first_name,
+        lastName: child.last_name,
+        dateOfBirth: new Date(child.created_at), // Unknown, placeholder mapping
+        gender: 'M', // Unknown, placeholder
+        parentId: undefined,
+        classId: child.class_id,
+        schoolId: child.school_id,
+        enrollmentDate: new Date(child.created_at),
+        createdAt: new Date(child.created_at),
+        updatedAt: new Date(child.updated_at),
         className: child.classes?.name || 'N/A',
-        average: 15.2, // Mock data
-        attendance: 95, // Mock data
-        recentGrades: [] // Mock data
-      } as ChildInfo)) || [];
+        average: averagesByStudent.get(child.id) || 0,
+        attendance: 0,
+        recentGrades: (recentGradesByStudent.get(child.id) || []).map(g => ({
+          id: 'n/a',
+          studentId: child.id,
+          subjectId: 'n/a',
+          evaluationType: 'note',
+          score: g.grade,
+          maxScore: 20,
+          date: new Date(g.created_at),
+          teacherId: 'n/a',
+          createdAt: new Date(g.created_at),
+          updatedAt: new Date(g.created_at)
+        })) as any
+      }));
 
       return childrenWithInfo;
     } catch (error) {
@@ -116,33 +206,28 @@ export class ParentService {
    */
   async getTeacherMessages(): Promise<TeacherMessage[]> {
     try {
-      // Mock teacher messages
-      const mockMessages: TeacherMessage[] = [
-        { 
-          id: '1',
-          content: 'Félicitations pour les excellents résultats de Marie en mathématiques ce trimestre!',
-          senderId: 'teacher-1',
-          receiverId: this.parentId,
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          teacherName: 'Mme. Lucie',
-          subject: 'Mathématiques',
-          isRead: false,
-          isNew: true
-        },
-        { 
-          id: '2',
-          content: 'Rappel: Projet de sciences à rendre vendredi prochain.',
-          senderId: 'teacher-2',
-          receiverId: this.parentId,
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          teacherName: 'M. Pierre',
-          subject: 'Sciences',
-          isRead: true,
-          isNew: false
-        }
-      ];
+      const { data: messages, error } = await supabase
+        .from('messages')
+        .select('id, content, sender_id, receiver_id, read, created_at, users!messages_sender_id_fkey(full_name)')
+        .eq('receiver_id', this.parentId)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      return mockMessages;
+      if (error) throw error;
+
+      const mapped: TeacherMessage[] = (messages || []).map((m: any) => ({
+        id: m.id,
+        content: m.content,
+        senderId: m.sender_id,
+        receiverId: m.receiver_id,
+        timestamp: new Date(m.created_at),
+        teacherName: m.users?.full_name || 'Enseignant',
+        subject: 'Message',
+        isRead: !!m.read,
+        isNew: !m.read
+      }));
+
+      return mapped;
     } catch (error) {
       logger.error('Error fetching teacher messages:', error);
       throw new Error('Failed to fetch teacher messages');
@@ -154,25 +239,42 @@ export class ParentService {
    */
   async getPaymentInfo(): Promise<PaymentInfo[]> {
     try {
-      // Mock payment information
-      const mockPayments: PaymentInfo[] = [
-        { 
-          id: '1',
-          amount: 50000,
-          dueDate: '2024-02-01',
-          status: 'payé',
-          description: 'Frais de scolarité - Trimestre 1'
-        },
-        { 
-          id: '2',
-          amount: 50000,
-          dueDate: '2024-05-01',
-          status: 'à payer',
-          description: 'Frais de scolarité - Trimestre 2'
-        }
-      ];
+      // Resolve parent email, fetch children ids
+      const { data: parentUser, error: parentError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('id', this.parentId)
+        .single();
 
-      return mockPayments;
+      if (parentError) throw parentError;
+
+      const { data: children, error: childrenError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('parent_email', parentUser.email);
+
+      if (childrenError) throw childrenError;
+
+      const childIds = (children || []).map(c => c.id);
+      if (childIds.length === 0) return [];
+
+      const { data: payments, error } = await supabase
+        .from('payments')
+        .select('id, amount, due_date, status')
+        .in('student_id', childIds)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+
+      const mapped: PaymentInfo[] = (payments || []).map(p => ({
+        id: p.id,
+        amount: p.amount,
+        dueDate: p.due_date,
+        status: p.status === 'paid' ? 'payé' : p.status === 'overdue' ? 'en retard' : 'à payer',
+        description: 'Frais de scolarité'
+      }));
+
+      return mapped;
     } catch (error) {
       logger.error('Error fetching payment info:', error);
       throw new Error('Failed to fetch payment information');
@@ -205,38 +307,30 @@ export class ParentService {
    */
   async getChildGrades(childId: string): Promise<Grade[]> {
     try {
-      // Mock grades
-      const mockGrades: Grade[] = [
-        { 
-          id: '1',
-          studentId: childId,
-          subject: 'Mathématiques',
-          score: 16,
-          maxScore: 20,
-          date: '2024-01-15',
-          description: 'Contrôle sur les fractions'
-        },
-        { 
-          id: '2',
-          studentId: childId,
-          subject: 'Français',
-          score: 14,
-          maxScore: 20,
-          date: '2024-01-10',
-          description: 'Dictée'
-        },
-        { 
-          id: '3',
-          studentId: childId,
-          subject: 'Histoire',
-          score: 17,
-          maxScore: 20,
-          date: '2024-01-05',
-          description: 'Examen sur la Révolution française'
-        }
-      ];
+      const { data: grades, error } = await supabase
+        .from('grades')
+        .select('id, student_id, subject, grade, evaluation, created_at, teacher_id')
+        .eq('student_id', childId)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      return mockGrades;
+      if (error) throw error;
+
+      // Map DB schema to app Grade interface best-effort
+      const mapped: any[] = (grades || []).map(g => ({
+        id: g.id,
+        studentId: g.student_id,
+        subjectId: g.subject, // using subject name as id placeholder
+        evaluationType: g.evaluation,
+        score: g.grade,
+        maxScore: 20,
+        date: new Date(g.created_at),
+        teacherId: g.teacher_id,
+        createdAt: new Date(g.created_at),
+        updatedAt: new Date(g.created_at)
+      }));
+
+      return mapped as unknown as Grade[];
     } catch (error) {
       logger.error('Error fetching child grades:', error);
       throw new Error('Failed to fetch child grades');
