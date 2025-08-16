@@ -23,14 +23,34 @@ const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
   const typedUser = user as UserWithProfile | null;
 
-  if (loading) return <Spinner />;
-  if (!typedUser) return <Navigate to="/connexion" replace />;
+  if (import.meta.env.DEV) {
+    console.log('RoleRoute: checking role access', { loading, userId: typedUser?.id, allowedRoles });
+  }
+
+  if (loading) {
+    if (import.meta.env.DEV) {
+      console.log('RoleRoute: loading, showing spinner');
+    }
+    return <Spinner />;
+  }
+  if (!typedUser) {
+    if (import.meta.env.DEV) {
+      console.log('RoleRoute: no user, redirecting to login');
+    }
+    return <Navigate to="/connexion" replace />;
+  }
 
   const role = typedUser.profile?.role;
   if (!allowedRoles.includes(role)) {
+    if (import.meta.env.DEV) {
+      console.log('RoleRoute: unauthorized role, redirecting to dashboard', { role, allowedRoles });
+    }
     return <Navigate to="/dashboard" replace state={{ unauthorized: true }} />;
   }
 
+  if (import.meta.env.DEV) {
+    console.log('RoleRoute: access granted');
+  }
   return <>{children}</>;
 };
 

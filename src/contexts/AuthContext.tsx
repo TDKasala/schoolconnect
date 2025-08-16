@@ -27,7 +27,16 @@ interface AuthContextType {
 }
 
 export interface UserWithProfile extends User {
-  profile: any;
+  profile?: Profile;
+}
+
+// Profile stored in public.users table
+export interface Profile {
+  id: string;
+  full_name: string;
+  role: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
+  school_id?: string | null;
+  created_at: string;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -71,7 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logger.log('AuthProvider: profile data fetched', data);
       const userWithProfile: UserWithProfile = {
         ...authUser,
-        profile: data
+        profile: data as Profile
       };
       logger.log('AuthProvider: returning merged user profile', userWithProfile);
       return userWithProfile;
