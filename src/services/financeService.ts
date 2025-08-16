@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Payment } from '../types';
+import logger from '../utils/logger';
 
 export interface FinancialPayment extends Payment {
   id: string;
@@ -79,7 +80,7 @@ export class FinanceService {
         updatedAt: new Date(payment.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      logger.error('Error fetching payments:', error);
       throw new Error('Failed to fetch payments');
     }
   }
@@ -121,7 +122,7 @@ export class FinanceService {
         updatedAt: new Date(payment.updated_at)
       })) || [];
     } catch (error) {
-      console.error(`Error fetching ${status} payments:`, error);
+      logger.error(`Error fetching ${status} payments:`, error);
       throw new Error(`Failed to fetch ${status} payments`);
     }
   }
@@ -164,7 +165,7 @@ export class FinanceService {
         updatedAt: new Date(payment.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching overdue payments:', error);
+      logger.error('Error fetching overdue payments:', error);
       throw new Error('Failed to fetch overdue payments');
     }
   }
@@ -198,7 +199,7 @@ export class FinanceService {
         updatedAt: new Date(payment.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching student payments:', error);
+      logger.error('Error fetching student payments:', error);
       throw new Error('Failed to fetch student payments');
     }
   }
@@ -242,7 +243,7 @@ export class FinanceService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error creating payment:', error);
+      logger.error('Error creating payment:', error);
       throw new Error('Failed to create payment');
     }
   }
@@ -286,7 +287,7 @@ export class FinanceService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error updating payment:', error);
+      logger.error('Error updating payment:', error);
       throw new Error('Failed to update payment');
     }
   }
@@ -304,7 +305,7 @@ export class FinanceService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting payment:', error);
+      logger.error('Error deleting payment:', error);
       throw new Error('Failed to delete payment');
     }
   }
@@ -359,7 +360,7 @@ export class FinanceService {
         monthlyRevenue
       };
     } catch (error) {
-      console.error('Error fetching financial summary:', error);
+      logger.error('Error fetching financial summary:', error);
       throw new Error('Failed to fetch financial summary');
     }
   }
@@ -427,7 +428,7 @@ export class FinanceService {
         paymentsByStatus
       };
     } catch (error) {
-      console.error('Error fetching financial report:', error);
+      logger.error('Error fetching financial report:', error);
       throw new Error('Failed to fetch financial report');
     }
   }
@@ -466,7 +467,7 @@ export class FinanceService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error processing payment:', error);
+      logger.error('Error processing payment:', error);
       throw new Error('Failed to process payment');
     }
   }
