@@ -25,7 +25,7 @@ export const messagesService = {
     // Fetch both directions between user and peer, ordered ascending for chat display
     const { data, error } = await supabase
       .from('messages')
-      .select('*')
+      .select('id, sender_id, receiver_id, content, type, read, created_at, updated_at')
       .or(`and(sender_id.eq.${userId},receiver_id.eq.${peerId}),and(sender_id.eq.${peerId},receiver_id.eq.${userId})`)
       .order('created_at', { ascending: true })
       .limit(limit);
@@ -39,7 +39,7 @@ export const messagesService = {
     const { data, error } = await supabase
       .from('messages')
       .insert(payload as any)
-      .select('*')
+      .select('id, sender_id, receiver_id, content, type, read, created_at, updated_at')
       .single();
     if (error) throw error;
     return data as Message;
@@ -61,7 +61,7 @@ export const messagesService = {
     // Fetch recent messages involving the user and compute summaries client-side (MVP)
     const { data, error } = await supabase
       .from('messages')
-      .select('*')
+      .select('id, sender_id, receiver_id, content, type, read, created_at, updated_at')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false })
       .limit(limit);

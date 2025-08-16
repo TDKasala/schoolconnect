@@ -117,14 +117,14 @@ export class OverviewService {
         // Platform admin sees all stats
         const { count: studentsCount, error: studentsError } = await supabase
           .from('students')
-          .select('*', { count: 'exact', head: true });
+          .select('id', { count: 'exact', head: true });
 
         if (studentsError) throw studentsError;
         totalStudents = studentsCount || 0;
 
         const { count: teachersCount, error: teachersError } = await supabase
           .from('users')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('role', 'teacher');
 
         if (teachersError) throw teachersError;
@@ -132,21 +132,21 @@ export class OverviewService {
 
         const { count: classesCount, error: classesError } = await supabase
           .from('classes')
-          .select('*', { count: 'exact', head: true });
+          .select('id', { count: 'exact', head: true });
 
         if (classesError) throw classesError;
         totalClasses = classesCount || 0;
 
         const { count: schoolsCount, error: schoolsError } = await supabase
           .from('schools')
-          .select('*', { count: 'exact', head: true });
+          .select('id', { count: 'exact', head: true });
 
         if (schoolsError) throw schoolsError;
         totalSchools = schoolsCount || 0;
 
         const { count: allUsersCount, error: allUsersError } = await supabase
           .from('users')
-          .select('*', { count: 'exact', head: true });
+          .select('id', { count: 'exact', head: true });
 
         if (allUsersError) throw allUsersError;
         activeUsers = allUsersCount || 0;
@@ -155,7 +155,7 @@ export class OverviewService {
         // School admin sees stats for their school
         const { count: studentsCount, error: studentsError } = await supabase
           .from('students')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('school_id', this.schoolId);
 
         if (studentsError) throw studentsError;
@@ -163,7 +163,7 @@ export class OverviewService {
 
         const { count: teachersCount, error: teachersError } = await supabase
           .from('users')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('role', 'teacher')
           .eq('school_id', this.schoolId);
 
@@ -172,7 +172,7 @@ export class OverviewService {
 
         const { count: classesCount, error: classesError } = await supabase
           .from('classes')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('school_id', this.schoolId);
 
         if (classesError) throw classesError;
@@ -182,7 +182,7 @@ export class OverviewService {
 
         const { count: activeUsersCount, error: activeUsersError } = await supabase
           .from('users')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'active')
           .eq('school_id', this.schoolId);
 
@@ -191,7 +191,7 @@ export class OverviewService {
 
         const { count: pendingUsersCount, error: pendingUsersError } = await supabase
           .from('users')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'pending')
           .eq('school_id', this.schoolId);
 
@@ -201,7 +201,7 @@ export class OverviewService {
         // Teacher sees stats for their classes
         const { count: studentsCount, error: studentsError } = await supabase
           .from('students')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('school_id', this.schoolId);
 
         if (studentsError) throw studentsError;
@@ -256,7 +256,7 @@ export class OverviewService {
       let query = supabase
         .from('activity_logs')
         .select(`
-          *,
+          id, user_id, action, target, target_type, target_id, description, created_at, school_id,
           users!inner(full_name)
         `)
         .order('created_at', { ascending: false })
@@ -270,10 +270,15 @@ export class OverviewService {
 
       if (error) throw error;
 
-      return data?.map(activity => ({
+      return data?.map(activity => {
+        const userJoin = activity.users as any;
+        const userFullName = Array.isArray(userJoin)
+          ? userJoin[0]?.full_name
+          : userJoin?.full_name;
+        return {
         id: activity.id,
         userId: activity.user_id,
-        userName: activity.users?.full_name || 'Unknown User',
+        userName: userFullName || 'Unknown User',
         action: activity.action,
         // Prefer explicit target if present; fall back to target_type string
         target: activity.target || activity.target_type || '',
@@ -282,7 +287,8 @@ export class OverviewService {
         targetType: activity.target_type || undefined,
         targetId: activity.target_id || undefined,
         timestamp: new Date(activity.created_at)
-      })) || [];
+        };
+      }) || [];
     } catch (error) {
       logger.error('Error fetching recent activities:', error);
       throw new Error('Failed to fetch recent activities');

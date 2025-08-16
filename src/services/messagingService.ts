@@ -1,8 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { Message } from '../types';
 import logger from '../utils/logger';
 
-export interface MessagingMessage extends Message {
+export interface MessagingMessage {
   id: string;
   senderId: string;
   receiverId?: string;
@@ -31,11 +30,11 @@ export interface MessagingStats {
 
 export class MessagingService {
   private userId: string;
-  private schoolId: string;
+  private _schoolId: string;
 
   constructor(userId: string, schoolId: string) {
     this.userId = userId;
-    this.schoolId = schoolId;
+    this._schoolId = schoolId;
   }
 
   /**
@@ -45,7 +44,7 @@ export class MessagingService {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, sender_id, receiver_id, class_id, content, subject, type, is_read, created_at, updated_at')
         .or(`sender_id.eq.${this.userId},receiver_id.eq.${this.userId}`)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -77,7 +76,7 @@ export class MessagingService {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, sender_id, receiver_id, class_id, content, subject, type, is_read, created_at, updated_at')
         .eq('receiver_id', this.userId)
         .eq('is_read', false)
         .order('created_at', { ascending: false });
@@ -109,7 +108,7 @@ export class MessagingService {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, sender_id, receiver_id, class_id, content, subject, type, is_read, created_at, updated_at')
         .or(`and(sender_id.eq.${this.userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${this.userId})`)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -141,7 +140,7 @@ export class MessagingService {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, sender_id, receiver_id, class_id, content, subject, type, is_read, created_at, updated_at')
         .eq('class_id', classId)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -182,7 +181,7 @@ export class MessagingService {
           type: messageData.type,
           is_read: false
         })
-        .select()
+        .select('id, sender_id, receiver_id, class_id, content, subject, type, is_read, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -267,7 +266,7 @@ export class MessagingService {
       // Get total messages
       const { count: totalMessages, error: totalError } = await supabase
         .from('messages')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .or(`sender_id.eq.${this.userId},receiver_id.eq.${this.userId}`);
 
       if (totalError) throw totalError;
@@ -275,7 +274,7 @@ export class MessagingService {
       // Get unread messages
       const { count: unreadMessages, error: unreadError } = await supabase
         .from('messages')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('receiver_id', this.userId)
         .eq('is_read', false);
 
@@ -284,7 +283,7 @@ export class MessagingService {
       // Get sent messages
       const { count: sentMessages, error: sentError } = await supabase
         .from('messages')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('sender_id', this.userId);
 
       if (sentError) throw sentError;
@@ -292,7 +291,7 @@ export class MessagingService {
       // Get received messages
       const { count: receivedMessages, error: receivedError } = await supabase
         .from('messages')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('receiver_id', this.userId);
 
       if (receivedError) throw receivedError;
@@ -319,7 +318,7 @@ export class MessagingService {
       const { data, error } = await supabase
         .from('messages')
         .select(`
-          *,
+          id, sender_id, receiver_id, class_id, content, subject, type, is_read, created_at, updated_at,
           sender:users!messages_sender_id_fkey(full_name),
           receiver:users!messages_receiver_id_fkey(full_name)
         `)
@@ -333,8 +332,6 @@ export class MessagingService {
       
       data?.forEach(message => {
         const otherUserId = message.sender_id === this.userId ? message.receiver_id : message.sender_id;
-        const otherUserName = message.sender_id === this.userId ? 
-          message.receiver?.full_name : message.sender?.full_name;
         
         if (otherUserId && !conversationsMap[otherUserId]) {
           conversationsMap[otherUserId] = {

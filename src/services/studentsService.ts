@@ -31,7 +31,7 @@ export const studentsService = {
 
     let query = supabase
       .from('students')
-      .select('*', { count: 'exact' })
+      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at', { count: 'exact' })
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -51,7 +51,7 @@ export const studentsService = {
     const { schoolId, classId } = params;
     const { data, error } = await supabase
       .from('students')
-      .select('*')
+      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at')
       .eq('school_id', schoolId)
       .eq('class_id', classId)
       .order('last_name', { ascending: true })
@@ -65,7 +65,7 @@ export const studentsService = {
     const { data, error } = await supabase
       .from('students')
       .insert([payload])
-      .select('*')
+      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at')
       .single();
 
     if (error) throw error;
@@ -77,7 +77,7 @@ export const studentsService = {
       .from('students')
       .update(patch)
       .eq('id', id)
-      .select('*')
+      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at')
       .single();
 
     if (error) throw error;

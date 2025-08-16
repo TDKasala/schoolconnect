@@ -43,7 +43,7 @@ export class CalendarService {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select('id, title, description, start_date, end_date, location, event_type, created_by, school_id, class_id, is_all_day, color, created_at, updated_at')
         .eq('school_id', this.schoolId)
         .gte('start_date', startDate.toISOString())
         .lte('end_date', endDate.toISOString())
@@ -91,7 +91,7 @@ export class CalendarService {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select('id, title, description, start_date, end_date, location, event_type, created_by, school_id, class_id, is_all_day, color, created_at, updated_at')
         .eq('school_id', this.schoolId)
         .gte('start_date', new Date().toISOString())
         .order('start_date', { ascending: true })
@@ -140,7 +140,7 @@ export class CalendarService {
           class_id: eventData.classId,
           is_all_day: eventData.isAllDay
         })
-        .select()
+        .select('id, title, description, start_date, end_date, location, event_type, created_by, school_id, class_id, is_all_day, color, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -187,7 +187,7 @@ export class CalendarService {
         })
         .eq('id', eventId)
         .eq('school_id', this.schoolId)
-        .select()
+        .select('id, title, description, start_date, end_date, location, event_type, created_by, school_id, class_id, is_all_day, color, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -240,7 +240,7 @@ export class CalendarService {
       // Get total events
       const { count: totalEvents, error: totalError } = await supabase
         .from('events')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('school_id', this.schoolId);
 
       if (totalError) throw totalError;
@@ -251,7 +251,7 @@ export class CalendarService {
       
       const { count: upcomingEvents, error: upcomingError } = await supabase
         .from('events')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('school_id', this.schoolId)
         .gte('start_date', new Date().toISOString())
         .lte('start_date', next30Days.toISOString());
@@ -290,7 +290,7 @@ export class CalendarService {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select('id, title, description, start_date, end_date, location, event_type, created_by, school_id, class_id, is_all_day, color, created_at, updated_at')
         .eq('class_id', classId)
         .eq('school_id', this.schoolId)
         .order('start_date', { ascending: true });

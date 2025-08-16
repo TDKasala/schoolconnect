@@ -21,7 +21,7 @@ export const gradesService = {
     const { classId, subject, fromDate, toDate } = params;
     let query = supabase
       .from('grades')
-      .select('*')
+      .select('id, student_id, class_id, subject, grade, evaluation_type, teacher_id, date, comment, created_at, updated_at')
       .eq('class_id', classId)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
@@ -50,7 +50,7 @@ export const gradesService = {
     const { data, error } = await supabase
       .from('grades')
       .insert(entries as any)
-      .select('*');
+      .select('id, student_id, class_id, subject, grade, evaluation_type, teacher_id, date, comment, created_at, updated_at');
     if (error) throw error;
     return (data as GradeRow[]) || [];
   },
@@ -60,7 +60,7 @@ export const gradesService = {
       .from('grades')
       .update(patch)
       .eq('id', id)
-      .select('*')
+      .select('id, student_id, class_id, subject, grade, evaluation_type, teacher_id, date, comment, created_at, updated_at')
       .single();
     if (error) throw error;
     return data as GradeRow;

@@ -68,7 +68,7 @@ export class TeacherService {
       // Get classes count for this teacher
       const { count: classCount } = await supabase
         .from('classes')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('teacher_id', this.teacherId);
 
       // Get total students across all classes
@@ -82,7 +82,7 @@ export class TeacherService {
         for (const cls of classes) {
           const { count: studentCount } = await supabase
             .from('students')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('class_id', cls.id);
           totalStudents += studentCount || 0;
         }
@@ -91,7 +91,7 @@ export class TeacherService {
       // Get pending grades (homework that needs grading)
       const { count: pendingGrades } = await supabase
         .from('homework')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('teacher_id', this.teacherId)
         .eq('status', 'submitted');
 
@@ -339,7 +339,7 @@ export class TeacherService {
     try {
       const { data: homework, error } = await supabase
         .from('homework')
-        .select('*')
+        .select('id, class_id, title, description, due_date, subject, teacher_id, created_at, updated_at')
         .eq('class_id', classId)
         .order('due_date', { ascending: true });
 
@@ -380,7 +380,7 @@ export class TeacherService {
     try {
       const { data: teacher, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, full_name, role, school_id, created_at, updated_at')
         .eq('id', this.teacherId)
         .single();
 
