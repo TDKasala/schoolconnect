@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import logger from '../utils/logger';
 
 export interface OverviewStats {
   totalStudents: number;
@@ -95,7 +96,7 @@ export class OverviewService {
         classPerformance
       };
     } catch (error) {
-      console.error('Error fetching overview data:', error);
+      logger.error('Error fetching overview data:', error);
       throw new Error('Failed to fetch overview data');
     }
   }
@@ -242,7 +243,7 @@ export class OverviewService {
         pendingUsers
       };
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      logger.error('Error fetching stats:', error);
       throw new Error('Failed to fetch statistics');
     }
   }
@@ -283,7 +284,7 @@ export class OverviewService {
         timestamp: new Date(activity.created_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching recent activities:', error);
+      logger.error('Error fetching recent activities:', error);
       throw new Error('Failed to fetch recent activities');
     }
   }
@@ -317,7 +318,7 @@ export class OverviewService {
         eventType: event.event_type
       })) || [];
     } catch (error) {
-      console.error('Error fetching upcoming events:', error);
+      logger.error('Error fetching upcoming events:', error);
       throw new Error('Failed to fetch upcoming events');
     }
   }
@@ -352,7 +353,7 @@ export class OverviewService {
         isRead: message.is_read || false
       })) || [];
     } catch (error) {
-      console.error('Error fetching recent messages:', error);
+      logger.error('Error fetching recent messages:', error);
       throw new Error('Failed to fetch recent messages');
     }
   }
@@ -400,7 +401,7 @@ export class OverviewService {
         overduePayments
       };
     } catch (error) {
-      console.error('Error fetching financial summary:', error);
+      logger.error('Error fetching financial summary:', error);
       throw new Error('Failed to fetch financial summary');
     }
   }
@@ -438,7 +439,7 @@ export class OverviewService {
         studentCount: cls.students?.[0]?.count || 0
       })) || [];
     } catch (error) {
-      console.error('Error fetching class performance:', error);
+      logger.error('Error fetching class performance:', error);
       throw new Error('Failed to fetch class performance');
     }
   }
