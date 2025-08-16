@@ -57,13 +57,13 @@ export const settingsService = {
       const { data, error } = await supabase
         .from(SETTINGS_TABLE)
         .select('*')
-        .limit(1)
+        .eq('id', 'platform')
         .maybeSingle();
 
       if (error) throw error;
       return data ?? null;
     } catch (err) {
-      console.error('getSettings error:', err);
+      logger.error('getSettings error:', err);
       return null;
     }
   },
