@@ -223,7 +223,7 @@ async function prepareContextData(context?: Record<string, any>): Promise<Record
   if (context.studentId) {
     const { data: student } = await supabase
       .from('students')
-      .select('*, classes(name)')
+      .select('id, first_name, last_name, class_id, school_id, created_at, updated_at, classes(name)')
       .eq('id', context.studentId)
       .single();
     enrichedContext.student = student;
@@ -232,7 +232,7 @@ async function prepareContextData(context?: Record<string, any>): Promise<Record
   if (context.classId) {
     const { data: classData } = await supabase
       .from('classes')
-      .select('*, schools(name)')
+      .select('id, name, school_id, level, teacher_id, created_at, schools(name)')
       .eq('id', context.classId)
       .single();
     enrichedContext.class = classData;
@@ -241,7 +241,7 @@ async function prepareContextData(context?: Record<string, any>): Promise<Record
   if (context.teacherId) {
     const { data: teacher } = await supabase
       .from('users')
-      .select('*')
+      .select('id')
       .eq('id', context.teacherId)
       .single();
     enrichedContext.teacher = teacher;
