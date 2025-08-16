@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Student, Grade, Message, User } from '../types';
+import logger from '../utils/logger';
 
 export interface ParentStats {
   childrenCount: number;
@@ -74,7 +75,7 @@ export class ParentService {
         overallAttendance
       };
     } catch (error) {
-      console.error('Error fetching parent stats:', error);
+      logger.error('Error fetching parent stats:', error);
       throw new Error('Failed to fetch parent statistics');
     }
   }
@@ -105,7 +106,7 @@ export class ParentService {
 
       return childrenWithInfo;
     } catch (error) {
-      console.error('Error fetching children:', error);
+      logger.error('Error fetching children:', error);
       throw new Error('Failed to fetch children information');
     }
   }
@@ -143,7 +144,7 @@ export class ParentService {
 
       return mockMessages;
     } catch (error) {
-      console.error('Error fetching teacher messages:', error);
+      logger.error('Error fetching teacher messages:', error);
       throw new Error('Failed to fetch teacher messages');
     }
   }
@@ -173,7 +174,7 @@ export class ParentService {
 
       return mockPayments;
     } catch (error) {
-      console.error('Error fetching payment info:', error);
+      logger.error('Error fetching payment info:', error);
       throw new Error('Failed to fetch payment information');
     }
   }
@@ -194,7 +195,7 @@ export class ParentService {
 
       return mockAttendance;
     } catch (error) {
-      console.error('Error fetching attendance records:', error);
+      logger.error('Error fetching attendance records:', error);
       throw new Error('Failed to fetch attendance records');
     }
   }
@@ -237,7 +238,7 @@ export class ParentService {
 
       return mockGrades;
     } catch (error) {
-      console.error('Error fetching child grades:', error);
+      logger.error('Error fetching child grades:', error);
       throw new Error('Failed to fetch child grades');
     }
   }
@@ -248,12 +249,12 @@ export class ParentService {
   async sendMessage(teacherId: string, content: string): Promise<void> {
     try {
       // In a real implementation, you would save this to a messages table
-      console.log(`Message sent to teacher ${teacherId}: ${content}`);
+      logger.log(`Message sent to teacher ${teacherId}: ${content}`);
       
       // For now, we'll just log to console
       // TODO: Implement actual message sending to database
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       throw new Error('Failed to send message');
     }
   }
@@ -281,7 +282,7 @@ export class ParentService {
         updatedAt: new Date(parent.updated_at)
       };
     } catch (error) {
-      console.error('Error fetching parent info:', error);
+      logger.error('Error fetching parent info:', error);
       throw new Error('Failed to fetch parent information');
     }
   }
