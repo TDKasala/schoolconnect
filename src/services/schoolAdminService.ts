@@ -59,13 +59,13 @@ export class SchoolAdminService {
       // Get total students for this school
       const { count: totalStudents } = await supabase
         .from('students')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('school_id', this.schoolId);
 
       // Get active teachers for this school
       const { count: activeTeachers } = await supabase
         .from('users')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('school_id', this.schoolId)
         .eq('role', 'teacher');
 
@@ -107,7 +107,7 @@ export class SchoolAdminService {
       
       const { data: users, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, full_name, email, role, school_id, created_at')
         .eq('school_id', this.schoolId)
         .gte('created_at', oneWeekAgo);
 
@@ -259,7 +259,7 @@ export class SchoolAdminService {
     try {
       const { data: users, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, full_name, role, school_id, created_at, updated_at')
         .eq('school_id', this.schoolId)
         .eq('role', 'teacher');
 
@@ -271,7 +271,7 @@ export class SchoolAdminService {
           // Get student count for this teacher
           const { count: studentCount } = await supabase
             .from('students')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('class_id', user.id); // Assuming teacher_id is stored in class_id
 
           return {
@@ -304,7 +304,7 @@ export class SchoolAdminService {
       const { data: students, error } = await supabase
         .from('students')
         .select(`
-          *,
+          id, first_name, last_name, date_of_birth, school_id, class_id, created_at, updated_at,
           classes(name),
           users(full_name)
         `)
@@ -335,7 +335,7 @@ export class SchoolAdminService {
     try {
       const { data: school, error } = await supabase
         .from('schools')
-        .select('*')
+        .select('id, name, address, phone, email, created_at, updated_at')
         .eq('id', this.schoolId)
         .single();
 
