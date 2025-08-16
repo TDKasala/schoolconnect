@@ -71,7 +71,7 @@ export class BackendVerificationService {
       try {
         const { data, error } = await supabase
           .from(feature.table)
-          .select('*')
+          .select('id')
           .limit(1);
 
         if (error) {
@@ -102,13 +102,14 @@ export class BackendVerificationService {
       'payments'
     ];
 
-    const results = [];
+    const results = [] as { policy: string; status: boolean; error?: string }[];
 
     for (const table of policies) {
       try {
-        const { data, error } = await supabase
+        // Head-only exact count to test access without fetching rows
+        const { error } = await supabase
           .from(table)
-          .select('count');
+          .select('id', { count: 'exact', head: true });
 
         results.push({
           policy: `${table}_rls`,
