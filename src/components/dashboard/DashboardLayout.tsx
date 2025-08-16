@@ -57,6 +57,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       { name: 'Messaging', href: '/dashboard/messagerie', icon: MessageSquare },
       { name: 'Calendar', href: '/dashboard/calendrier', icon: Calendar },
     ];
+  } else if (typedUser?.profile?.role === 'parent') {
+    navigation = [
+      { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
+      { name: 'Mes enfants', href: '/dashboard/enfants', icon: Users },
+      { name: 'Notes', href: '/dashboard/notes', icon: Edit3 },
+      { name: 'Paiements', href: '/dashboard/paiements', icon: DollarSign },
+      { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
+      { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+    ];
+  } else if (typedUser?.profile?.role === 'student') {
+    navigation = [
+      { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
+      { name: 'Mes cours', href: '/dashboard/cours', icon: BookOpen },
+      { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
+      { name: 'Notes', href: '/dashboard/grades', icon: Edit3 },
+      { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
+      { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+    ];
   } else {
     // Default: school_admin
     navigation = [
