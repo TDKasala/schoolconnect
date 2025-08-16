@@ -212,7 +212,7 @@ export class OverviewService {
 
         const { count: classesCount, error: classesError } = await supabase
           .from('classes')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('teacher_id', this.userId);
 
         if (classesError) throw classesError;
