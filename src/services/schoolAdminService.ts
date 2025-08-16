@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { User, School, Student, Teacher } from '../types';
+import logger from '../utils/logger';
 
 export interface SchoolStats {
   totalStudents: number;
@@ -90,7 +91,7 @@ export class SchoolAdminService {
         monthlyGrowth
       };
     } catch (error) {
-      console.error('Error fetching school stats:', error);
+      logger.error('Error fetching school stats:', error);
       throw new Error('Failed to fetch school statistics');
     }
   }
@@ -121,7 +122,7 @@ export class SchoolAdminService {
         schoolId: user.school_id
       })) || [];
     } catch (error) {
-      console.error('Error fetching pending users:', error);
+      logger.error('Error fetching pending users:', error);
       throw new Error('Failed to fetch pending users');
     }
   }
@@ -160,7 +161,7 @@ export class SchoolAdminService {
         time: 'just now'
       });
     } catch (error) {
-      console.error(`Error ${action}ing user:`, error);
+      logger.error(`Error ${action}ing user:`, error);
       throw new Error(`Failed to ${action} user`);
     }
   }
@@ -204,7 +205,7 @@ export class SchoolAdminService {
 
       return mockActivities.slice(0, limit);
     } catch (error) {
-      console.error('Error fetching recent activities:', error);
+      logger.error('Error fetching recent activities:', error);
       throw new Error('Failed to fetch recent activities');
     }
   }
@@ -219,12 +220,12 @@ export class SchoolAdminService {
   }): Promise<void> {
     try {
       // In a real implementation, you would save this to an activity_logs table
-      console.log('Activity logged:', activity);
+      logger.log('Activity logged:', activity);
       
       // For now, we'll just log to console
       // TODO: Implement actual activity logging to database
     } catch (error) {
-      console.error('Error logging activity:', error);
+      logger.error('Error logging activity:', error);
     }
   }
 
@@ -234,7 +235,7 @@ export class SchoolAdminService {
   async sendInvitation(email: string, role: 'teacher' | 'parent'): Promise<void> {
     try {
       // In a real implementation, you would send an email invitation
-      console.log(`Invitation sent to ${email} as ${role}`);
+      logger.log(`Invitation sent to ${email} as ${role}`);
       
       // For now, we'll just log to console
       // TODO: Implement actual email invitation system
@@ -246,7 +247,7 @@ export class SchoolAdminService {
         time: 'just now'
       });
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      logger.error('Error sending invitation:', error);
       throw new Error('Failed to send invitation');
     }
   }
@@ -290,7 +291,7 @@ export class SchoolAdminService {
 
       return teachersWithStats;
     } catch (error) {
-      console.error('Error fetching teachers:', error);
+      logger.error('Error fetching teachers:', error);
       throw new Error('Failed to fetch teachers');
     }
   }
@@ -322,7 +323,7 @@ export class SchoolAdminService {
         lastGradeDate: '2024-01-15' // Mock data
       } as StudentWithClass)) || [];
     } catch (error) {
-      console.error('Error fetching students:', error);
+      logger.error('Error fetching students:', error);
       throw new Error('Failed to fetch students');
     }
   }
@@ -350,7 +351,7 @@ export class SchoolAdminService {
         updatedAt: new Date(school.updated_at)
       };
     } catch (error) {
-      console.error('Error fetching school info:', error);
+      logger.error('Error fetching school info:', error);
       throw new Error('Failed to fetch school information');
     }
   }

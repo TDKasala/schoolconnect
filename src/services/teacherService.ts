@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Class, Student, Grade, Homework, User } from '../types';
+import logger from '../utils/logger';
 
 export interface TeacherStats {
   classCount: number;
@@ -91,7 +92,7 @@ export class TeacherService {
         weeklyClasses
       };
     } catch (error) {
-      console.error('Error fetching teacher stats:', error);
+      logger.error('Error fetching teacher stats:', error);
       throw new Error('Failed to fetch teacher statistics');
     }
   }
@@ -130,7 +131,7 @@ export class TeacherService {
 
       return classesWithStats;
     } catch (error) {
-      console.error('Error fetching classes:', error);
+      logger.error('Error fetching classes:', error);
       throw new Error('Failed to fetch classes');
     }
   }
@@ -182,7 +183,7 @@ export class TeacherService {
 
       return mockActivities.slice(0, limit);
     } catch (error) {
-      console.error('Error fetching recent activities:', error);
+      logger.error('Error fetching recent activities:', error);
       throw new Error('Failed to fetch recent activities');
     }
   }
@@ -219,7 +220,7 @@ export class TeacherService {
 
       return mockTasks;
     } catch (error) {
-      console.error('Error fetching upcoming tasks:', error);
+      logger.error('Error fetching upcoming tasks:', error);
       throw new Error('Failed to fetch upcoming tasks');
     }
   }
@@ -278,9 +279,9 @@ export class TeacherService {
       if (error) throw error;
 
       // Log activity
-      console.log(`Homework created: ${homeworkData.title}`);
+      logger.log(`Homework created: ${homeworkData.title}`);
     } catch (error) {
-      console.error('Error creating homework:', error);
+      logger.error('Error creating homework:', error);
       throw new Error('Failed to create homework');
     }
   }
@@ -300,7 +301,7 @@ export class TeacherService {
 
       return homework || [];
     } catch (error) {
-      console.error('Error fetching homework:', error);
+      logger.error('Error fetching homework:', error);
       throw new Error('Failed to fetch homework');
     }
   }
@@ -316,12 +317,12 @@ export class TeacherService {
   }[]): Promise<void> {
     try {
       // In a real implementation, you would update grades in the database
-      console.log('Grades updated:', grades);
+      logger.log('Grades updated:', grades);
       
       // For now, we'll just log to console
       // TODO: Implement actual grade updating to database
     } catch (error) {
-      console.error('Error updating grades:', error);
+      logger.error('Error updating grades:', error);
       throw new Error('Failed to update grades');
     }
   }
@@ -349,7 +350,7 @@ export class TeacherService {
         updatedAt: new Date(teacher.updated_at)
       };
     } catch (error) {
-      console.error('Error fetching teacher info:', error);
+      logger.error('Error fetching teacher info:', error);
       throw new Error('Failed to fetch teacher information');
     }
   }

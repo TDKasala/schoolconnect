@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Student, Class, Grade, Attendance } from '../types';
+import logger from '../utils/logger';
 
 export interface PedagogyStudent extends Student {
   id: string;
@@ -109,7 +110,7 @@ export class PedagogyService {
         updatedAt: new Date(cls.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching classes:', error);
+      logger.error('Error fetching classes:', error);
       throw new Error('Failed to fetch classes');
     }
   }
@@ -142,7 +143,7 @@ export class PedagogyService {
         updatedAt: new Date(student.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching class students:', error);
+      logger.error('Error fetching class students:', error);
       throw new Error('Failed to fetch class students');
     }
   }
@@ -176,7 +177,7 @@ export class PedagogyService {
         updatedAt: new Date(grade.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching class grades:', error);
+      logger.error('Error fetching class grades:', error);
       throw new Error('Failed to fetch class grades');
     }
   }
@@ -215,7 +216,7 @@ export class PedagogyService {
         updatedAt: new Date(attendance.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching class attendance:', error);
+      logger.error('Error fetching class attendance:', error);
       throw new Error('Failed to fetch class attendance');
     }
   }
@@ -246,7 +247,7 @@ export class PedagogyService {
         updatedAt: new Date(grade.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching student grades:', error);
+      logger.error('Error fetching student grades:', error);
       throw new Error('Failed to fetch student grades');
     }
   }
@@ -275,7 +276,7 @@ export class PedagogyService {
         updatedAt: new Date(attendance.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching student attendance:', error);
+      logger.error('Error fetching student attendance:', error);
       throw new Error('Failed to fetch student attendance');
     }
   }
@@ -314,7 +315,7 @@ export class PedagogyService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error adding grade:', error);
+      logger.error('Error adding grade:', error);
       throw new Error('Failed to add grade');
     }
   }
@@ -352,7 +353,7 @@ export class PedagogyService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error updating grade:', error);
+      logger.error('Error updating grade:', error);
       throw new Error('Failed to update grade');
     }
   }
@@ -425,7 +426,7 @@ export class PedagogyService {
         };
       }
     } catch (error) {
-      console.error('Error recording attendance:', error);
+      logger.error('Error recording attendance:', error);
       throw new Error('Failed to record attendance');
     }
   }
@@ -505,7 +506,7 @@ export class PedagogyService {
         topStudents: topStudentsWithDetails
       };
     } catch (error) {
-      console.error('Error fetching class performance:', error);
+      logger.error('Error fetching class performance:', error);
       throw new Error('Failed to fetch class performance');
     }
   }
@@ -593,7 +594,7 @@ export class PedagogyService {
         recentAttendance
       };
     } catch (error) {
-      console.error('Error fetching student performance:', error);
+      logger.error('Error fetching student performance:', error);
       throw new Error('Failed to fetch student performance');
     }
   }
@@ -625,7 +626,7 @@ export class PedagogyService {
         updatedAt: new Date(student.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching students:', error);
+      logger.error('Error fetching students:', error);
       throw new Error('Failed to fetch students');
     }
   }
@@ -657,7 +658,7 @@ export class PedagogyService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error fetching student:', error);
+      logger.error('Error fetching student:', error);
       throw new Error('Failed to fetch student');
     }
   }

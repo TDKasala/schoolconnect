@@ -34,6 +34,8 @@ import { useOverview } from '../../hooks/useOverview';
 
 const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const role = (user as any)?.profile?.role ?? 'platform_admin';
+  const canManage = role === 'platform_admin';
   const { settings, setSettings, loading: settingsLoading, saving: settingsSaving, error: settingsError, updateSettings, runSecurityChecks } = useSettings();
   const [securityReport, setSecurityReport] = useState<{ checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; details?: string }>; passed: boolean } | null>(null);
   const [exportType, setExportType] = useState<'schools' | 'users' | 'analytics'>('analytics');
@@ -101,9 +103,10 @@ const PlatformAdminDashboard: React.FC = () => {
   const [pendingUsersModalOpen, setPendingUsersModalOpen] = useState(false);
 
   useEffect(() => {
-    if (dashboardError) {
-      // Log error to console for debugging
-      console.error('Dashboard error:', dashboardError);
+    // Keep a minimal console.warn for unexpected errors only in development
+    if (dashboardError && process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('Dashboard error:', dashboardError);
     }
   }, [dashboardError]);
 
@@ -117,8 +120,6 @@ const PlatformAdminDashboard: React.FC = () => {
           PlatformAdminService.getSchoolsWithStats(),
           PlatformAdminService.getUsersWithSchool()
         ]);
-        console.log('Fetched schools data:', schoolsData);
-        console.log('Fetched users data:', usersData);
         setSchools(schoolsData);
         setUsers(usersData);
         if (!schoolsData || schoolsData.length === 0) {
@@ -139,7 +140,6 @@ const PlatformAdminDashboard: React.FC = () => {
 
   // Add school handlers with useCallback for stability
   const openAddSchoolModal = useCallback(() => {
-    console.log('Opening add school modal');
     setAddSchoolError('');
     setAddSchoolOpen(true);
   }, []);
@@ -168,7 +168,6 @@ const PlatformAdminDashboard: React.FC = () => {
 
   // Edit school handlers with useCallback for stability
   const openEditSchoolModal = useCallback((school: any) => {
-    console.log('Opening edit modal for school:', school);
     setSelectedSchool(school);
     setEditSchoolError('');
     setEditSchoolOpen(true);
@@ -186,7 +185,6 @@ const PlatformAdminDashboard: React.FC = () => {
     setEditSchoolError('');
     try {
       await PlatformAdminService.updateSchool(selectedSchool.id, form);
-      console.log('École modifiée avec succès');
       const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
       setSchools(updatedSchools);
       closeEditSchoolModal();
@@ -228,7 +226,6 @@ const PlatformAdminDashboard: React.FC = () => {
     
     try {
       await PlatformAdminService.deleteSchool(schoolToDelete.id);
-      console.log('École supprimée avec succès');
       
       // Refresh schools list
       const updatedSchools = await PlatformAdminService.getSchoolsWithStats();
@@ -242,9 +239,7 @@ const PlatformAdminDashboard: React.FC = () => {
       setSchoolDeleteModalOpen(false);
       setSchoolToDelete(null);
     } catch (error: any) {
-      console.error('Erreur lors de la suppression de l\'école:', error);
-      // The error will be shown in the confirmation modal
-      alert('Erreur lors de la suppression de l\'école. Veuillez réessayer.');
+      setDashboardError("Erreur lors de la suppression de l'école. " + (error?.message || ''));
     }
   }, [schoolToDelete]);
 
@@ -281,7 +276,6 @@ const PlatformAdminDashboard: React.FC = () => {
     setAddUserError('');
     try {
       const newUser = await PlatformAdminService.createUser(form);
-      console.log('Utilisateur créé avec succès:', newUser);
       const updatedUsers = await PlatformAdminService.getUsersWithSchool();
       setUsers(updatedUsers);
       closeAddUserModal();
@@ -321,7 +315,6 @@ const PlatformAdminDashboard: React.FC = () => {
       setEditUserOpen(false);
       setSelectedUser(null);
     } catch (error) {
-      console.error('Error updating user:', error);
       setEditUserError('Failed to update user. Please try again.');
     } finally {
       setEditUserLoading(false);
@@ -345,10 +338,7 @@ const PlatformAdminDashboard: React.FC = () => {
     setEditUserError('');
     
     try {
-      console.log(`Attempting to delete user with ID: ${userToDelete.id}`);
       await PlatformAdminService.deleteUser(userToDelete.id);
-      
-      console.log('User deleted successfully, refreshing user list...');
       const updatedUsers = await PlatformAdminService.getUsersWithSchool();
       setUsers(updatedUsers);
       
@@ -401,27 +391,24 @@ const PlatformAdminDashboard: React.FC = () => {
       await PlatformAdminService.updateUserStatus(userId, newStatus);
       const updatedUsers = await PlatformAdminService.getUsersWithSchool();
       setUsers(updatedUsers);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du statut de l\'utilisateur:', error);
-      alert('Erreur lors de la mise à jour du statut de l\'utilisateur. Veuillez réessayer.');
+    } catch (error: any) {
+      setDashboardError("Erreur lors de la mise à jour du statut de l'utilisateur. " + (error?.message || ''));
     }
   };
 
   const handleApproveUsers = async () => {
     try {
-      const pendingUsers = await PlatformAdminService.getPendingUsers();
-      console.log('Pending users:', pendingUsers);
-    } catch (error) {
-      console.error('Failed to get pending users:', error);
+      await PlatformAdminService.getPendingUsers();
+    } catch (error: any) {
+      setDashboardError('Impossible de récupérer les utilisateurs en attente: ' + (error?.message || ''));
     }
   };
 
   const handleExportData = async () => {
     try {
-      const data = await PlatformAdminService.exportData('schools');
-      console.log('Export data:', data);
-    } catch (error) {
-      console.error('Failed to export data:', error);
+      await PlatformAdminService.exportData('schools');
+    } catch (error: any) {
+      setDashboardError('Échec de l\'export des données: ' + (error?.message || ''));
     }
   };
 
@@ -519,7 +506,10 @@ const PlatformAdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <button 
             onClick={openAddSchoolModal}
-            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+            disabled={!canManage}
+            aria-disabled={!canManage}
+            title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
             <span className="text-sm sm:text-base text-gray-600">Ajouter École</span>
@@ -541,14 +531,20 @@ const PlatformAdminDashboard: React.FC = () => {
           />
           <button 
             onClick={handleApproveUsers}
-            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+            disabled={!canManage}
+            aria-disabled={!canManage}
+            title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
             <span className="text-sm sm:text-base text-gray-600">Approuver Utilisateurs</span>
           </button>
           <button 
             onClick={handleExportData}
-            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors sm:col-span-2 lg:col-span-1"
+            disabled={!canManage}
+            aria-disabled={!canManage}
+            title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+            className="flex items-center justify-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors sm:col-span-2 lg:col-span-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mr-2" />
             <span className="text-sm sm:text-base text-gray-600">Exporter Données</span>
@@ -622,19 +618,28 @@ const PlatformAdminDashboard: React.FC = () => {
                 <div className="flex justify-end space-x-3">
                   <button 
                     onClick={() => handleViewSchoolDetails(school)}
-                    className="text-blue-600 hover:text-blue-900"
+                    disabled={!canManage}
+                    aria-disabled={!canManage}
+                    title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+                    className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Eye className="h-4 w-4" />
                   </button>
                   <button 
                     onClick={() => openEditSchoolModal(school)}
-                    className="text-green-600 hover:text-green-900"
+                    disabled={!canManage}
+                    aria-disabled={!canManage}
+                    title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+                    className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button 
                     onClick={() => handleDeleteSchoolClick(school)}
-                    className="text-red-600 hover:text-red-900"
+                    disabled={!canManage}
+                    aria-disabled={!canManage}
+                    title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -685,19 +690,28 @@ const PlatformAdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button 
                           onClick={() => handleViewSchoolDetails(school)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          disabled={!canManage}
+                          aria-disabled={!canManage}
+                          title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+                          className="text-blue-600 hover:text-blue-900 mr-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => openEditSchoolModal(school)}
-                          className="text-green-600 hover:text-green-900 mr-3"
+                          disabled={!canManage}
+                          aria-disabled={!canManage}
+                          title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+                          className="text-green-600 hover:text-green-900 mr-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteSchoolClick(school)}
-                          className="text-red-600 hover:text-red-900"
+                          disabled={!canManage}
+                          aria-disabled={!canManage}
+                          title={!canManage ? 'Action réservée aux administrateurs plateforme' : undefined}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

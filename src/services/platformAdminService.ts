@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { User, School, UserRole } from '../types';
+import logger from '../utils/logger';
 
 export interface PlatformStats {
   totalSchools: number;
@@ -109,7 +110,7 @@ export class PlatformAdminService {
         monthlyGrowth
       };
     } catch (error) {
-      console.error('Error fetching platform stats:', error);
+      logger.error('Error fetching platform stats:', error);
       throw new Error('Failed to fetch platform statistics');
     }
   }
@@ -172,7 +173,7 @@ export class PlatformAdminService {
 
       return schoolsWithStats;
     } catch (error) {
-      console.error('Error fetching schools with stats:', error);
+      logger.error('Error fetching schools with stats:', error);
       throw new Error('Failed to fetch schools data');
     }
   }
@@ -203,7 +204,7 @@ export class PlatformAdminService {
         updatedAt: new Date(user.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching users with school:', error);
+      logger.error('Error fetching users with school:', error);
       throw new Error('Failed to fetch users data');
     }
   }
@@ -240,7 +241,7 @@ export class PlatformAdminService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error creating school:', error);
+      logger.error('Error creating school:', error);
       throw new Error('Failed to create school');
     }
   }
@@ -276,7 +277,7 @@ export class PlatformAdminService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error updating school:', error);
+      logger.error('Error updating school:', error);
       throw new Error('Failed to update school');
     }
   }
@@ -293,7 +294,7 @@ export class PlatformAdminService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting school:', error);
+      logger.error('Error deleting school:', error);
       throw new Error('Failed to delete school');
     }
   }
@@ -327,7 +328,7 @@ export class PlatformAdminService {
         type: 'user'
       });
     } catch (error) {
-      console.error('Error updating user status:', error);
+      logger.error('Error updating user status:', error);
       throw new Error('Failed to update user status');
     }
   }
@@ -370,7 +371,7 @@ export class PlatformAdminService {
 
       return mockLogs.slice(0, limit);
     } catch (error) {
-      console.error('Error fetching activity logs:', error);
+      logger.error('Error fetching activity logs:', error);
       throw new Error('Failed to fetch activity logs');
     }
   }
@@ -386,12 +387,12 @@ export class PlatformAdminService {
   }): Promise<void> {
     try {
       // In a real implementation, you would save this to an activity_logs table
-      console.log('Activity logged:', activity);
+      logger.log('Activity logged:', activity);
       
       // For now, we'll just log to console
       // TODO: Implement actual activity logging to database
     } catch (error) {
-      console.error('Error logging activity:', error);
+      logger.error('Error logging activity:', error);
     }
   }
 
@@ -451,7 +452,7 @@ export class PlatformAdminService {
         usersByRole: usersByRoleArray
       };
     } catch (error) {
-      console.error('Error fetching system analytics:', error);
+      logger.error('Error fetching system analytics:', error);
       throw new Error('Failed to fetch system analytics');
     }
   }
@@ -480,7 +481,7 @@ export class PlatformAdminService {
       const jsonData = JSON.stringify(data, null, 2);
       return new Blob([jsonData], { type: 'application/json' });
     } catch (error) {
-      console.error('Error exporting data:', error);
+      logger.error('Error exporting data:', error);
       throw new Error('Failed to export data');
     }
   }
@@ -526,7 +527,7 @@ export class PlatformAdminService {
 
       return schoolsWithStats;
     } catch (error) {
-      console.error('Error searching schools:', error);
+      logger.error('Error searching schools:', error);
       throw new Error('Failed to search schools');
     }
   }
@@ -562,7 +563,7 @@ export class PlatformAdminService {
         updatedAt: new Date(user.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching pending users:', error);
+      logger.error('Error fetching pending users:', error);
       throw new Error('Failed to fetch pending users');
     }
   }
@@ -634,7 +635,7 @@ export class PlatformAdminService {
         updatedAt: new Date(user.updated_at)
       };
     } catch (error) {
-      console.error('Error creating user:', error);
+      logger.error('Error creating user:', error);
       throw new Error('Failed to create user: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
@@ -696,7 +697,7 @@ export class PlatformAdminService {
         updatedAt: new Date(user.updated_at)
       };
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       throw new Error('Failed to update user');
     }
   }
@@ -706,7 +707,7 @@ export class PlatformAdminService {
    */
   static async deleteUser(userId: string): Promise<void> {
     try {
-      console.log(`Starting deletion of user with ID: ${userId}`);
+      logger.log(`Starting deletion of user with ID: ${userId}`);
       
       // Get the current session token
       const { data: { session } } = await supabase.auth.getSession();
@@ -723,19 +724,19 @@ export class PlatformAdminService {
       });
 
       if (error) {
-        console.error('Error calling delete-user function:', error);
+        logger.error('Error calling delete-user function:', error);
         throw new Error(`Failed to delete user: ${error.message}`);
       }
 
       if (!data.success) {
-        console.error('Delete user function returned error:', data.error);
+        logger.error('Delete user function returned error:', data.error);
         throw new Error(data.error || 'Failed to delete user');
       }
 
-      console.log('User deleted successfully:', data.message);
+      logger.log('User deleted successfully:', data.message);
       
     } catch (error: any) {
-      console.error('Error in deleteUser:', error);
+      logger.error('Error in deleteUser:', error);
       
       // Provide more specific error messages based on the error
       if (error.message.includes('Insufficient permissions')) {

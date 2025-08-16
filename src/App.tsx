@@ -102,12 +102,9 @@ const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const typedUser = user as UserWithProfile | null;
   
-  console.log('AppContent: rendering', { user, loading });
-
   // Loading state is handled by AuthContext, no additional timeout needed
 
   if (loading) {
-    console.log('AppContent: showing spinner - loading is true');
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <div className="text-center">
@@ -118,7 +115,6 @@ const AppContent: React.FC = () => {
     );
   }
 
-  console.log('AppContent: rendering routes', { user });
   return (
     <>
       <div className="flex flex-col min-h-screen bg-gray-50">
