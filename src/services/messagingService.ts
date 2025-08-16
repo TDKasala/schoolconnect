@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Message } from '../types';
+import logger from '../utils/logger';
 
 export interface MessagingMessage extends Message {
   id: string;
@@ -64,7 +65,7 @@ export class MessagingService {
         updatedAt: new Date(message.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      logger.error('Error fetching messages:', error);
       throw new Error('Failed to fetch messages');
     }
   }
@@ -96,7 +97,7 @@ export class MessagingService {
         updatedAt: new Date(message.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching unread messages:', error);
+      logger.error('Error fetching unread messages:', error);
       throw new Error('Failed to fetch unread messages');
     }
   }
@@ -128,7 +129,7 @@ export class MessagingService {
         updatedAt: new Date(message.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching direct messages:', error);
+      logger.error('Error fetching direct messages:', error);
       throw new Error('Failed to fetch direct messages');
     }
   }
@@ -160,7 +161,7 @@ export class MessagingService {
         updatedAt: new Date(message.updated_at)
       })) || [];
     } catch (error) {
-      console.error('Error fetching class messages:', error);
+      logger.error('Error fetching class messages:', error);
       throw new Error('Failed to fetch class messages');
     }
   }
@@ -199,7 +200,7 @@ export class MessagingService {
         updatedAt: new Date(data.updated_at)
       };
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       throw new Error('Failed to send message');
     }
   }
@@ -217,7 +218,7 @@ export class MessagingService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error marking message as read:', error);
+      logger.error('Error marking message as read:', error);
       throw new Error('Failed to mark message as read');
     }
   }
@@ -235,7 +236,7 @@ export class MessagingService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error marking all messages as read:', error);
+      logger.error('Error marking all messages as read:', error);
       throw new Error('Failed to mark all messages as read');
     }
   }
@@ -253,7 +254,7 @@ export class MessagingService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting message:', error);
+      logger.error('Error deleting message:', error);
       throw new Error('Failed to delete message');
     }
   }
@@ -303,7 +304,7 @@ export class MessagingService {
         receivedMessages: receivedMessages || 0
       };
     } catch (error) {
-      console.error('Error fetching messaging stats:', error);
+      logger.error('Error fetching messaging stats:', error);
       throw new Error('Failed to fetch messaging statistics');
     }
   }
@@ -379,7 +380,7 @@ export class MessagingService {
 
       return Object.values(conversationsMap);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      logger.error('Error fetching conversations:', error);
       throw new Error('Failed to fetch conversations');
     }
   }
