@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import logger from '../utils/logger';
 
 export type PlatformSettings = {
   id: string;
@@ -79,9 +80,9 @@ export const settingsService = {
 
       if (error) throw error;
       return data;
-    } catch (err) {
-      console.error('upsertSettings error:', err);
-      throw new Error('Impossible de sauvegarder les paramètres');
+    } catch (error) {
+      logger.error('Error validating settings:', error);
+      throw new Error('Failed to validate settings');
     }
   },
 
