@@ -215,7 +215,7 @@ VITE_SUPABASE_ANON_KEY
             } />
             <Route path="/dashboard/reports" element={
               <PrivateRoute>
-                <RoleRoute allowedRoles={['school_admin']}>
+                <RoleRoute allowedRoles={['school_admin', 'teacher', 'parent']}>
                   <DashboardLayout>
                     <ReportsPage />
                   </DashboardLayout>
