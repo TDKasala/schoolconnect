@@ -114,120 +114,73 @@ export class OverviewService {
       let pendingUsers = 0;
 
       if (this.userRole === 'platform_admin') {
-        // Platform admin sees all stats
-        const { count: studentsCount, error: studentsError } = await supabase
-          .from('students')
-          .select('id', { count: 'exact', head: true });
+        // Platform admin sees all stats (parallelized)
+        const [studentsRes, teachersRes, classesRes, schoolsRes, usersRes] = await Promise.all([
+          supabase.from('students').select('id', { count: 'exact', head: true }),
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
+          supabase.from('classes').select('id', { count: 'exact', head: true }),
+          supabase.from('schools').select('id', { count: 'exact', head: true }),
+          supabase.from('users').select('id', { count: 'exact', head: true })
+        ]);
 
-        if (studentsError) throw studentsError;
-        totalStudents = studentsCount || 0;
+        if (studentsRes.error) throw studentsRes.error;
+        if (teachersRes.error) throw teachersRes.error;
+        if (classesRes.error) throw classesRes.error;
+        if (schoolsRes.error) throw schoolsRes.error;
+        if (usersRes.error) throw usersRes.error;
 
-        const { count: teachersCount, error: teachersError } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('role', 'teacher');
-
-        if (teachersError) throw teachersError;
-        totalTeachers = teachersCount || 0;
-
-        const { count: classesCount, error: classesError } = await supabase
-          .from('classes')
-          .select('id', { count: 'exact', head: true });
-
-        if (classesError) throw classesError;
-        totalClasses = classesCount || 0;
-
-        const { count: schoolsCount, error: schoolsError } = await supabase
-          .from('schools')
-          .select('id', { count: 'exact', head: true });
-
-        if (schoolsError) throw schoolsError;
-        totalSchools = schoolsCount || 0;
-
-        const { count: allUsersCount, error: allUsersError } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true });
-
-        if (allUsersError) throw allUsersError;
-        activeUsers = allUsersCount || 0;
+        totalStudents = studentsRes.count || 0;
+        totalTeachers = teachersRes.count || 0;
+        totalClasses = classesRes.count || 0;
+        totalSchools = schoolsRes.count || 0;
+        activeUsers = usersRes.count || 0;
         pendingUsers = 0; // No status column available, set to 0
       } else if (this.userRole === 'school_admin' && this.schoolId) {
-        // School admin sees stats for their school
-        const { count: studentsCount, error: studentsError } = await supabase
-          .from('students')
-          .select('id', { count: 'exact', head: true })
-          .eq('school_id', this.schoolId);
+        // School admin sees stats for their school (parallelized)
+        const [studentsRes, teachersRes, classesRes, activeUsersRes, pendingUsersRes] = await Promise.all([
+          supabase.from('students').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId),
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher').eq('school_id', this.schoolId),
+          supabase.from('classes').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId),
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'active').eq('school_id', this.schoolId),
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('school_id', this.schoolId)
+        ]);
 
-        if (studentsError) throw studentsError;
-        totalStudents = studentsCount || 0;
+        if (studentsRes.error) throw studentsRes.error;
+        if (teachersRes.error) throw teachersRes.error;
+        if (classesRes.error) throw classesRes.error;
+        if (activeUsersRes.error) throw activeUsersRes.error;
+        if (pendingUsersRes.error) throw pendingUsersRes.error;
 
-        const { count: teachersCount, error: teachersError } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('role', 'teacher')
-          .eq('school_id', this.schoolId);
-
-        if (teachersError) throw teachersError;
-        totalTeachers = teachersCount || 0;
-
-        const { count: classesCount, error: classesError } = await supabase
-          .from('classes')
-          .select('id', { count: 'exact', head: true })
-          .eq('school_id', this.schoolId);
-
-        if (classesError) throw classesError;
-        totalClasses = classesCount || 0;
-
+        totalStudents = studentsRes.count || 0;
+        totalTeachers = teachersRes.count || 0;
+        totalClasses = classesRes.count || 0;
         totalSchools = 1;
-
-        const { count: activeUsersCount, error: activeUsersError } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'active')
-          .eq('school_id', this.schoolId);
-
-        if (activeUsersError) throw activeUsersError;
-        activeUsers = activeUsersCount || 0;
-
-        const { count: pendingUsersCount, error: pendingUsersError } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'pending')
-          .eq('school_id', this.schoolId);
-
-        if (pendingUsersError) throw pendingUsersError;
-        pendingUsers = pendingUsersCount || 0;
+        activeUsers = activeUsersRes.count || 0;
+        pendingUsers = pendingUsersRes.count || 0;
       } else if (this.userRole === 'teacher' && this.schoolId) {
-        // Teacher sees stats for their classes
-        const { count: studentsCount, error: studentsError } = await supabase
-          .from('students')
-          .select('id', { count: 'exact', head: true })
-          .eq('school_id', this.schoolId);
+        // Teacher sees stats for their classes (parallelized)
+        const [studentsRes, classesRes] = await Promise.all([
+          supabase.from('students').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId),
+          supabase.from('classes').select('id', { count: 'exact', head: true }).eq('teacher_id', this.userId)
+        ]);
 
-        if (studentsError) throw studentsError;
-        totalStudents = studentsCount || 0;
+        if (studentsRes.error) throw studentsRes.error;
+        if (classesRes.error) throw classesRes.error;
 
+        totalStudents = studentsRes.count || 0;
         totalTeachers = 1;
         totalSchools = 1;
-
-        const { count: classesCount, error: classesError } = await supabase
-          .from('classes')
-          .select('id', { count: 'exact', head: true })
-          .eq('teacher_id', this.userId);
-
-        if (classesError) throw classesError;
-        totalClasses = classesCount || 0;
-
+        totalClasses = classesRes.count || 0;
         activeUsers = 1;
       } else if (this.userRole === 'parent' && this.schoolId) {
-        // Parent sees stats for their children
-        const { data: childrenData, error: childrenError } = await supabase
+        // Parent sees stats for their children (use head-only count)
+        const { count: childrenCount, error: childrenError } = await supabase
           .from('students')
-          .select('id')
+          .select('id', { count: 'exact', head: true })
           .eq('parent_id', this.userId);
 
         if (childrenError) throw childrenError;
-        totalStudents = childrenData?.length || 0;
+        totalStudents = childrenCount || 0;
         totalTeachers = 0;
         totalClasses = 0;
         totalSchools = 1;

@@ -28,12 +28,12 @@ export interface AIResponse {
 
 export class AIService {
   private static instance: AIService;
-  private baseURL: string;
-  private apiKey: string;
+  private _baseURL: string;
+  private _apiKey: string;
 
   private constructor() {
-    this.baseURL = import.meta.env.VITE_AI_API_URL || 'http://localhost:3001/api';
-    this.apiKey = import.meta.env.VITE_AI_API_KEY || '';
+    this._baseURL = import.meta.env.VITE_AI_API_URL || 'http://localhost:3001/api';
+    this._apiKey = import.meta.env.VITE_AI_API_KEY || '';
   }
 
   public static getInstance(): AIService {
@@ -263,7 +263,7 @@ Provide:
   }
 
   private async processAIRequest(
-    prompt: string,
+    _prompt: string,
     type: string,
     context: Record<string, any>,
     startTime: number
