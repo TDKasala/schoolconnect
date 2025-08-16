@@ -49,9 +49,19 @@ export class AIService {
     try {
       // Fetch student data
       const [student, grades, attendance] = await Promise.all([
-        supabase.from('students').select('*, classes(name)').eq('id', studentId).single(),
-        supabase.from('grades').select('*').eq('student_id', studentId),
-        supabase.from('attendance').select('*').eq('student_id', studentId)
+        supabase
+          .from('students')
+          .select('id, first_name, last_name, class_id, school_id, created_at, updated_at, classes(name)')
+          .eq('id', studentId)
+          .single(),
+        supabase
+          .from('grades')
+          .select('id, student_id, subject, grade, max_grade, created_at')
+          .eq('student_id', studentId),
+        supabase
+          .from('attendance')
+          .select('id, student_id, status, created_at')
+          .eq('student_id', studentId)
       ]);
 
       const context = {
@@ -75,11 +85,21 @@ export class AIService {
     
     try {
       const [classData, students, grades] = await Promise.all([
-        supabase.from('classes').select('*, schools(name)').eq('id', classId).single(),
-        supabase.from('students').select('*').eq('class_id', classId),
-        supabase.from('grades').select('*').in('student_id', 
-          (await supabase.from('students').select('id').eq('class_id', classId)).data?.map(s => s.id) || []
-        )
+        supabase
+          .from('classes')
+          .select('id, name, school_id, level, teacher_id, created_at, schools(name)')
+          .eq('id', classId)
+          .single(),
+        supabase
+          .from('students')
+          .select('id')
+          .eq('class_id', classId),
+        supabase
+          .from('grades')
+          .select('id, student_id, grade, max_grade, created_at')
+          .in('student_id', 
+            (await supabase.from('students').select('id').eq('class_id', classId)).data?.map(s => s.id) || []
+          )
       ]);
 
       const context = {
@@ -103,9 +123,18 @@ export class AIService {
     
     try {
       const [grades, attendance, behavior] = await Promise.all([
-        supabase.from('grades').select('*').eq('student_id', studentId),
-        supabase.from('attendance').select('*').eq('student_id', studentId),
-        supabase.from('behavior_records').select('*').eq('student_id', studentId)
+        supabase
+          .from('grades')
+          .select('id, student_id, grade, max_grade, created_at')
+          .eq('student_id', studentId),
+        supabase
+          .from('attendance')
+          .select('id, student_id, status, created_at')
+          .eq('student_id', studentId),
+        supabase
+          .from('behavior_records')
+          .select('id, student_id, created_at')
+          .eq('student_id', studentId)
       ]);
 
       const context = {

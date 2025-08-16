@@ -18,7 +18,7 @@ export const attendanceService = {
     const { classId, date } = params;
     const { data, error } = await supabase
       .from('attendance')
-      .select('*')
+      .select('id, student_id, class_id, date, status, teacher_id, notes, created_at')
       .eq('class_id', classId)
       .eq('date', date)
       .order('created_at', { ascending: true });
@@ -40,7 +40,7 @@ export const attendanceService = {
     const { data, error } = await supabase
       .from('attendance')
       .insert(entries as any)
-      .select('*');
+      .select('id, student_id, class_id, date, status, teacher_id, notes, created_at');
     if (error) throw error;
     return (data as Attendance[]) || [];
   },

@@ -48,7 +48,7 @@ export class BulletinService {
       // Fetch student data
       const { data: student, error: studentError } = await supabase
         .from('students')
-        .select('*, classes(name)')
+        .select('id, full_name, class_id, classes(name)')
         .eq('id', studentId)
         .single();
 
@@ -58,7 +58,15 @@ export class BulletinService {
       const { data: grades, error: gradesError } = await supabase
         .from('grades')
         .select(`
-          *,
+          id,
+          student_id,
+          subject,
+          grade,
+          max_grade,
+          coefficient,
+          date,
+          teacher_id,
+          class_id,
           classes(name),
           users!grades_teacher_id_fkey(full_name)
         `)
@@ -71,7 +79,7 @@ export class BulletinService {
       // Fetch attendance data
       const { data: attendance, error: attendanceError } = await supabase
         .from('attendance')
-        .select('*')
+        .select('id, student_id, status, date')
         .eq('student_id', studentId)
         .eq('semester', semester)
         .eq('year', year);
@@ -193,7 +201,7 @@ export class BulletinService {
    * Generate AI-powered comments
    */
   private static generateAIComments(bulletin: BulletinReport): string {
-    const { overall_average, attendance_rate, subjects } = bulletin;
+    const { overall_average, attendance_rate } = bulletin;
     
     let comments = '';
     
@@ -238,7 +246,7 @@ export class BulletinService {
       // Fetch all students in the class
       const { data: students, error } = await supabase
         .from('students')
-        .select('*')
+        .select('id')
         .eq('class_id', classId);
 
       if (error) throw error;

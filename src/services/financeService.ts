@@ -1,8 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { Payment } from '../types';
 import logger from '../utils/logger';
 
-export interface FinancialPayment extends Payment {
+export interface FinancialPayment {
   id: string;
   studentId: string;
   amount: number;
@@ -35,11 +34,11 @@ export interface FinancialReport {
 }
 
 export class FinanceService {
-  private userId: string;
+  private _userId: string;
   private schoolId: string;
 
   constructor(userId: string, schoolId: string) {
-    this.userId = userId;
+    this._userId = userId;
     this.schoolId = schoolId;
   }
 
@@ -51,7 +50,19 @@ export class FinanceService {
       const { data, error } = await supabase
         .from('payments')
         .select(`
-          *,
+          id,
+          student_id,
+          school_id,
+          amount,
+          currency,
+          payment_method,
+          status,
+          due_date,
+          payment_date,
+          description,
+          receipt_url,
+          created_at,
+          updated_at,
           student:students!payments_student_id_fkey(
             id,
             first_name,
@@ -93,7 +104,19 @@ export class FinanceService {
       const { data, error } = await supabase
         .from('payments')
         .select(`
-          *,
+          id,
+          student_id,
+          school_id,
+          amount,
+          currency,
+          payment_method,
+          status,
+          due_date,
+          payment_date,
+          description,
+          receipt_url,
+          created_at,
+          updated_at,
           student:students!payments_student_id_fkey(
             id,
             first_name,
@@ -135,7 +158,19 @@ export class FinanceService {
       const { data, error } = await supabase
         .from('payments')
         .select(`
-          *,
+          id,
+          student_id,
+          school_id,
+          amount,
+          currency,
+          payment_method,
+          status,
+          due_date,
+          payment_date,
+          description,
+          receipt_url,
+          created_at,
+          updated_at,
           student:students!payments_student_id_fkey(
             id,
             first_name,
@@ -177,7 +212,7 @@ export class FinanceService {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select('*')
+        .select('id, student_id, school_id, amount, currency, payment_method, status, due_date, payment_date, description, receipt_url, created_at, updated_at')
         .eq('student_id', studentId)
         .eq('school_id', this.schoolId)
         .order('created_at', { ascending: false });
@@ -223,7 +258,7 @@ export class FinanceService {
           description: paymentData.description,
           receipt_url: paymentData.receiptUrl
         })
-        .select()
+        .select('id, student_id, school_id, amount, currency, payment_method, status, due_date, payment_date, description, receipt_url, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -267,7 +302,7 @@ export class FinanceService {
         })
         .eq('id', paymentId)
         .eq('school_id', this.schoolId)
-        .select()
+        .select('id, student_id, school_id, amount, currency, payment_method, status, due_date, payment_date, description, receipt_url, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -447,7 +482,7 @@ export class FinanceService {
         })
         .eq('id', paymentId)
         .eq('school_id', this.schoolId)
-        .select()
+        .select('id, student_id, school_id, amount, currency, payment_method, status, due_date, payment_date, description, receipt_url, created_at, updated_at')
         .single();
 
       if (error) throw error;
