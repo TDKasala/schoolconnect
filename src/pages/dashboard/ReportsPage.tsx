@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth, type UserWithProfile } from '../../contexts/AuthContext';
 import ReportService, { type StudentReportData } from '../../services/reportService';
+import AIService from '../../services/aiService';
 import { supabase } from '../../lib/supabase';
 
 const ReportsPage: React.FC = () => {
@@ -12,6 +13,9 @@ const ReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+  const [aiText, setAiText] = useState<string>('');
+  const [aiConfidence, setAiConfidence] = useState<number | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const role = typedUser?.profile?.role ?? 'teacher';
 
@@ -159,20 +163,23 @@ const ReportsPage: React.FC = () => {
   const onGenerate = async () => {
     setError(null);
     setReport(null);
-    if (!service || !typedUser) {
-      setError("Session invalide. Veuillez vous reconnecter.");
-      return;
-    }
-    if (!studentId) {
-      setError("Veuillez saisir l'ID de l'élève.");
-      return;
-    }
     try {
-      setLoading(true);
-      const data = await service.getStudentReportData(studentId);
+      const data = await service.getStudentReport(studentId);
       setReport(data);
+      // Generate AI narrative
+      setAiLoading(true);
+      try {
+        const ai = await AIService.getInstance().generateBulletinAnalysis(studentId, { language: 'fr' });
+        setAiText(ai.content);
+        setAiConfidence(ai.confidence);
+      } catch (e: any) {
+        // Non-blocking
+        console.warn('AI generation failed:', e?.message || e);
+      } finally {
+        setAiLoading(false);
+      }
     } catch (e: any) {
-      setError(e?.message || 'Échec de la génération du rapport');
+      setError(e?.message || 'Échec de génération du rapport');
     } finally {
       setLoading(false);
     }
@@ -302,19 +309,32 @@ const ReportsPage: React.FC = () => {
       {/* Report Preview */}
       {report && (
         <div ref={printRef} className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Rapport de Progression</h2>
-              <p className="text-gray-600">
-                {report.student?.first_name} {report.student?.last_name}
-                {report.student?.class?.name ? (
-                  <span className="ml-2 badge">{report.student?.class?.name}</span>
-                ) : null}
-              </p>
+              <h2 className="text-xl font-semibold text-gray-900">Rapport de {report.student?.first_name} {report.student?.last_name}</h2>
+              <p className="text-sm text-gray-500">Classe: {report.student?.class?.name || '—'}</p>
             </div>
-            <div className="text-right text-sm text-gray-500">
-              Généré le {new Date().toLocaleString('fr-FR')}
+            <div className="text-right">
+              <p className="text-sm text-gray-700"><span className="font-medium">Moyenne:</span> {calculateAverage(report.grades)} / 20</p>
+              <p className="text-sm text-gray-700"><span className="font-medium">Présence:</span> {calculateAttendanceRate(report.attendance)}%</p>
             </div>
+          </div>
+
+          {/* AI Insights */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Analyse IA</h3>
+            {aiLoading ? (
+              <p className="text-sm text-gray-500">Génération de l'analyse…</p>
+            ) : aiText ? (
+              <div className="p-4 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900">
+                <p className="whitespace-pre-line">{aiText}</p>
+                {aiConfidence !== null && (
+                  <p className="mt-2 text-xs text-indigo-700">Confiance: {(aiConfidence * 100).toFixed(0)}%</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Aucune analyse disponible.</p>
+            )}
           </div>
 
           {/* Highlights */}
