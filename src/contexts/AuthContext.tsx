@@ -41,7 +41,15 @@ export interface Profile {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  // Hydrate from localStorage to prevent blank flashes on initial paint
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (authUser: User | null): Promise<UserWithProfile | null> => {
@@ -120,11 +128,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userWithProfile = await fetchUserProfile(session.user);
           logger.log('AuthProvider: profile fetch complete, setting user');
           if (isMounted) {
-            setUser(userWithProfile);
+            // Avoid redundant state updates if nothing changed
+            const prev = user as UserWithProfile | null;
+            const same = prev && userWithProfile && prev.id === userWithProfile.id
+              && JSON.stringify(prev.profile) === JSON.stringify(userWithProfile.profile);
+            if (!same) {
+              setUser(userWithProfile);
+              localStorage.setItem('user', JSON.stringify(userWithProfile));
+            }
           }
         } else if (isMounted) {
           logger.log('AuthProvider: no session user found, setting user to null');
           setUser(null);
+          localStorage.removeItem('user');
         }
       } catch (error) {
         logger.error('Session check error:', error);
@@ -147,6 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
+    // Run async without blocking initial paint which already has hydrated user
     checkUser();
 
     if (!hasSupabase) {
@@ -165,7 +182,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           fetchUserProfile(session.user).then((userWithProfile) => {
             if (isMounted) {
               logger.log('AuthProvider: profile fetch complete in onAuthStateChange, setting user', userWithProfile);
-              setUser(userWithProfile);
+              const prev = user as UserWithProfile | null;
+              const same = prev && userWithProfile && prev.id === userWithProfile.id
+                && JSON.stringify(prev.profile) === JSON.stringify(userWithProfile.profile);
+              if (!same) {
+                setUser(userWithProfile);
+                localStorage.setItem('user', JSON.stringify(userWithProfile));
+              }
             }
           }).catch((error) => {
             logger.error('AuthProvider: error fetching profile in onAuthStateChange', error);
