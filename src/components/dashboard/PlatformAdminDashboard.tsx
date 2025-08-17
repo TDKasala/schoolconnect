@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
@@ -10,7 +10,7 @@ import SchoolDetailsModal from './SchoolDetailsModal';
 import SchoolDeleteSuccessModal from './SchoolDeleteSuccessModal';
 import PendingUsersModal from './PendingUsersModal';
 import AnalyticsCharts from './AnalyticsCharts';
-import { useSettings } from '../../hooks/useSettings';
+import PlatformAdminSettings from './PlatformAdminSettings';
 import RecentActivities from './RecentActivities';
 import AIBulletinGenerator from './AIBulletinGenerator';
 import {
@@ -28,7 +28,6 @@ import {
   DollarSign,
   Building2,
   AlertCircle,
-  Shield,
   CreditCard,
   Filter,
   MessageSquare
@@ -42,9 +41,8 @@ const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const role = (user as any)?.profile?.role ?? 'platform_admin';
   const canManage = role === 'platform_admin';
-  const { settings, setSettings, loading: settingsLoading, saving: settingsSaving, error: settingsError, updateSettings, runSecurityChecks } = useSettings();
-  const [securityReport, setSecurityReport] = useState<{ checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; details?: string }>; passed: boolean } | null>(null);
-  const [exportType, setExportType] = useState<'schools' | 'users' | 'analytics'>('analytics');
+  
+  
   
   // Helper: map activity action to type for `RecentActivities`
   const getActivityType = (action: string): 'user' | 'school' | 'system' | 'payment' | 'auth' => {
@@ -1123,28 +1121,13 @@ const PlatformAdminDashboard: React.FC = () => {
 
   const renderBilling = () => {
     const revenue = financialSummary?.totalRevenue || 0;
-    const mrr = financialSummary?.mrr || 0;
-    const arpu = financialSummary?.arpu || 0;
-    const invoices = financialSummary?.invoiceCount || 0;
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900">Facturation & Abonnements</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow p-6">
             <p className="text-sm text-gray-600">Revenus Totaux</p>
             <p className="mt-1 text-2xl font-semibold text-gray-900">${revenue.toLocaleString()}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">MRR</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">${mrr.toLocaleString()}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">ARPU</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">${arpu.toLocaleString()}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Factures</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">{invoices}</p>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
@@ -1162,214 +1145,7 @@ const PlatformAdminDashboard: React.FC = () => {
 
   
 
-  const renderSettings = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Paramètres de la Plateforme</h2>
-      
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration Générale</h3>
-        {settingsError && <div className="text-red-600 text-sm mb-3">{settingsError}</div>}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Nom de la Plateforme</label>
-            <input
-              type="text"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              value={settings?.platform_name || ''}
-              onChange={(e) => setSettings(s => (s ? { ...s, platform_name: e.target.value } : s))}
-              disabled={settingsLoading || settingsSaving}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email de Contact</label>
-            <input
-              type="email"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              value={settings?.contact_email || ''}
-              onChange={(e) => setSettings(s => (s ? { ...s, contact_email: e.target.value } : s))}
-              disabled={settingsLoading || settingsSaving}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Couleur Principale</label>
-            <div className="mt-1 flex items-center gap-3">
-              <input
-                type="color"
-                className="h-10 w-14 p-0 border-gray-300 rounded-md shadow-sm"
-                value={settings?.primary_color || '#2563eb'}
-                onChange={(e) => setSettings(s => (s ? { ...s, primary_color: e.target.value } : s))}
-                disabled={settingsLoading || settingsSaving}
-              />
-              <input
-                type="text"
-                className="flex-1 border-gray-300 rounded-md shadow-sm"
-                value={settings?.primary_color || ''}
-                onChange={(e) => setSettings(s => (s ? { ...s, primary_color: e.target.value } : s))}
-                placeholder="#2563eb"
-                disabled={settingsLoading || settingsSaving}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">URL de Support</label>
-            <input
-              type="url"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              value={settings?.support_url || ''}
-              onChange={(e) => setSettings(s => (s ? { ...s, support_url: e.target.value } : s))}
-              placeholder="https://schoolconnect.cd/support"
-              disabled={settingsLoading || settingsSaving}
-            />
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={async () => { if (settings) await updateSettings({ platform_name: settings.platform_name, contact_email: settings.contact_email, primary_color: settings.primary_color, support_url: settings.support_url }); }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              disabled={settingsLoading || settingsSaving}
-            >
-              {settingsSaving ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Système</h3>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-700">Type d'Export</label>
-            <select
-              className="border-gray-300 rounded-md shadow-sm"
-              value={exportType}
-              onChange={(e) => setExportType(e.target.value as any)}
-            >
-              <option value="analytics">Analytics</option>
-              <option value="schools">Écoles</option>
-              <option value="users">Utilisateurs</option>
-            </select>
-          </div>
-          <button
-            onClick={async () => {
-              try {
-                const blob = await PlatformAdminService.exportData(exportType);
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `backup-${exportType}-${new Date().toISOString()}.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-              } catch (e) {
-                alert('Échec de la sauvegarde.');
-              }
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Sauvegarder la Base de Données
-          </button>
-          <button
-            onClick={async () => {
-              const report = await runSecurityChecks();
-              setSecurityReport(report);
-            }}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center"
-          >
-            <Shield className="h-4 w-4 mr-2" />
-            Vérifier la Sécurité
-          </button>
-        </div>
-        {securityReport && (
-          <div className="mt-4 border-t pt-4">
-            <h4 className="text-md font-semibold mb-2">Rapport de Sécurité</h4>
-            <ul className="space-y-2">
-              {securityReport.checks.map((c, idx) => (
-                <li key={idx} className="text-sm flex items-start">
-                  <span className={`mr-2 mt-0.5 inline-block h-2 w-2 rounded-full ${c.status === 'ok' ? 'bg-green-500' : c.status === 'warn' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
-                  <span className="text-gray-700">
-                    <strong>{c.name}:</strong> {c.status}
-                    {c.details ? ` – ${c.details}` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className={`mt-2 text-sm ${securityReport.passed ? 'text-green-600' : 'text-yellow-600'}`}>{securityReport.passed ? 'Tous les contrôles critiques sont OK.' : 'Certaines vérifications nécessitent votre attention.'}</div>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fonctionnalités (Feature Toggles)</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-900">Messaging</div>
-              <div className="text-xs text-gray-500">Activer la messagerie en temps réel</div>
-            </div>
-            <label className="inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={Boolean(settings?.feature_flags?.messaging)}
-                onChange={(e) => setSettings(s => (s ? { ...s, feature_flags: { ...(s.feature_flags || {}), messaging: e.target.checked } } : s))}
-              />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
-                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5" />
-              </div>
-            </label>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-900">UBank</div>
-              <div className="text-xs text-gray-500">Paiements et gestion financière</div>
-            </div>
-            <label className="inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={Boolean(settings?.feature_flags?.ubank)}
-                onChange={(e) => setSettings(s => (s ? { ...s, feature_flags: { ...(s.feature_flags || {}), ubank: e.target.checked } } : s))}
-              />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
-                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5" />
-              </div>
-            </label>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-900">POSP</div>
-              <div className="text-xs text-gray-500">Gestion pédagogique</div>
-            </div>
-            <label className="inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={Boolean(settings?.feature_flags?.posp)}
-                onChange={(e) => setSettings(s => (s ? { ...s, feature_flags: { ...(s.feature_flags || {}), posp: e.target.checked } } : s))}
-              />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
-                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5" />
-              </div>
-            </label>
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={async () => {
-                if (settings) {
-                  await updateSettings({ feature_flags: settings.feature_flags || { messaging: false, ubank: false, posp: false } });
-                }
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              disabled={settingsLoading || settingsSaving}
-            >
-              {settingsSaving ? 'Enregistrement...' : 'Enregistrer les fonctionnalités'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Settings rendering moved into dedicated component
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1432,7 +1208,7 @@ const PlatformAdminDashboard: React.FC = () => {
                 <AIBulletinGenerator />
               </div>
             )}
-            {activeTab === 'settings' && renderSettings()}
+            {activeTab === 'settings' && <PlatformAdminSettings />}
           </div>
         </div>
         
