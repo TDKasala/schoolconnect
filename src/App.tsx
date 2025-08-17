@@ -99,6 +99,10 @@ import BulletinsPage from './pages/dashboard/BulletinsPage';
 import ReportsPage from './pages/dashboard/ReportsPage';
 import PaymentsPage from './pages/dashboard/PaymentsPage';
 import TeachersPage from './pages/dashboard/TeachersPage';
+import ParentChildrenPage from './pages/dashboard/ParentChildrenPage';
+import ParentAttendancePage from './pages/dashboard/ParentAttendancePage';
+import ParentNotesPage from './pages/dashboard/ParentNotesPage';
+import ParentPaymentsPage from './pages/dashboard/ParentPaymentsPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -228,6 +232,43 @@ VITE_SUPABASE_ANON_KEY
                 <RoleRoute allowedRoles={['school_admin', 'teacher', 'parent']}>
                   <DashboardLayout>
                     <ReportsPage />
+                  </DashboardLayout>
+                </RoleRoute>
+              </PrivateRoute>
+            } />
+            {/* Parent-specific routes */}
+            <Route path="/dashboard/enfants" element={
+              <PrivateRoute>
+                <RoleRoute allowedRoles={['parent']}>
+                  <DashboardLayout>
+                    <ParentChildrenPage />
+                  </DashboardLayout>
+                </RoleRoute>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/attendance-parent" element={
+              <PrivateRoute>
+                <RoleRoute allowedRoles={['parent']}>
+                  <DashboardLayout>
+                    <ParentAttendancePage />
+                  </DashboardLayout>
+                </RoleRoute>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/notes" element={
+              <PrivateRoute>
+                <RoleRoute allowedRoles={['parent']}>
+                  <DashboardLayout>
+                    <ParentNotesPage />
+                  </DashboardLayout>
+                </RoleRoute>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/paiements" element={
+              <PrivateRoute>
+                <RoleRoute allowedRoles={['parent']}>
+                  <DashboardLayout>
+                    <ParentPaymentsPage />
                   </DashboardLayout>
                 </RoleRoute>
               </PrivateRoute>
