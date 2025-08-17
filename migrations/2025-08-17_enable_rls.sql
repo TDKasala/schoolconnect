@@ -6,14 +6,16 @@ begin;
 -- 1) public.users: enable RLS and allow users to select their own row (needed for Pending Approval)
 alter table if exists public.users enable row level security;
 
--- Policy: users can select their own profile
-create policy if not exists "Users can select their own profile"
+-- Policy: users can select their own profile (idempotent)
+drop policy if exists "Users can select their own profile" on public.users;
+create policy "Users can select their own profile"
   on public.users for select
   to authenticated
   using (id = auth.uid());
 
--- Optional: platform admins can select all users (keeps admin UX working)
-create policy if not exists "Platform admins can select all users"
+-- Optional: platform admins can select all users (idempotent)
+drop policy if exists "Platform admins can select all users" on public.users;
+create policy "Platform admins can select all users"
   on public.users for select
   to authenticated
   using (exists (
