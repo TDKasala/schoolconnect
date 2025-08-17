@@ -12,6 +12,7 @@ import PendingUsersModal from './PendingUsersModal';
 import AnalyticsCharts from './AnalyticsCharts';
 import { useSettings } from '../../hooks/useSettings';
 import RecentActivities from './RecentActivities';
+import AIBulletinGenerator from './AIBulletinGenerator';
 import {
   Users,
   BarChart3,
@@ -1159,70 +1160,7 @@ const PlatformAdminDashboard: React.FC = () => {
     );
   };
 
-  const renderAI = () => {
-    const [filterSchool, setFilterSchool] = useState<string>('');
-    const [start, setStart] = useState<string>('');
-    const [end, setEnd] = useState<string>('');
-    const [subStatus, setSubStatus] = useState<string>('all');
-    const report = useMemo(() => ({
-      totalSchools: stats?.totalSchools || 0,
-      totalUsers: (stats?.activeUsers || 0) + (stats?.pendingUsers || 0),
-      revenue: financialSummary?.totalRevenue || 0,
-    }), [stats, financialSummary]);
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Générateur de Rapports IA</h2>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">École</label>
-              <select className="w-full border-gray-300 rounded-md" value={filterSchool} onChange={(e) => setFilterSchool(e.target.value)}>
-                <option value="">Toutes</option>
-                {schools.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Début</label>
-              <input type="date" className="w-full border-gray-300 rounded-md" value={start} onChange={(e) => setStart(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Fin</label>
-              <input type="date" className="w-full border-gray-300 rounded-md" value={end} onChange={(e) => setEnd(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Abonnement</label>
-              <select className="w-full border-gray-300 rounded-md" value={subStatus} onChange={(e) => setSubStatus(e.target.value)}>
-                <option value="all">Tous</option>
-                <option value="active">Actif</option>
-                <option value="trial">Essai</option>
-                <option value="canceled">Annulé</option>
-              </select>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-3">
-            <button className="px-4 py-2 rounded-md bg-[#1E88E5] text-white hover:bg-blue-700">Générer</button>
-            <button onClick={() => window.print()} className="px-4 py-2 rounded-md bg-[#43A047] text-white hover:bg-green-700">Exporter PDF</button>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Total Écoles</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">{report.totalSchools}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Utilisateurs Actifs</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">{report.totalUsers}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Revenus</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">${report.revenue.toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  
 
   const renderSettings = () => (
     <div className="space-y-6">
@@ -1488,7 +1426,12 @@ const PlatformAdminDashboard: React.FC = () => {
             {activeTab === 'messages' && renderMessages()}
             {activeTab === 'analytics' && renderAnalytics()}
             {activeTab === 'billing' && renderBilling()}
-            {activeTab === 'ai' && renderAI()}
+            {activeTab === 'ai' && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Générateur IA</h2>
+                <AIBulletinGenerator />
+              </div>
+            )}
             {activeTab === 'settings' && renderSettings()}
           </div>
         </div>
