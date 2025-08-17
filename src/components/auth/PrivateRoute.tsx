@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface PrivateRouteProps {
@@ -20,6 +20,7 @@ const Spinner: React.FC = () => (
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
   
   if (import.meta.env.DEV) {
     console.log('PrivateRoute: checking auth state', { user, loading });
@@ -37,6 +38,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
       console.log('PrivateRoute: redirecting to login');
     }
     return <Navigate to="/connexion" replace />;
+  }
+
+  // Gate: if user profile exists and is not approved, redirect to Pending Approval
+  const approved = (user as any)?.profile?.approved;
+  const onPendingPage = location.pathname === '/en-attente-approbation';
+  if (approved === false && !onPendingPage) {
+    return <Navigate to="/en-attente-approbation" replace />;
   }
 
   if (import.meta.env.DEV) {

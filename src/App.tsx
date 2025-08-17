@@ -81,6 +81,7 @@ import PrivacyPage from './pages/public/PrivacyPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import PendingApprovalPage from './pages/auth/PendingApprovalPage';
 
 // Dashboard pages
 import DashboardLayout from './components/dashboard/DashboardLayout';
@@ -164,6 +165,7 @@ VITE_SUPABASE_ANON_KEY
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/inscription" element={<RegisterPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+            <Route path="/en-attente-approbation" element={<PendingApprovalPage />} />
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={

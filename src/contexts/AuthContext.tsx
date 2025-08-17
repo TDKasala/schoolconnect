@@ -36,6 +36,7 @@ export interface Profile {
   full_name: string;
   role: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
   school_id?: string | null;
+  approved?: boolean;
   created_at: string;
 }
 
@@ -59,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const supabasePromise = supabase
         .from('users')
-        .select('id, full_name, role, school_id, created_at')
+        .select('id, full_name, role, school_id, created_at, approved')
         .eq('id', authUser.id)
         .single();
       
