@@ -81,13 +81,42 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       },
     ];
   } else if (typedUser?.profile?.role === 'parent') {
-    navigation = [
-      { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
-      { name: 'Mes enfants', href: '/dashboard/enfants', icon: Users },
-      { name: 'Notes', href: '/dashboard/notes', icon: Edit3 },
-      { name: 'Paiements', href: '/dashboard/paiements', icon: DollarSign },
-      { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
-      { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+    navigationGroups = [
+      {
+        title: 'Informations Enfant',
+        items: [
+          { name: 'Tableau de bord', href: '/dashboard', icon: Home },
+          { name: 'Mes enfants', href: '/dashboard/enfants', icon: Users },
+          { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
+          { name: 'Bulletins', href: '/dashboard/notes', icon: FileText },
+        ],
+      },
+      {
+        title: 'Rapports',
+        items: [
+          { name: 'Générateur IA', href: '/dashboard/reports', icon: Sparkles },
+        ],
+      },
+      {
+        title: 'Finance',
+        items: [
+          { name: 'Frais & Paiements', href: '/dashboard/paiements', icon: DollarSign },
+        ],
+      },
+      {
+        title: 'Communication',
+        items: [
+          { name: 'Annonces', href: '/dashboard/messagerie', icon: MessageSquare },
+          { name: 'Messages', href: '/dashboard/messagerie', icon: MessageSquare },
+          { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+        ],
+      },
+      {
+        title: 'Paramètres',
+        items: [
+          { name: 'Paramètres', href: '/dashboard/settings', icon: SettingsIcon },
+        ],
+      },
     ];
   } else if (typedUser?.profile?.role === 'student') {
     navigation = [
