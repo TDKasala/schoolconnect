@@ -198,7 +198,7 @@ VITE_SUPABASE_ANON_KEY
             } />
             <Route path="/dashboard/attendance" element={
               <PrivateRoute>
-                <RoleRoute allowedRoles={['school_admin']}>
+                <RoleRoute allowedRoles={['school_admin', 'teacher']}>
                   <DashboardLayout>
                     <AttendancePage />
                   </DashboardLayout>
@@ -207,7 +207,7 @@ VITE_SUPABASE_ANON_KEY
             } />
             <Route path="/dashboard/grades" element={
               <PrivateRoute>
-                <RoleRoute allowedRoles={['school_admin']}>
+                <RoleRoute allowedRoles={['school_admin', 'teacher']}>
                   <DashboardLayout>
                     <GradesPage />
                   </DashboardLayout>

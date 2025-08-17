@@ -26,7 +26,7 @@ const GradesPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string>('');
 
-  // Load classes
+  // Load classes (teachers see only their assigned classes)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -34,7 +34,10 @@ const GradesPage: React.FC = () => {
       try {
         setLoading(true);
         const { data } = await classesService.listClasses({ schoolId, limit: 100, offset: 0 });
-        if (mounted) setClasses(data);
+        if (mounted) {
+          const filtered = teacherId ? data.filter((c) => c.teacher_id === teacherId) : data;
+          setClasses(filtered);
+        }
       } catch (e) {
         console.error('Failed to load classes', e);
       } finally {

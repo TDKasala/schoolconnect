@@ -48,20 +48,37 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Role-specific navigation
   let navigation: Array<{ name: string; href: string; icon: any }> = [];
-  // Grouped navigation for school_admin
+  // Grouped navigation for roles
   let navigationGroups: Array<{ title: string; items: Array<{ name: string; href: string; icon: any }> }> | null = null;
   if (typedUser?.profile?.role === 'platform_admin') {
     navigation = [
       { name: 'Administration', href: '/dashboard', icon: Home },
     ];
   } else if (typedUser?.profile?.role === 'teacher') {
-    navigation = [
-      { name: 'Overview', href: '/dashboard', icon: Home },
-      { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
-      { name: 'Attendance', href: '/dashboard/attendance', icon: CheckSquare },
-      { name: 'Grades', href: '/dashboard/grades', icon: Edit3 },
-      { name: 'Messaging', href: '/dashboard/messagerie', icon: MessageSquare },
-      { name: 'Calendar', href: '/dashboard/calendrier', icon: Calendar },
+    navigationGroups = [
+      {
+        title: 'Enseignement',
+        items: [
+          { name: 'Tableau de bord', href: '/dashboard', icon: Home },
+          // Keep classes link hidden for teachers if not authorized by route; attendance/grades will filter to teacher classes
+          { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
+          { name: 'Notes', href: '/dashboard/grades', icon: Edit3 },
+        ],
+      },
+      {
+        title: 'Communication',
+        items: [
+          { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
+          { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+        ],
+      },
+      {
+        title: 'Rapports',
+        items: [
+          { name: 'Rapports', href: '/dashboard/reports', icon: BarChart3 },
+          { name: 'Générateur IA', href: '/dashboard/reports', icon: Sparkles },
+        ],
+      },
     ];
   } else if (typedUser?.profile?.role === 'parent') {
     navigation = [
@@ -265,6 +282,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
 interface SidebarContentProps {
   navigation: Array<{ name: string; href: string; icon: any }>;
+  navigationGroups: Array<{ title: string; items: Array<{ name: string; href: string; icon: any }> }> | null;
   location: any;
   user: UserWithProfile | null;
   getRoleDisplayName: (role: string) => string;
@@ -274,6 +292,7 @@ interface SidebarContentProps {
 
 const SidebarContent: React.FC<SidebarContentProps> = ({
   navigation,
+  navigationGroups,
   location,
   user: typedUser,
   getRoleDisplayName,
