@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Menu, 
-  X, 
-  Home, 
-  BookOpen, 
-  DollarSign, 
-  Users, 
-  MessageSquare, 
+import {
+  Menu,
+  X,
+  Home,
+  BookOpen,
+  DollarSign,
+  Users,
+  MessageSquare,
   Calendar,
   LogOut,
   Bell,
   CheckSquare,
   Edit3,
   FileText,
-  BarChart3
+  BarChart3,
+  Settings as SettingsIcon,
+  Sparkles,
+  UserCheck,
+  Layers
 } from 'lucide-react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
@@ -44,6 +48,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Role-specific navigation
   let navigation: Array<{ name: string; href: string; icon: any }> = [];
+  // Grouped navigation for school_admin
+  let navigationGroups: Array<{ title: string; items: Array<{ name: string; href: string; icon: any }> }> | null = null;
   if (typedUser?.profile?.role === 'platform_admin') {
     navigation = [
       { name: 'Administration', href: '/dashboard', icon: Home },
@@ -76,20 +82,37 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
     ];
   } else {
-    // Default: school_admin
-    navigation = [
-      { name: 'Vue d\'ensemble', href: '/dashboard', icon: Home },
-      { name: 'Élèves', href: '/dashboard/students', icon: Users },
-      { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
-      { name: 'Présence', href: '/dashboard/attendance', icon: CheckSquare },
-      { name: 'Notes', href: '/dashboard/grades', icon: Edit3 },
-      { name: 'Bulletins', href: '/dashboard/bulletins', icon: FileText },
-      { name: 'Rapports', href: '/dashboard/reports', icon: BarChart3 },
-      { name: 'Pédagogie', href: '/dashboard/pedagogie', icon: BookOpen },
-      { name: 'Finances', href: '/dashboard/finances', icon: DollarSign },
-      { name: 'Parents', href: '/dashboard/parents', icon: Users },
-      { name: 'Messagerie', href: '/dashboard/messagerie', icon: MessageSquare },
-      { name: 'Calendrier', href: '/dashboard/calendrier', icon: Calendar },
+    // Default: school_admin (grouped, role-relevant only)
+    navigationGroups = [
+      {
+        title: 'Gestion',
+        items: [
+          { name: 'Tableau de bord', href: '/dashboard', icon: Home },
+          { name: 'Élèves', href: '/dashboard/students', icon: Users },
+          { name: 'Enseignants', href: '/dashboard/classes', icon: UserCheck },
+          { name: 'Classes', href: '/dashboard/classes', icon: Layers },
+          { name: 'Emploi du temps', href: '/dashboard/calendrier', icon: Calendar },
+        ],
+      },
+      {
+        title: 'Communication',
+        items: [
+          { name: 'Annonces', href: '/dashboard/messagerie', icon: MessageSquare },
+        ],
+      },
+      {
+        title: 'Rapports',
+        items: [
+          { name: 'Rapports', href: '/dashboard/reports', icon: BarChart3 },
+          { name: 'Générateur IA', href: '/dashboard/reports', icon: Sparkles },
+        ],
+      },
+      {
+        title: 'Paramètres',
+        items: [
+          { name: 'Paramètres', href: '/dashboard/settings', icon: SettingsIcon },
+        ],
+      },
     ];
   }
 
@@ -135,8 +158,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>
-            <SidebarContent 
-              navigation={navigation} 
+            <SidebarContent
+              navigation={navigation}
+              navigationGroups={navigationGroups}
               location={location} 
               user={typedUser} 
               getRoleDisplayName={getRoleDisplayName}
@@ -150,8 +174,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <SidebarContent 
-            navigation={navigation} 
+          <SidebarContent
+            navigation={navigation}
+            navigationGroups={navigationGroups}
             location={location} 
             user={typedUser} 
             getRoleDisplayName={getRoleDisplayName}
@@ -177,7 +202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="w-full flex md:ml-0">
                 <div className="relative w-full text-gray-400 focus-within:text-gray-600">
                   <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
-                    <span className="text-lg font-semibold text-gray-900">
+                    <span className="text-lg font-semibold text-[#212121]">
                       SchoolConnect
                     </span>
                   </div>
@@ -187,7 +212,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             
             <div className="ml-4 flex items-center md:ml-6">
               {/* Notifications */}
-              <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+              <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1E88E5]">
                 <Bell className="h-6 w-6" />
               </button>
 
@@ -195,15 +220,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="ml-3 relative">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
-                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-[#1E88E5] flex items-center justify-center">
                       <span className="text-sm font-medium text-white">
                         {(typedUser?.profile?.full_name || typedUser?.email)?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   </div>
                   <div className="hidden md:block">
-                    <div className="text-sm font-medium text-gray-700">{typedUser?.profile?.full_name || typedUser?.email}</div>
-                    <div className="text-xs text-gray-500">{typedUser?.email}</div>
+                    <div className="text-sm font-medium text-[#212121]">{typedUser?.profile?.full_name || typedUser?.email}</div>
+                    <div className="text-xs text-[#616161]">{typedUser?.email}</div>
                   </div>
                 </div>
               </div>
@@ -258,10 +283,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
       {/* Logo */}
-      <div className="flex items-center h-16 flex-shrink-0 px-4 bg-primary-600">
+      <div className="flex items-center h-16 flex-shrink-0 px-4" style={{ backgroundColor: '#1E88E5' }}>
         <Link to="/" className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-            <span className="text-primary-600 font-bold text-sm">SC</span>
+            <span className="font-bold text-sm" style={{ color: '#1E88E5' }}>SC</span>
           </div>
           <span className="text-xl font-bold text-white">SchoolConnect</span>
         </Link>
@@ -271,14 +296,14 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       <div className="flex-shrink-0 px-4 py-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0">
-            <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#1E88E5' }}>
               <span className="text-sm font-medium text-white">
                 {(typedUser?.profile?.full_name || typedUser?.email)?.charAt(0).toUpperCase()}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-[#212121] truncate">
               {typedUser?.profile?.full_name || typedUser?.email}
             </p>
             <span className={cn(
@@ -292,39 +317,74 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                isActive
-                  ? 'bg-primary-100 text-primary-900'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              )}
-            >
-              <item.icon
+      <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto" style={{ backgroundColor: '#F5F7FA' }}>
+        {navigationGroups ? (
+          navigationGroups.map((group) => (
+            <div key={group.title}>
+              <div className="px-2 text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#616161' }}>
+                {group.title}
+              </div>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                        isActive
+                          ? 'text-[#1E88E5] bg-white shadow'
+                          : 'text-[#616161] hover:bg-white hover:shadow'
+                      )}
+                    >
+                      <item.icon
+                        className={cn(
+                          'mr-3 flex-shrink-0 h-5 w-5',
+                          isActive ? 'text-[#1E88E5]' : 'text-[#9e9e9e] group-hover:text-[#1E88E5]'
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        ) : (
+          navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
                 className={cn(
-                  'mr-3 flex-shrink-0 h-5 w-5',
-                  isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
+                  'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                  isActive
+                    ? 'bg-blue-50 text-[#1E88E5]'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )}
-              />
-              {item.name}
-            </Link>
-          );
-        })}
+              >
+                <item.icon
+                  className={cn(
+                    'mr-3 flex-shrink-0 h-5 w-5',
+                    isActive ? 'text-[#1E88E5]' : 'text-gray-400 group-hover:text-gray-500'
+                  )}
+                />
+                {item.name}
+              </Link>
+            );
+          })
+        )}
       </nav>
 
       {/* Bottom actions */}
       <div className="flex-shrink-0 border-t border-gray-200 p-4 space-y-2">
         <button
           onClick={handleLogout}
-          className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+          className="w-full group flex items-center px-2 py-2 text-sm font-medium text-[#616161] rounded-md hover:bg-gray-50 hover:text-[#212121]"
         >
-          <LogOut className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+          <LogOut className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-[#1E88E5]" />
           Déconnexion
         </button>
       </div>

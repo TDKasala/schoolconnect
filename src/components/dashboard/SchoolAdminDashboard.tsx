@@ -33,7 +33,7 @@ const SchoolAdminDashboard: React.FC = () => {
   const [kpis, setKpis] = useState({
     students: 0,
     teachers: 0,
-    classes: 0,
+    pendingReports: 0,
     attendanceTodayRate: 0,
   });
 
@@ -44,10 +44,11 @@ const SchoolAdminDashboard: React.FC = () => {
       if (!schoolId) return;
       setKpisLoading(true);
       try {
-        const [studentsCount, teachersCount, classesCount, attendanceToday] = await Promise.all([
+        const [studentsCount, teachersCount, pendingReportsCount, attendanceToday] = await Promise.all([
           supabase.from('students').select('id', { count: 'exact', head: true }).eq('school_id', schoolId),
           supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher').eq('school_id', schoolId),
-          supabase.from('classes').select('id', { count: 'exact', head: true }).eq('school_id', schoolId),
+          // Pending reports (safe fallback if table doesn't exist or column differs)
+          supabase.from('reports').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).eq('status', 'pending'),
           supabase
             .from('attendance')
             .select('id, status, date, created_at')
@@ -59,12 +60,13 @@ const SchoolAdminDashboard: React.FC = () => {
         const present = attData.filter(a => a.status === 'present').length;
         const rate = attData.length ? Math.round((present / attData.length) * 100) : 0;
 
-        setKpis({
+        setKpis((prev) => ({
+          ...prev,
           students: studentsCount.count || 0,
           teachers: teachersCount.count || 0,
-          classes: classesCount.count || 0,
+          pendingReports: pendingReportsCount.count || 0,
           attendanceTodayRate: rate,
-        });
+        }));
       } catch (e) {
         // non-blocking
         console.warn('Failed loading KPIs', e);
@@ -79,45 +81,45 @@ const SchoolAdminDashboard: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Tableau de bord - Admin École</h1>
-        <p className="mt-2 text-gray-600">Vue d'ensemble et actions rapides pour votre établissement</p>
+        <h1 className="text-3xl font-bold" style={{ color: '#212121' }}>Tableau de bord - Admin École</h1>
+        <p className="mt-2" style={{ color: '#616161' }}>Vue d'ensemble et actions rapides pour votre établissement</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="bg-primary-500 rounded-lg p-3"><Users className="h-6 w-6 text-white" /></div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#1E88E5' }}><Users className="h-6 w-6 text-white" /></div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Élèves</p>
-              <p className="text-2xl font-semibold text-gray-900">{(loading || kpisLoading) ? '—' : (stats?.totalStudents ?? kpis.students)}</p>
+              <p className="text-sm font-medium" style={{ color: '#616161' }}>Élèves</p>
+              <p className="text-2xl font-semibold" style={{ color: '#212121' }}>{(loading || kpisLoading) ? '—' : (stats?.totalStudents ?? kpis.students)}</p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="bg-green-500 rounded-lg p-3"><UserCheck className="h-6 w-6 text-white" /></div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#43A047' }}><UserCheck className="h-6 w-6 text-white" /></div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Enseignants</p>
-              <p className="text-2xl font-semibold text-gray-900">{(loading || kpisLoading) ? '—' : (stats?.totalTeachers ?? kpis.teachers)}</p>
+              <p className="text-sm font-medium" style={{ color: '#616161' }}>Enseignants</p>
+              <p className="text-2xl font-semibold" style={{ color: '#212121' }}>{(loading || kpisLoading) ? '—' : (stats?.totalTeachers ?? kpis.teachers)}</p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="bg-indigo-500 rounded-lg p-3"><Layers className="h-6 w-6 text-white" /></div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#FBC02D' }}><FileText className="h-6 w-6 text-white" /></div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Classes</p>
-              <p className="text-2xl font-semibold text-gray-900">{(loading || kpisLoading) ? '—' : (stats?.totalClasses ?? kpis.classes)}</p>
+              <p className="text-sm font-medium" style={{ color: '#616161' }}>Rapports en attente</p>
+              <p className="text-2xl font-semibold" style={{ color: '#212121' }}>{(loading || kpisLoading) ? '—' : (kpis.pendingReports)}</p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="bg-yellow-500 rounded-lg p-3"><Clock className="h-6 w-6 text-white" /></div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#FBC02D' }}><Clock className="h-6 w-6 text-white" /></div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Présence Aujourd'hui</p>
-              <p className="text-2xl font-semibold text-gray-900">{(loading || kpisLoading) ? '—' : `${kpis.attendanceTodayRate}%`}</p>
+              <p className="text-sm font-medium" style={{ color: '#616161' }}>Présence Aujourd'hui</p>
+              <p className="text-2xl font-semibold" style={{ color: '#212121' }}>{(loading || kpisLoading) ? '—' : `${kpis.attendanceTodayRate}%`}</p>
             </div>
           </div>
         </div>
@@ -127,24 +129,24 @@ const SchoolAdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <button onClick={() => navigate('/dashboard/students')} className="bg-white rounded-lg shadow p-5 hover:shadow-md transition flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500">Gestion des élèves</div>
-            <div className="text-lg font-semibold">Inscrire / Gérer</div>
+            <div className="text-sm" style={{ color: '#616161' }}>Gestion des élèves</div>
+            <div className="text-lg font-semibold" style={{ color: '#212121' }}>Inscrire / Gérer</div>
           </div>
-          <UserPlus className="h-6 w-6 text-primary-600" />
+          <UserPlus className="h-6 w-6" style={{ color: '#1E88E5' }} />
         </button>
         <button onClick={() => navigate('/dashboard/classes')} className="bg-white rounded-lg shadow p-5 hover:shadow-md transition flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500">Gestion des enseignants</div>
-            <div className="text-lg font-semibold">Assigner aux classes</div>
+            <div className="text-sm" style={{ color: '#616161' }}>Gestion des enseignants</div>
+            <div className="text-lg font-semibold" style={{ color: '#212121' }}>Assigner aux classes</div>
           </div>
-          <BookOpen className="h-6 w-6 text-indigo-600" />
+          <BookOpen className="h-6 w-6" style={{ color: '#1E88E5' }} />
         </button>
         <button onClick={() => navigate('/dashboard/reports')} className="bg-white rounded-lg shadow p-5 hover:shadow-md transition flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500">Rapports & Bulletins</div>
-            <div className="text-lg font-semibold">Générer et Exporter</div>
+            <div className="text-sm" style={{ color: '#616161' }}>Rapports & Bulletins</div>
+            <div className="text-lg font-semibold" style={{ color: '#212121' }}>Générer et Exporter</div>
           </div>
-          <FileText className="h-6 w-6 text-green-600" />
+          <FileText className="h-6 w-6" style={{ color: '#43A047' }} />
         </button>
       </div>
 
@@ -153,7 +155,7 @@ const SchoolAdminDashboard: React.FC = () => {
         {/* Student Management */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Users className="h-5 w-5 text-primary-600" /> Gestion des élèves</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#212121' }}><Users className="h-5 w-5" style={{ color: '#1E88E5' }} /> Gestion des élèves</h2>
             <Link className="text-primary-600 text-sm hover:underline" to="/dashboard/students">Voir tout</Link>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,7 +167,7 @@ const SchoolAdminDashboard: React.FC = () => {
         {/* Teacher Management */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><UserCheck className="h-5 w-5 text-green-600" /> Gestion des enseignants</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#212121' }}><UserCheck className="h-5 w-5" style={{ color: '#43A047' }} /> Gestion des enseignants</h2>
             <Link className="text-primary-600 text-sm hover:underline" to="/dashboard/classes">Voir tout</Link>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,7 +179,7 @@ const SchoolAdminDashboard: React.FC = () => {
         {/* Class & Timetable Management */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Layers className="h-5 w-5 text-indigo-600" /> Cours & Emploi du temps</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#212121' }}><Layers className="h-5 w-5" style={{ color: '#1E88E5' }} /> Cours & Emploi du temps</h2>
             <Link className="text-primary-600 text-sm hover:underline" to="/dashboard/classes">Gérer</Link>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -189,7 +191,7 @@ const SchoolAdminDashboard: React.FC = () => {
         {/* Announcements & Communication */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><MessageSquare className="h-5 w-5 text-orange-600" /> Annonces & Communication</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#212121' }}><MessageSquare className="h-5 w-5" style={{ color: '#FBC02D' }} /> Annonces & Communication</h2>
             <Link className="text-primary-600 text-sm hover:underline" to="/dashboard/messagerie">Ouvrir</Link>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -201,7 +203,7 @@ const SchoolAdminDashboard: React.FC = () => {
         {/* Reports & Analytics */}
         <div className="bg-white rounded-lg shadow lg:col-span-2">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-teal-600" /> Rapports & Analyses</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#212121' }}><BarChart3 className="h-5 w-5" style={{ color: '#1E88E5' }} /> Rapports & Analyses</h2>
             <Link className="text-primary-600 text-sm hover:underline" to="/dashboard/reports">Voir</Link>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -220,7 +222,7 @@ const SchoolAdminDashboard: React.FC = () => {
           </div>
           {/* Recent Activities */}
           <div className="px-6 pb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Activités récentes</h3>
+            <h3 className="text-sm font-medium mb-3" style={{ color: '#616161' }}>Activités récentes</h3>
             <div className="space-y-3">
               {loading && (<p className="text-sm text-gray-500">Chargement…</p>)}
               {error && (<p className="text-sm text-red-600">{error}</p>)}
@@ -245,13 +247,13 @@ const SchoolAdminDashboard: React.FC = () => {
         {/* AI-Powered Report Generator */}
         <div className="bg-white rounded-lg shadow lg:col-span-2">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Sparkles className="h-5 w-5 text-fuchsia-600" /> Générateur de rapports (IA)</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#212121' }}><Sparkles className="h-5 w-5" style={{ color: '#1E88E5' }} /> Générateur de rapports (IA)</h2>
             <Link className="text-primary-600 text-sm hover:underline" to="/dashboard/reports">Ouvrir</Link>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button onClick={() => navigate('/dashboard/reports')} className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 gap-2"><Target className="h-4 w-4" /> Rapport Établissement</button>
-            <button onClick={() => navigate('/dashboard/reports')} className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 gap-2"><Layers className="h-4 w-4" /> Rapport par Classe</button>
-            <button onClick={() => navigate('/dashboard/reports')} className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 gap-2"><Users className="h-4 w-4" /> Rapport Élève</button>
+            <button onClick={() => navigate('/dashboard/reports')} className="inline-flex items-center justify-center px-4 py-2 rounded-md text-white gap-2 transition" style={{ backgroundColor: '#1E88E5' }}><Target className="h-4 w-4" /> Rapport Établissement</button>
+            <button onClick={() => navigate('/dashboard/reports')} className="inline-flex items-center justify-center px-4 py-2 rounded-md text-white gap-2 transition" style={{ backgroundColor: '#1E88E5' }}><Layers className="h-4 w-4" /> Rapport par Classe</button>
+            <button onClick={() => navigate('/dashboard/reports')} className="inline-flex items-center justify-center px-4 py-2 rounded-md text-white gap-2 transition" style={{ backgroundColor: '#1E88E5' }}><Users className="h-4 w-4" /> Rapport Élève</button>
           </div>
           <div className="px-6 pb-6 text-sm text-gray-600">
             Utilise les données Supabase (présence, notes, devoirs) pour générer automatiquement des rapports avec points forts, faiblesses et axes d'amélioration. Export en PDF inclus.
