@@ -14,8 +14,8 @@ const DashboardPage: React.FC = () => {
     return null;
   }
 
-  // Show pending message for users awaiting activation
-  if (typedUser.profile?.role === 'pending') {
+  // Show pending message for users awaiting admin approval
+  if (typedUser.profile?.approved === false) {
     return <PendingAccountMessage />;
   }
 
