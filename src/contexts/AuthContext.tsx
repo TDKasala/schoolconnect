@@ -229,6 +229,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
+  // Subscribe to realtime user profile changes (e.g., approved flag updates)
+  useEffect(() => {
+    if (!hasSupabase) return;
+    const current = user as UserWithProfile | null;
+    if (!current?.id) return;
+
+    const channel = supabase
+      .channel(`user-profile-${current.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users', filter: `id=eq.${current.id}` },
+        async (_payload) => {
+          try {
+            const refreshed = await fetchUserProfile(current as unknown as User);
+            if (refreshed) {
+              setUser(refreshed);
+              localStorage.setItem('user', JSON.stringify(refreshed));
+              logger.log('AuthProvider: user profile refreshed from realtime change');
+            }
+          } catch (err) {
+            logger.error('AuthProvider: error refreshing profile from realtime', err);
+          }
+        }
+      )
+      .subscribe((status) => {
+        logger.log('AuthProvider: realtime subscription status', status);
+      });
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {}
+    };
+  }, [user]);
+
   const login = async (email: string, password: string) => {
     try {
       logger.log('AuthProvider: attempting login for', email);
