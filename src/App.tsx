@@ -98,6 +98,7 @@ import GradesPage from './pages/dashboard/GradesPage';
 import BulletinsPage from './pages/dashboard/BulletinsPage';
 import ReportsPage from './pages/dashboard/ReportsPage';
 import PaymentsPage from './pages/dashboard/PaymentsPage';
+import TeachersPage from './pages/dashboard/TeachersPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -182,6 +183,15 @@ VITE_SUPABASE_ANON_KEY
                 <RoleRoute allowedRoles={['school_admin']}>
                   <DashboardLayout>
                     <ClassesPage />
+                  </DashboardLayout>
+                </RoleRoute>
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/teachers" element={
+              <PrivateRoute>
+                <RoleRoute allowedRoles={['school_admin']}>
+                  <DashboardLayout>
+                    <TeachersPage />
                   </DashboardLayout>
                 </RoleRoute>
               </PrivateRoute>
