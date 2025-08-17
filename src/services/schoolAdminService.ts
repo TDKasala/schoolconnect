@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { User, School, Student, Teacher } from '../types';
+import { School, Student } from '../types';
 import logger from '../utils/logger';
 
 export interface SchoolStats {
@@ -32,7 +32,14 @@ export interface RecentActivity {
   timestamp: Date;
 }
 
-export interface TeacherWithStats extends Teacher {
+export interface TeacherWithStats {
+  id: string;
+  email: string;
+  name: string;
+  role: 'teacher';
+  schoolId: string;
+  createdAt: Date;
+  updatedAt: Date;
   studentCount: number;
   classCount: number;
   lastActive: string;
@@ -101,15 +108,12 @@ export class SchoolAdminService {
    */
   async getPendingUsers(): Promise<PendingUser[]> {
     try {
-      // In a real implementation, you would filter by a status field
-      // For now, we'll return users created in the last 7 days as "pending"
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      
+      // Pending = explicitly not approved yet
       const { data: users, error } = await supabase
         .from('users')
-        .select('id, full_name, email, role, school_id, created_at')
+        .select('id, full_name, email, role, school_id, created_at, approved')
         .eq('school_id', this.schoolId)
-        .gte('created_at', oneWeekAgo);
+        .eq('approved', false);
 
       if (error) throw error;
 
@@ -133,10 +137,11 @@ export class SchoolAdminService {
   async handleUserRequest(userId: string, action: 'approve' | 'reject'): Promise<void> {
     try {
       if (action === 'approve') {
-        // Update user status to active
+        // Approve user: set approved=true and update timestamp
         const { error } = await supabase
           .from('users')
           .update({ 
+            approved: true,
             updated_at: new Date().toISOString() 
           })
           .eq('id', userId)
@@ -312,16 +317,25 @@ export class SchoolAdminService {
 
       if (error) throw error;
 
-      return students?.map(student => ({
-        id: student.id,
-        firstName: student.first_name,
-        lastName: student.last_name,
-        dateOfBirth: new Date(student.date_of_birth),
-        schoolId: student.school_id,
-        className: student.classes?.name || 'N/A',
-        teacherName: student.users?.full_name || 'N/A',
-        lastGradeDate: '2024-01-15' // Mock data
-      } as StudentWithClass)) || [];
+      return students?.map((student: any) => {
+        const className = Array.isArray(student.classes)
+          ? student.classes[0]?.name
+          : student.classes?.name;
+        const teacherName = Array.isArray(student.users)
+          ? student.users[0]?.full_name
+          : student.users?.full_name;
+
+        return {
+          id: student.id,
+          firstName: student.first_name,
+          lastName: student.last_name,
+          dateOfBirth: new Date(student.date_of_birth),
+          schoolId: student.school_id,
+          className: className || 'N/A',
+          teacherName: teacherName || 'N/A',
+          lastGradeDate: '2024-01-15' // Mock data
+        } as StudentWithClass;
+      }) || [];
     } catch (error) {
       logger.error('Error fetching students:', error);
       throw new Error('Failed to fetch students');

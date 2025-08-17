@@ -184,7 +184,7 @@ export class PlatformAdminService {
       const { data: users, error } = await supabase
         .from('users')
         .select(`
-          id, email, full_name, role, school_id, is_active, created_at, updated_at,
+          id, email, full_name, role, school_id, is_active, approved, created_at, updated_at,
           schools(name)
         `);
 
@@ -197,7 +197,7 @@ export class PlatformAdminService {
         role: user.role,
         schoolId: user.school_id,
         schoolName: user.schools?.name,
-        status: user.is_active ? 'active' : 'suspended',
+        status: user.approved === false ? 'pending' : (user.is_active ? 'active' : 'suspended'),
         createdAt: new Date(user.created_at),
         updatedAt: new Date(user.updated_at)
       })) || [];
@@ -535,17 +535,13 @@ export class PlatformAdminService {
    */
   static async getPendingUsers(): Promise<UserWithSchool[]> {
     try {
-      // In a real implementation, you would filter by a status field
-      // For now, we'll return users created in the last 24 hours as "pending"
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      
       const { data: users, error } = await supabase
         .from('users')
         .select(`
-          id, email, full_name, role, school_id, is_active, created_at, updated_at,
+          id, email, full_name, role, school_id, is_active, approved, created_at, updated_at,
           schools(name)
         `)
-        .gte('created_at', yesterday);
+        .eq('approved', false);
 
       if (error) throw error;
 
@@ -648,6 +644,7 @@ export class PlatformAdminService {
       name?: string;
       role?: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
       schoolId?: string;
+      approved?: boolean;
     }
   ): Promise<UserWithSchool> {
     try {
@@ -667,10 +664,11 @@ export class PlatformAdminService {
           full_name: updates.name,
           role: updates.role,
           school_id: updates.schoolId,
+          approved: updates.approved,
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId)
-        .select('id, email, full_name, role, school_id, is_active, created_at, updated_at, schools(name)')
+        .select('id, email, full_name, role, school_id, is_active, approved, created_at, updated_at, schools(name)')
         .single();
 
       if (userError) throw userError;
@@ -690,7 +688,7 @@ export class PlatformAdminService {
         role: user.role,
         schoolId: user.school_id,
         schoolName: user.schools?.name,
-        status: user.status as 'active' | 'pending' | 'suspended' || 'active',
+        status: user.approved === false ? 'pending' : (user.is_active ? 'active' : 'suspended'),
         createdAt: new Date(user.created_at),
         updatedAt: new Date(user.updated_at)
       };

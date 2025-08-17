@@ -54,9 +54,10 @@ const PendingUsersModal: React.FC<PendingUsersModalProps> = ({ isOpen, onClose, 
         throw new Error('User not found');
       }
       
-      // Update user to make them active (we'll use updateUser method)
+      // Approve user: set approved=true and keep their role
       await PlatformAdminService.updateUser(userId, {
-        role: userToApprove.role as 'platform_admin' | 'school_admin' | 'teacher' | 'parent'
+        role: userToApprove.role as 'platform_admin' | 'school_admin' | 'teacher' | 'parent',
+        approved: true,
       });
       
       // Remove from pending list
