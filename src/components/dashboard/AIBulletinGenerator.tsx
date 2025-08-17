@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Calendar, Users, BarChart3, AlertCircle, CheckCircle } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, Wand2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BulletinService, BulletinReport } from '../../services/bulletinService';
+import { GeminiService } from '../../services/geminiService';
 
 interface AIBulletinGeneratorProps {
   classId?: string;
   teacherId?: string;
 }
 
-const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = ({ classId, teacherId }) => {
+const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = (_props) => {
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [semester, setSemester] = useState<string>('1');
@@ -17,6 +18,7 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = ({ classId, teac
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchClasses();
@@ -96,6 +98,64 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = ({ classId, teac
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // Build a concise French prompt for Gemini based on bulletin data
+  const buildAIPrompt = (b: BulletinReport) => {
+    const subjects = b.subjects
+      .map((s) => `- ${s.subject}: moyenne ${s.average.toFixed(2)}/20 (coef ${s.coefficient})`)
+      .join('\n');
+    return (
+      `Rédige un commentaire d'enseignant en 3 à 5 phrases en français pour le bulletin d'un élève. ` +
+      `Sois précis, bienveillant, et oriente vers des pistes d'amélioration. ` +
+      `Évite les informations sensibles et garde un ton professionnel.\n\n` +
+      `Élève: ${b.student_name}\n` +
+      `Classe: ${b.class_name}, Trimestre: ${b.semester}, Année: ${b.year}\n` +
+      `Moyenne générale: ${b.overall_average.toFixed(2)}/20, Assiduité: ${b.attendance_rate.toFixed(1)}%\n` +
+      `Conduite: ${b.conduct_grade}\n` +
+      `Matières:\n${subjects}`
+    );
+  };
+
+  const enrichBulletinWithAI = async (studentId: string) => {
+    const b = bulletins.find((x) => x.student_id === studentId);
+    if (!b) return;
+    setAiLoading(true);
+    try {
+      const res = await GeminiService.assist(buildAIPrompt(b));
+      if (res.ok) {
+        const text = res.text?.trim() || '';
+        setBulletins((prev) =>
+          prev.map((it) => (it.student_id === studentId ? { ...it, ai_feedback: text } : it))
+        );
+      } else {
+        setError(res.error || "Erreur lors de l'assistance IA");
+      }
+    } catch (e) {
+      setError("Erreur lors de l'assistance IA");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const enrichAllWithAI = async () => {
+    if (bulletins.length === 0) return;
+    setAiLoading(true);
+    setError('');
+    try {
+      for (const b of bulletins) {
+        const res = await GeminiService.assist(buildAIPrompt(b));
+        const text = res.ok ? (res.text?.trim() || '') : '';
+        setBulletins((prev) => prev.map((it) => (it.student_id === b.student_id ? { ...it, ai_feedback: text } : it)));
+        // Small delay to be gentle with rate limits
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      setSuccess('Commentaires IA générés pour tous les bulletins');
+    } catch (e) {
+      setError("Erreur lors de la génération des commentaires IA");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -199,13 +259,23 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = ({ classId, teac
             <h2 className="text-lg font-semibold text-gray-900">
               Bulletins générés ({bulletins.length} élèves)
             </h2>
-            <button
-              onClick={downloadAllBulletins}
-              className="bg-secondary-600 text-white py-2 px-4 rounded-md hover:bg-secondary-700 transition-colors flex items-center"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Tout télécharger
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={enrichAllWithAI}
+                disabled={aiLoading}
+                className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors flex items-center disabled:opacity-50"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Générer commentaires IA
+              </button>
+              <button
+                onClick={downloadAllBulletins}
+                className="bg-secondary-600 text-white py-2 px-4 rounded-md hover:bg-secondary-700 transition-colors flex items-center"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Tout télécharger
+              </button>
+            </div>
           </div>
 
           <div className="p-6">
@@ -229,12 +299,15 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = ({ classId, teac
                       Mention
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Commentaire IA
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {bulletins.map((bulletin, index) => (
+                  {bulletins.map((bulletin) => (
                     <tr key={bulletin.student_id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         #{bulletin.rank}
@@ -251,12 +324,27 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = ({ classId, teac
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {bulletin.conduct_grade}
                       </td>
+                      <td className="px-6 py-4 whitespace-pre-wrap text-sm text-gray-900 max-w-xl">
+                        {bulletin.ai_feedback ? (
+                          <span>{bulletin.ai_feedback}</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <button
                           onClick={() => downloadBulletin(bulletin)}
-                          className="text-primary-600 hover:text-primary-900"
+                          className="text-primary-600 hover:text-primary-900 mr-3"
                         >
                           <Download className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => enrichBulletinWithAI(bulletin.student_id)}
+                          disabled={aiLoading}
+                          className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
+                          title="Générer commentaire IA"
+                        >
+                          <Wand2 className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>

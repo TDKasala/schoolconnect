@@ -27,6 +27,8 @@ export interface BulletinReport {
   attendance_rate: number;
   conduct_grade: string;
   teacher_comments: string;
+  // Optional AI-enhanced feedback (e.g., from Gemini)
+  ai_feedback?: string;
   generated_at: string;
 }
 
