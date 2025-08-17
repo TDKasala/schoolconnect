@@ -61,6 +61,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           { name: 'Gérer les Écoles', href: '/dashboard?tab=schools', icon: Building2 },
           { name: 'Admins Écoles', href: '/dashboard?tab=users', icon: UserCheck },
           { name: 'Utilisateurs', href: '/dashboard?tab=users', icon: Users },
+          { name: 'Messages', href: '/dashboard?tab=messages', icon: MessageSquare },
         ],
       },
       {

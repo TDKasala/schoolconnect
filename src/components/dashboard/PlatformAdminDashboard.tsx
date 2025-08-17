@@ -29,11 +29,13 @@ import {
   AlertCircle,
   Shield,
   CreditCard,
-  Filter
+  Filter,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlatformAdminService, type SchoolWithStats, type UserWithSchool } from '../../services/platformAdminService';
 import { useOverview } from '../../hooks/useOverview';
+import { contactMessagesService, type ContactMessage, type ContactStatus } from '../../services/contactMessagesService';
 
 const PlatformAdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -428,6 +430,7 @@ const PlatformAdminDashboard: React.FC = () => {
     { id: 'overview', name: 'Vue d\'ensemble', icon: BarChart3 },
     { id: 'schools', name: 'Écoles', icon: Building2 },
     { id: 'users', name: 'Utilisateurs', icon: Users },
+    { id: 'messages', name: 'Messages', icon: MessageSquare },
     { id: 'analytics', name: 'Analytiques', icon: TrendingUp },
     { id: 'billing', name: 'Facturation', icon: CreditCard },
     { id: 'ai', name: 'Générateur IA', icon: Filter },
@@ -591,6 +594,149 @@ const PlatformAdminDashboard: React.FC = () => {
           loading={loading}
         />
       </div>
+    </div>
+  );
+
+  const [cmLoading, setCmLoading] = useState(false);
+  const [cmError, setCmError] = useState<string | null>(null);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [statusFilter, setStatusFilter] = useState<ContactStatus | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchContactMessages = useCallback(async () => {
+    setCmLoading(true);
+    setCmError(null);
+    try {
+      const msgs = await contactMessagesService.list({
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        search: searchQuery || undefined,
+      });
+      setContactMessages(msgs);
+    } catch (e: any) {
+      setCmError(e?.message || 'Erreur lors du chargement des messages');
+    } finally {
+      setCmLoading(false);
+    }
+  }, [statusFilter, searchQuery]);
+
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      fetchContactMessages();
+    }
+  }, [activeTab, fetchContactMessages]);
+
+  const handleUpdateMessageStatus = async (id: string, status: ContactStatus) => {
+    try {
+      await contactMessagesService.updateStatus(id, status);
+      await fetchContactMessages();
+    } catch (e: any) {
+      setCmError(e?.message || 'Impossible de mettre à jour le statut');
+    }
+  };
+
+  const renderMessages = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Messages de Contact</h2>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-700">Statut</label>
+            <select
+              className="border-gray-300 rounded-md text-sm"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+            >
+              <option value="all">Tous</option>
+              <option value="new">Nouveaux</option>
+              <option value="read">Lus</option>
+              <option value="responded">Répondus</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 flex-1 sm:flex-none">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Recherche nom, email, sujet, message..."
+              className="w-full sm:w-64 border-gray-300 rounded-md text-sm"
+            />
+            <button
+              onClick={fetchContactMessages}
+              className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+            >
+              Filtrer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {cmError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{cmError}</div>
+      )}
+
+      {cmLoading ? (
+        <div className="flex justify-center items-center h-48">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        </div>
+      ) : contactMessages.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">Aucun message trouvé.</div>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sujet</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reçu</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {contactMessages.map((m) => (
+                  <tr key={m.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{m.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{m.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 max-w-xs truncate" title={m.subject}>{m.subject}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 max-w-md truncate" title={m.message}>{m.message}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{new Date(m.created_at).toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        m.status === 'new' ? 'bg-blue-100 text-blue-800' : m.status === 'read' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {m.status === 'new' ? 'Nouveau' : m.status === 'read' ? 'Lu' : 'Répondu'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      {m.status !== 'read' && (
+                        <button
+                          onClick={() => handleUpdateMessageStatus(m.id, 'read')}
+                          className="text-yellow-700 hover:text-yellow-900"
+                          title="Marquer comme lu"
+                        >
+                          Lu
+                        </button>
+                      )}
+                      {m.status !== 'responded' && (
+                        <button
+                          onClick={() => handleUpdateMessageStatus(m.id, 'responded')}
+                          className="text-green-700 hover:text-green-900"
+                          title="Marquer comme répondu"
+                        >
+                          Répondu
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1339,6 +1485,7 @@ const PlatformAdminDashboard: React.FC = () => {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'schools' && renderSchools()}
             {activeTab === 'users' && renderUsers()}
+            {activeTab === 'messages' && renderMessages()}
             {activeTab === 'analytics' && renderAnalytics()}
             {activeTab === 'billing' && renderBilling()}
             {activeTab === 'ai' && renderAI()}

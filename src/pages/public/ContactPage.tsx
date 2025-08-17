@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { contactMessagesService } from '../../services/contactMessagesService';
 import { 
   Mail, 
   Phone, 
@@ -15,13 +16,17 @@ const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    subject: '',
     school: '',
     phone: '',
     message: '',
-    requestType: 'demo'
+    requestType: 'demo',
+    // Honeypot field for spam prevention
+    website: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -31,12 +36,22 @@ const ContactPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    setErrorMsg(null);
+    try {
+      // Submit to Supabase (production path)
+      await contactMessagesService.submit({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject || formData.requestType || 'Contact',
+        message: formData.message || `Demande: ${formData.requestType}\nÉcole: ${formData.school}\nTéléphone: ${formData.phone}`,
+        honeypot: formData.website,
+      });
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setErrorMsg(err?.message || 'Erreur lors de l\'envoi du message. Veuillez réessayer.');
+    }
   };
 
   const contactInfo = [
@@ -154,7 +169,10 @@ const ContactPage: React.FC = () => {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                {errorMsg && (
+                  <div className="p-3 rounded-md bg-red-50 text-red-700 text-sm">{errorMsg}</div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -186,6 +204,22 @@ const ContactPage: React.FC = () => {
                       placeholder="votre@email.com"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    Sujet *
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    required
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Objet de votre demande"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -253,6 +287,21 @@ const ContactPage: React.FC = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Décrivez vos besoins ou posez vos questions..."
+                  />
+                </div>
+
+                {/* Honeypot field */}
+                <div className="hidden" aria-hidden="true">
+                  <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">Site web</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleInputChange}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   />
                 </div>
 
