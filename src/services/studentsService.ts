@@ -5,7 +5,7 @@ export type Student = {
   school_id: string;
   first_name: string;
   last_name: string;
-  middle_name?: string | null;
+  middle_name?: string | null; // optional and may not exist in some schemas
   student_id: string;
   gender?: 'M' | 'F' | null;
   date_of_birth?: string | null; // ISO date string
@@ -31,7 +31,7 @@ export const studentsService = {
 
     let query = supabase
       .from('students')
-      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at', { count: 'exact' })
+      .select('id, school_id, first_name, last_name, student_id, gender, date_of_birth, class_id, created_at', { count: 'exact' })
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -51,7 +51,7 @@ export const studentsService = {
     const { schoolId, classId } = params;
     const { data, error } = await supabase
       .from('students')
-      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at')
+      .select('id, school_id, first_name, last_name, student_id, gender, date_of_birth, class_id, created_at')
       .eq('school_id', schoolId)
       .eq('class_id', classId)
       .order('last_name', { ascending: true })
@@ -61,11 +61,13 @@ export const studentsService = {
   },
 
   async createStudent(input: CreateStudentInput): Promise<Student> {
-    const payload = { ...input } as any;
+    // Remove middle_name if present to avoid errors on schemas without this column
+    const { middle_name, ...rest } = input as any;
+    const payload = { ...rest } as any;
     const { data, error } = await supabase
       .from('students')
       .insert([payload])
-      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at')
+      .select('id, school_id, first_name, last_name, student_id, gender, date_of_birth, class_id, created_at')
       .single();
 
     if (error) throw error;
@@ -73,11 +75,13 @@ export const studentsService = {
   },
 
   async updateStudent(id: string, patch: Partial<Omit<Student, 'id' | 'created_at'>>): Promise<Student> {
+    // Strip middle_name to be safe across schemas
+    const { middle_name, ...rest } = (patch as any) || {};
     const { data, error } = await supabase
       .from('students')
-      .update(patch)
+      .update(rest)
       .eq('id', id)
-      .select('id, school_id, first_name, last_name, middle_name, student_id, gender, date_of_birth, class_id, created_at')
+      .select('id, school_id, first_name, last_name, student_id, gender, date_of_birth, class_id, created_at')
       .single();
 
     if (error) throw error;
