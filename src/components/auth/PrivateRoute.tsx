@@ -26,6 +26,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     console.log('PrivateRoute: checking auth state', { user, loading });
   }
 
+  // Global auth loading
   if (loading) {
     if (import.meta.env.DEV) {
       console.log('PrivateRoute: showing spinner');
@@ -40,8 +41,17 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/connexion" replace />;
   }
 
+  // Wait until profile is loaded to avoid premature redirects
+  const profile = (user as any)?.profile;
+  if (!profile) {
+    if (import.meta.env.DEV) {
+      console.log('PrivateRoute: profile not loaded yet, showing spinner');
+    }
+    return <Spinner />;
+  }
+
   // Gate: if user profile exists and is not approved, redirect to Pending Approval
-  const approved = (user as any)?.profile?.approved;
+  const approved = profile?.approved;
   const onPendingPage = location.pathname === '/en-attente-approbation';
   if (approved === false && !onPendingPage) {
     return <Navigate to="/en-attente-approbation" replace />;
