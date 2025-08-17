@@ -6,6 +6,7 @@ import {
   Home,
   BookOpen,
   DollarSign,
+  CreditCard,
   Users,
   MessageSquare,
   Calendar,
@@ -18,7 +19,8 @@ import {
   Settings as SettingsIcon,
   Sparkles,
   UserCheck,
-  Layers
+  Layers,
+  Building2
 } from 'lucide-react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
@@ -51,8 +53,36 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Grouped navigation for roles
   let navigationGroups: Array<{ title: string; items: Array<{ name: string; href: string; icon: any }> }> | null = null;
   if (typedUser?.profile?.role === 'platform_admin') {
-    navigation = [
-      { name: 'Administration', href: '/dashboard', icon: Home },
+    navigationGroups = [
+      {
+        title: 'Gestion',
+        items: [
+          { name: 'Tableau de bord', href: '/dashboard?tab=overview', icon: Home },
+          { name: 'Gérer les Écoles', href: '/dashboard?tab=schools', icon: Building2 },
+          { name: 'Admins Écoles', href: '/dashboard?tab=users', icon: UserCheck },
+          { name: 'Utilisateurs', href: '/dashboard?tab=users', icon: Users },
+        ],
+      },
+      {
+        title: 'Analytique',
+        items: [
+          { name: 'Analytiques', href: '/dashboard?tab=analytics', icon: BarChart3 },
+          { name: 'Générateur IA', href: '/dashboard?tab=ai', icon: Sparkles },
+          { name: 'Rapports', href: '/dashboard?tab=analytics', icon: FileText },
+        ],
+      },
+      {
+        title: 'Finance',
+        items: [
+          { name: 'Facturation & Abonnements', href: '/dashboard?tab=billing', icon: CreditCard },
+        ],
+      },
+      {
+        title: 'Paramètres',
+        items: [
+          { name: 'Paramètres', href: '/dashboard?tab=settings', icon: SettingsIcon },
+        ],
+      },
     ];
   } else if (typedUser?.profile?.role === 'teacher') {
     navigationGroups = [
@@ -374,7 +404,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               </div>
               <div className="space-y-1">
                 {group.items.map((item) => {
-                  const isActive = location.pathname === item.href;
+                  const url = new URL(item.href, window.location.origin);
+                  const isQueryLink = url.pathname === '/dashboard' && url.searchParams.get('tab');
+                  const current = new URL(window.location.href);
+                  const isActive = isQueryLink
+                    ? (location.pathname === '/dashboard' && current.searchParams.get('tab') === url.searchParams.get('tab'))
+                    : (location.pathname === item.href);
                   return (
                     <Link
                       key={item.name}

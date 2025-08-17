@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AddSchoolModal, { SchoolForm } from './AddSchoolModal';
 import EditSchoolModal from './EditSchoolModal';
 import AddUserModal, { UserForm as AddUserForm } from './AddUserModal';
@@ -26,7 +27,9 @@ import {
   DollarSign,
   Building2,
   AlertCircle,
-  Shield
+  Shield,
+  CreditCard,
+  Filter
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlatformAdminService, type SchoolWithStats, type UserWithSchool } from '../../services/platformAdminService';
@@ -61,6 +64,8 @@ const PlatformAdminDashboard: React.FC = () => {
   } = useOverview(user?.id || '', 'platform_admin');
 
   // State for dashboard-specific data
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [schools, setSchools] = useState<SchoolWithStats[]>([]);
   const [users, setUsers] = useState<UserWithSchool[]>([]);
@@ -424,8 +429,30 @@ const PlatformAdminDashboard: React.FC = () => {
     { id: 'schools', name: 'Écoles', icon: Building2 },
     { id: 'users', name: 'Utilisateurs', icon: Users },
     { id: 'analytics', name: 'Analytiques', icon: TrendingUp },
+    { id: 'billing', name: 'Facturation', icon: CreditCard },
+    { id: 'ai', name: 'Générateur IA', icon: Filter },
     { id: 'settings', name: 'Paramètres', icon: Settings }
   ];
+
+  // Sync tab with query param
+  useEffect(() => {
+    const qp = new URLSearchParams(location.search);
+    const qTab = qp.get('tab');
+    const validIds = new Set(tabs.map(t => t.id));
+    if (qTab && validIds.has(qTab)) {
+      setActiveTab(qTab);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  useEffect(() => {
+    const qp = new URLSearchParams(location.search);
+    if (qp.get('tab') !== activeTab) {
+      qp.set('tab', activeTab);
+      navigate({ pathname: '/dashboard', search: `?${qp.toString()}` }, { replace: false });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const renderOverview = () => (
     <div className="space-y-6">
@@ -947,6 +974,110 @@ const PlatformAdminDashboard: React.FC = () => {
     </div>
   );
 
+  const renderBilling = () => {
+    const revenue = financialSummary?.totalRevenue || 0;
+    const mrr = financialSummary?.mrr || 0;
+    const arpu = financialSummary?.arpu || 0;
+    const invoices = financialSummary?.invoiceCount || 0;
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Facturation & Abonnements</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">Revenus Totaux</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">${revenue.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">MRR</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">${mrr.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">ARPU</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">${arpu.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">Factures</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{invoices}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Renouvellements et Statuts</h3>
+            <button className="inline-flex items-center px-3 py-2 rounded-md bg-[#1E88E5] text-white hover:bg-blue-700">
+              <Download className="h-4 w-4 mr-2" /> Export CSV
+            </button>
+          </div>
+          <div className="text-sm text-gray-600">Les détails de facturation par école seront affichés ici.</div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAI = () => {
+    const [filterSchool, setFilterSchool] = useState<string>('');
+    const [start, setStart] = useState<string>('');
+    const [end, setEnd] = useState<string>('');
+    const [subStatus, setSubStatus] = useState<string>('all');
+    const report = useMemo(() => ({
+      totalSchools: stats?.totalSchools || 0,
+      totalUsers: (stats?.activeUsers || 0) + (stats?.pendingUsers || 0),
+      revenue: financialSummary?.totalRevenue || 0,
+    }), [stats, financialSummary]);
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Générateur de Rapports IA</h2>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">École</label>
+              <select className="w-full border-gray-300 rounded-md" value={filterSchool} onChange={(e) => setFilterSchool(e.target.value)}>
+                <option value="">Toutes</option>
+                {schools.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Début</label>
+              <input type="date" className="w-full border-gray-300 rounded-md" value={start} onChange={(e) => setStart(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Fin</label>
+              <input type="date" className="w-full border-gray-300 rounded-md" value={end} onChange={(e) => setEnd(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Abonnement</label>
+              <select className="w-full border-gray-300 rounded-md" value={subStatus} onChange={(e) => setSubStatus(e.target.value)}>
+                <option value="all">Tous</option>
+                <option value="active">Actif</option>
+                <option value="trial">Essai</option>
+                <option value="canceled">Annulé</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-3">
+            <button className="px-4 py-2 rounded-md bg-[#1E88E5] text-white hover:bg-blue-700">Générer</button>
+            <button onClick={() => window.print()} className="px-4 py-2 rounded-md bg-[#43A047] text-white hover:bg-green-700">Exporter PDF</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">Total Écoles</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{report.totalSchools}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">Utilisateurs Actifs</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">{report.totalUsers}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600">Revenus</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">${report.revenue.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderSettings = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Paramètres de la Plateforme</h2>
@@ -1209,6 +1340,8 @@ const PlatformAdminDashboard: React.FC = () => {
             {activeTab === 'schools' && renderSchools()}
             {activeTab === 'users' && renderUsers()}
             {activeTab === 'analytics' && renderAnalytics()}
+            {activeTab === 'billing' && renderBilling()}
+            {activeTab === 'ai' && renderAI()}
             {activeTab === 'settings' && renderSettings()}
           </div>
         </div>
