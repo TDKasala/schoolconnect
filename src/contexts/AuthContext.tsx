@@ -27,7 +27,7 @@ interface AuthContextType {
 }
 
 export interface UserWithProfile extends User {
-  profile?: Profile;
+  profile?: Profile | null;
 }
 
 // Profile stored in public.users table
@@ -90,6 +90,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           details: error.details,
           hint: error.hint
         });
+        
+        // For critical errors, return user with empty profile to prevent infinite loading
+        if (error.code === 'PGRST116' || error.message?.includes('JWT')) {
+          logger.log('AuthProvider: critical error, returning user with empty profile');
+          return {
+            ...authUser,
+            profile: null
+          };
+        }
+        
         logger.log('AuthProvider: returning auth user only due to error');
         return authUser as UserWithProfile;
       }
@@ -108,6 +118,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         message: (error as Error).message,
         stack: (error as Error).stack
       });
+      
+      // For timeout or critical errors, return user with null profile
+      if ((error as Error).message?.includes('timeout') || (error as Error).message?.includes('JWT')) {
+        logger.log('AuthProvider: timeout/critical error, returning user with null profile');
+        return {
+          ...authUser,
+          profile: null
+        };
+      }
+      
       logger.log('AuthProvider: returning auth user only due to exception');
       return authUser as UserWithProfile;
     } finally {

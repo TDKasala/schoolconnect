@@ -41,13 +41,24 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/connexion" replace />;
   }
 
-  // Wait until profile is loaded to avoid premature redirects
+  // Handle profile loading state more gracefully
   const profile = (user as any)?.profile;
-  if (!profile) {
+  
+  // If profile is explicitly null (failed to load), let DashboardPage handle the error
+  // Only show spinner if profile is undefined (still loading)
+  if (profile === undefined) {
     if (import.meta.env.DEV) {
-      console.log('PrivateRoute: profile not loaded yet, showing spinner');
+      console.log('PrivateRoute: profile still loading, showing spinner');
     }
     return <Spinner />;
+  }
+  
+  // If profile is null (failed to load), continue to dashboard for error handling
+  if (profile === null) {
+    if (import.meta.env.DEV) {
+      console.log('PrivateRoute: profile failed to load, allowing dashboard to handle error');
+    }
+    // Continue to dashboard - it will show appropriate error message
   }
 
   // Gate: if user profile exists and is not approved, redirect to Pending Approval

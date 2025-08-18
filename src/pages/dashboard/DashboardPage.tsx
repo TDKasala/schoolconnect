@@ -6,13 +6,65 @@ import PlatformAdminDashboard from '../../components/dashboard/PlatformAdminDash
 import ParentDashboard from '../../components/dashboard/ParentDashboard';
 import PendingAccountMessage from '../../components/dashboard/PendingAccountMessage';
 import DashboardSkeleton from '../../components/dashboard/DashboardSkeleton';
+import { AlertTriangle } from 'lucide-react';
+import useAuthDebug from '../../hooks/useAuthDebug';
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const typedUser = user as UserWithProfile | null;
+  const { logAuthState } = useAuthDebug('DashboardPage');
 
+  // Show loading skeleton while auth is loading
+  if (loading) {
+    console.log('DashboardPage: Auth loading, showing skeleton');
+    logAuthState();
+    return <DashboardSkeleton variant="admin" />;
+  }
+
+  // If no user after loading completes, show error state
   if (!typedUser) {
-    return null;
+    console.log('DashboardPage: No user found after auth loading completed');
+    logAuthState();
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="mx-auto h-16 w-16 text-red-500" />
+          <h2 className="text-2xl font-bold text-gray-900">Erreur d'authentification</h2>
+          <p className="text-gray-600 max-w-md">
+            Impossible de charger vos informations utilisateur. Veuillez vous reconnecter.
+          </p>
+          <button
+            onClick={() => window.location.href = '/connexion'}
+            className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700"
+          >
+            Se reconnecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If user exists but no profile, show error state
+  if (!typedUser.profile) {
+    console.log('DashboardPage: User found but no profile loaded');
+    logAuthState();
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500" />
+          <h2 className="text-2xl font-bold text-gray-900">Profil incomplet</h2>
+          <p className="text-gray-600 max-w-md">
+            Votre profil utilisateur n'a pas pu être chargé. Contactez l'administrateur.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700"
+          >
+            Recharger
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Show pending message for users awaiting admin approval
