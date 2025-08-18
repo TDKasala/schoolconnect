@@ -53,8 +53,22 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   // Gate: if user profile exists and is not approved, redirect to Pending Approval
   const approved = profile?.approved;
   const onPendingPage = location.pathname === '/en-attente-approbation';
-  if (approved === false && !onPendingPage) {
+  
+  // Handle approval status more robustly - treat null/undefined as pending approval
+  // Only allow access if explicitly approved (true)
+  if (approved !== true && !onPendingPage) {
+    if (import.meta.env.DEV) {
+      console.log('PrivateRoute: user not approved, redirecting to pending page', { approved, profile });
+    }
     return <Navigate to="/en-attente-approbation" replace />;
+  }
+  
+  // If on pending page but user is approved, redirect to dashboard
+  if (approved === true && onPendingPage) {
+    if (import.meta.env.DEV) {
+      console.log('PrivateRoute: user approved, redirecting from pending page to dashboard');
+    }
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (import.meta.env.DEV) {

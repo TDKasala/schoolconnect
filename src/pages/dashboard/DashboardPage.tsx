@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import SchoolAdminDashboard from '../../components/dashboard/SchoolAdminDashboard';
 import TeacherDashboard from '../../components/dashboard/TeacherDashboard';
 import PlatformAdminDashboard from '../../components/dashboard/PlatformAdminDashboard';
 import ParentDashboard from '../../components/dashboard/ParentDashboard';
 import PendingAccountMessage from '../../components/dashboard/PendingAccountMessage';
+import DashboardSkeleton from '../../components/dashboard/DashboardSkeleton';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -20,15 +21,34 @@ const DashboardPage: React.FC = () => {
   }
 
   const renderDashboard = () => {
-    switch (typedUser?.profile?.role) {
+    const role = typedUser?.profile?.role;
+    
+    // Wrap each dashboard component in Suspense to prevent flicker
+    switch (role) {
       case 'platform_admin':
-        return <PlatformAdminDashboard />;
+        return (
+          <Suspense fallback={<DashboardSkeleton variant="admin" />}>
+            <PlatformAdminDashboard />
+          </Suspense>
+        );
       case 'school_admin':
-        return <SchoolAdminDashboard />;
+        return (
+          <Suspense fallback={<DashboardSkeleton variant="admin" />}>
+            <SchoolAdminDashboard />
+          </Suspense>
+        );
       case 'teacher':
-        return <TeacherDashboard />;
+        return (
+          <Suspense fallback={<DashboardSkeleton variant="teacher" />}>
+            <TeacherDashboard />
+          </Suspense>
+        );
       case 'parent':
-        return <ParentDashboard />;
+        return (
+          <Suspense fallback={<DashboardSkeleton variant="parent" />}>
+            <ParentDashboard />
+          </Suspense>
+        );
       default:
         return (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,7 +57,7 @@ const DashboardPage: React.FC = () => {
                 Tableau de bord en développement
               </h2>
               <p className="text-gray-600">
-                Votre tableau de bord pour le rôle {typedUser?.profile?.role} sera bientôt disponible.
+                Votre tableau de bord pour le rôle {role || 'inconnu'} sera bientôt disponible.
               </p>
             </div>
           </div>

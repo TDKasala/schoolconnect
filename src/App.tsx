@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth, UserWithProfile } from './contexts/AuthContext';
 import Header from './components/layout/Header';
@@ -9,6 +9,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import ScrollToTop from './components/ScrollToTop';
 import Spinner from './components/Spinner';
 import AnalyticsTracker from './components/AnalyticsTracker';
+import AppErrorBoundary from './components/ErrorBoundary';
 import { hasSupabase, supabaseInitError } from './lib/supabase';
 
 // Error Boundary Component
@@ -170,9 +171,7 @@ VITE_SUPABASE_ANON_KEY
             {/* Dashboard routes */}
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  {typedUser?.profile?.role === 'platform_admin' ? <PlatformAdminDashboard /> : <DashboardPage />}
-                </DashboardLayout>
+                <DashboardPage />
               </PrivateRoute>
             } />
             <Route path="/dashboard/students" element={
@@ -348,13 +347,17 @@ VITE_SUPABASE_ANON_KEY
 
 function App() {
   return (
-    <AuthProvider>
+    <AppErrorBoundary>
       <Router>
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Suspense fallback={<Spinner />}>
+              <AppContent />
+            </Suspense>
+          </div>
+        </AuthProvider>
       </Router>
-    </AuthProvider>
+    </AppErrorBoundary>
   );
 }
 

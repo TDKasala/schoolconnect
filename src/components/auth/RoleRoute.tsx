@@ -41,11 +41,20 @@ const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
   }
 
   const role = typedUser.profile?.role;
+  
+  // Handle missing or invalid role
+  if (!role) {
+    if (import.meta.env.DEV) {
+      console.log('RoleRoute: no role found, redirecting to dashboard', { profile: typedUser.profile });
+    }
+    return <Navigate to="/dashboard" replace state={{ missingRole: true }} />;
+  }
+  
   if (!allowedRoles.includes(role)) {
     if (import.meta.env.DEV) {
       console.log('RoleRoute: unauthorized role, redirecting to dashboard', { role, allowedRoles });
     }
-    return <Navigate to="/dashboard" replace state={{ unauthorized: true }} />;
+    return <Navigate to="/dashboard" replace state={{ unauthorized: true, userRole: role }} />;
   }
 
   if (import.meta.env.DEV) {

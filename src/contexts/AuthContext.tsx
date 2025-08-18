@@ -51,14 +51,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   });
   const [loading, setLoading] = useState(true);
+  const [profileFetchInProgress, setProfileFetchInProgress] = useState(false);
 
-  const fetchUserProfile = async (authUser: User | null): Promise<UserWithProfile | null> => {
+  const fetchUserProfile = async (authUser: User | null, force = false): Promise<UserWithProfile | null> => {
     if (!authUser) {
       logger.log('AuthProvider: fetchUserProfile called with null user');
       return null;
     }
     
+    // Prevent concurrent profile fetches unless forced
+    if (profileFetchInProgress && !force) {
+      logger.log('AuthProvider: profile fetch already in progress, skipping');
+      return user as UserWithProfile;
+    }
+    
     try {
+      setProfileFetchInProgress(true);
       logger.log('AuthProvider: fetching user profile for', authUser.id);
       
       // Add a timeout to prevent indefinite hanging
@@ -102,6 +110,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       logger.log('AuthProvider: returning auth user only due to exception');
       return authUser as UserWithProfile;
+    } finally {
+      setProfileFetchInProgress(false);
     }
   };
 
@@ -127,14 +137,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           logger.log('AuthProvider: session user found, fetching profile');
           const userWithProfile = await fetchUserProfile(session.user);
           logger.log('AuthProvider: profile fetch complete, setting user');
-          if (isMounted) {
+          if (isMounted && userWithProfile) {
             // Avoid redundant state updates if nothing changed
             const prev = user as UserWithProfile | null;
-            const same = prev && userWithProfile && prev.id === userWithProfile.id
-              && JSON.stringify(prev.profile) === JSON.stringify(userWithProfile.profile);
-            if (!same) {
+            const profileChanged = !prev || prev.id !== userWithProfile.id ||
+              JSON.stringify(prev.profile) !== JSON.stringify(userWithProfile.profile);
+            
+            if (profileChanged) {
               setUser(userWithProfile);
               localStorage.setItem('user', JSON.stringify(userWithProfile));
+              logger.log('AuthProvider: user state updated');
+            } else {
+              logger.log('AuthProvider: user profile unchanged, skipping update');
             }
           }
         } else if (isMounted) {
@@ -178,30 +192,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logger.log('AuthProvider: onAuthStateChange triggered', _event, session?.user?.id);
       if (isMounted) {
         if (session?.user) {
-          logger.log('AuthProvider: onAuthStateChange user found, fetching profile');
-          fetchUserProfile(session.user).then((userWithProfile) => {
-            if (isMounted) {
-              logger.log('AuthProvider: profile fetch complete in onAuthStateChange, setting user', userWithProfile);
-              const prev = user as UserWithProfile | null;
-              const same = prev && userWithProfile && prev.id === userWithProfile.id
-                && JSON.stringify(prev.profile) === JSON.stringify(userWithProfile.profile);
-              if (!same) {
-                setUser(userWithProfile);
-                localStorage.setItem('user', JSON.stringify(userWithProfile));
+          // Only fetch profile if user changed or we don't have a profile yet
+          const currentUser = user as UserWithProfile | null;
+          const userChanged = !currentUser || currentUser.id !== session.user.id;
+          const needsProfile = !currentUser?.profile;
+          
+          if (userChanged || needsProfile) {
+            logger.log('AuthProvider: onAuthStateChange user found, fetching profile');
+            fetchUserProfile(session.user, userChanged).then((userWithProfile) => {
+              if (isMounted && userWithProfile) {
+                logger.log('AuthProvider: profile fetch complete in onAuthStateChange, setting user');
+                const prev = user as UserWithProfile | null;
+                const profileChanged = !prev || prev.id !== userWithProfile.id ||
+                  JSON.stringify(prev.profile) !== JSON.stringify(userWithProfile.profile);
+                
+                if (profileChanged) {
+                  setUser(userWithProfile);
+                  localStorage.setItem('user', JSON.stringify(userWithProfile));
+                  logger.log('AuthProvider: user state updated in onAuthStateChange');
+                }
               }
-            }
-          }).catch((error) => {
-            logger.error('AuthProvider: error fetching profile in onAuthStateChange', error);
-            if (isMounted) {
-              setUser(session.user as UserWithProfile);
-            }
-          }).finally(() => {
-            // Ensure loading is set to false after profile fetch
+            }).catch((error) => {
+              logger.error('AuthProvider: error fetching profile in onAuthStateChange', error);
+              if (isMounted) {
+                setUser(session.user as UserWithProfile);
+              }
+            }).finally(() => {
+              // Ensure loading is set to false after profile fetch
+              if (loading) {
+                logger.log('AuthProvider: onAuthStateChange setting loading to false');
+                setLoading(false);
+              }
+            });
+          } else {
+            logger.log('AuthProvider: onAuthStateChange user unchanged, skipping profile fetch');
             if (loading) {
-              logger.log('AuthProvider: onAuthStateChange setting loading to false');
               setLoading(false);
             }
-          });
+          }
         } else {
           logger.log('AuthProvider: onAuthStateChange no user, setting user to null');
           setUser(null);
@@ -242,11 +270,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         { event: '*', schema: 'public', table: 'users', filter: `id=eq.${current.id}` },
         async (_payload) => {
           try {
-            const refreshed = await fetchUserProfile(current as unknown as User);
+            const refreshed = await fetchUserProfile(current as unknown as User, true);
             if (refreshed) {
-              setUser(refreshed);
-              localStorage.setItem('user', JSON.stringify(refreshed));
-              logger.log('AuthProvider: user profile refreshed from realtime change');
+              const profileChanged = JSON.stringify(current.profile) !== JSON.stringify(refreshed.profile);
+              if (profileChanged) {
+                setUser(refreshed);
+                localStorage.setItem('user', JSON.stringify(refreshed));
+                logger.log('AuthProvider: user profile refreshed from realtime change');
+              }
             }
           } catch (err) {
             logger.error('AuthProvider: error refreshing profile from realtime', err);

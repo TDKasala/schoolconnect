@@ -10,6 +10,18 @@ const PendingApprovalPage: React.FC = () => {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
+    // If user is already approved, redirect immediately
+    if (typedUser?.profile?.approved === true) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    // If no user or no profile, redirect to login
+    if (!typedUser || !typedUser.profile) {
+      navigate('/connexion', { replace: true });
+      return;
+    }
+
     let timer: number | undefined;
 
     const checkApproval = async () => {
@@ -24,20 +36,23 @@ const PendingApprovalPage: React.FC = () => {
         if (!error && data?.approved === true) {
           navigate('/dashboard', { replace: true });
         }
+      } catch (err) {
+        console.error('Error checking approval status:', err);
       } finally {
         setChecking(false);
       }
     };
 
-    // Initial check
-    checkApproval();
-    // Poll every 5s
-    timer = window.setInterval(checkApproval, 5000);
+    // Initial check after 1 second
+    const initialTimer = setTimeout(checkApproval, 1000);
+    // Poll every 10s (reduced frequency)
+    timer = window.setInterval(checkApproval, 10000);
 
     return () => {
+      clearTimeout(initialTimer);
       if (timer) window.clearInterval(timer);
     };
-  }, [navigate, typedUser?.id]);
+  }, [navigate, typedUser?.id, typedUser?.profile?.approved]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

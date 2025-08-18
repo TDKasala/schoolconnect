@@ -1,0 +1,90 @@
+diff --git a/src/components/auth/PrivateRoute.tsx b/src/components/auth/PrivateRoute.tsx
+index 1234567..abcdefg 100644
+--- a/src/components/auth/PrivateRoute.tsx
++++ b/src/components/auth/PrivateRoute.tsx
+@@ -51,9 +51,19 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+   }
+ 
+-  // Gate: if user profile exists and is not approved, redirect to Pending Approval
++  // Gate: if user profile exists and is not approved, redirect to Pending Approval
+   const approved = profile?.approved;
+   const onPendingPage = location.pathname === '/en-attente-approbation';
+-  if (approved === false && !onPendingPage) {
++  
++  // Handle approval status more robustly - treat null/undefined as pending approval
++  // Only allow access if explicitly approved (true)
++  if (approved !== true && !onPendingPage) {
++    if (import.meta.env.DEV) {
++      console.log('PrivateRoute: user not approved, redirecting to pending page', { approved, profile });
++    }
+     return <Navigate to="/en-attente-approbation" replace />;
+   }
++  
++  // If on pending page but user is approved, redirect to dashboard
++  if (approved === true && onPendingPage) {
++    if (import.meta.env.DEV) {
++      console.log('PrivateRoute: user approved, redirecting from pending page to dashboard');
++    }
++    return <Navigate to="/dashboard" replace />;
++  }
+
+diff --git a/src/components/auth/RoleRoute.tsx b/src/components/auth/RoleRoute.tsx
+index 1234567..abcdefg 100644
+--- a/src/components/auth/RoleRoute.tsx
++++ b/src/components/auth/RoleRoute.tsx
+@@ -42,6 +42,13 @@ const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
+   }
+ 
+   const role = typedUser.profile?.role;
++  
++  // Handle missing or invalid role
++  if (!role) {
++    if (import.meta.env.DEV) {
++      console.log('RoleRoute: no role found, redirecting to dashboard', { profile: typedUser.profile });
++    }
++    return <Navigate to="/dashboard" replace state={{ missingRole: true }} />;
++  }
++  
+   if (!allowedRoles.includes(role)) {
+     if (import.meta.env.DEV) {
+       console.log('RoleRoute: unauthorized role, redirecting to dashboard', { role, allowedRoles });
+     }
+-    return <Navigate to="/dashboard" replace state={{ unauthorized: true }} />;
++    return <Navigate to="/dashboard" replace state={{ unauthorized: true, userRole: role }} />;
+   }
+
+diff --git a/src/contexts/AuthContext.tsx b/src/contexts/AuthContext.tsx
+index 1234567..abcdefg 100644
+--- a/src/contexts/AuthContext.tsx
++++ b/src/contexts/AuthContext.tsx
+@@ -52,8 +52,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+   });
+   const [loading, setLoading] = useState(true);
++  const [profileFetchInProgress, setProfileFetchInProgress] = useState(false);
+ 
+-  const fetchUserProfile = async (authUser: User | null): Promise<UserWithProfile | null> => {
++  const fetchUserProfile = async (authUser: User | null, force = false): Promise<UserWithProfile | null> => {
+     if (!authUser) {
+       logger.log('AuthProvider: fetchUserProfile called with null user');
+       return null;
+     }
+     
++    // Prevent concurrent profile fetches unless forced
++    if (profileFetchInProgress && !force) {
++      logger.log('AuthProvider: profile fetch already in progress, skipping');
++      return user as UserWithProfile;
++    }
++    
+     try {
++      setProfileFetchInProgress(true);
+       logger.log('AuthProvider: fetching user profile for', authUser.id);
+       
+       // Add a timeout to prevent indefinite hanging
+@@ -103,6 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+       });
+       logger.log('AuthProvider: returning auth user only due to exception');
+       return authUser as UserWithProfile;
++    } finally {
++      setProfileFetchInProgress(false);
+     }
+   };

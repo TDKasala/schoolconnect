@@ -3,6 +3,7 @@ import { Download, AlertCircle, CheckCircle, Wand2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BulletinService, BulletinReport } from '../../services/bulletinService';
 import { GeminiService } from '../../services/geminiService';
+import { AIErrorBoundary } from '../ErrorBoundary';
 
 interface AIBulletinGeneratorProps {
   classId?: string;
@@ -119,47 +120,94 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = (_props) => {
 
   const enrichBulletinWithAI = async (studentId: string) => {
     const b = bulletins.find((x) => x.student_id === studentId);
-    if (!b) return;
+    if (!b) {
+      setError('Bulletin non trouvé pour cet élève');
+      return;
+    }
+    
     setAiLoading(true);
+    setError('');
+    
     try {
       const res = await GeminiService.assist(buildAIPrompt(b));
       if (res.ok) {
         const text = res.text?.trim() || '';
-        setBulletins((prev) =>
-          prev.map((it) => (it.student_id === studentId ? { ...it, ai_feedback: text } : it))
-        );
+        if (text) {
+          setBulletins((prev) =>
+            prev.map((it) => (it.student_id === studentId ? { ...it, ai_feedback: text } : it))
+          );
+        } else {
+          setError('Réponse IA vide reçue');
+        }
       } else {
-        setError(res.error || "Erreur lors de l'assistance IA");
+        const errorMsg = res.error || "Erreur lors de l'assistance IA";
+        console.error('AI Service Error:', errorMsg);
+        setError(errorMsg);
       }
     } catch (e) {
-      setError("Erreur lors de l'assistance IA");
+      const errorMsg = e instanceof Error ? e.message : "Erreur lors de l'assistance IA";
+      console.error('AI Request Error:', e);
+      setError(errorMsg);
     } finally {
       setAiLoading(false);
     }
   };
 
   const enrichAllWithAI = async () => {
-    if (bulletins.length === 0) return;
+    if (bulletins.length === 0) {
+      setError('Aucun bulletin à traiter');
+      return;
+    }
+    
     setAiLoading(true);
     setError('');
+    let processedCount = 0;
+    let errorCount = 0;
+    
     try {
       for (const b of bulletins) {
-        const res = await GeminiService.assist(buildAIPrompt(b));
-        const text = res.ok ? (res.text?.trim() || '') : '';
-        setBulletins((prev) => prev.map((it) => (it.student_id === b.student_id ? { ...it, ai_feedback: text } : it)));
-        // Small delay to be gentle with rate limits
-        await new Promise((r) => setTimeout(r, 200));
+        try {
+          const res = await GeminiService.assist(buildAIPrompt(b));
+          if (res.ok && res.text?.trim()) {
+            const text = res.text.trim();
+            setBulletins((prev) => 
+              prev.map((it) => 
+                it.student_id === b.student_id ? { ...it, ai_feedback: text } : it
+              )
+            );
+            processedCount++;
+          } else {
+            console.warn(`AI failed for student ${b.student_name}:`, res.error);
+            errorCount++;
+          }
+        } catch (individualError) {
+          console.error(`Error processing ${b.student_name}:`, individualError);
+          errorCount++;
+        }
+        
+        // Rate limiting delay
+        await new Promise((r) => setTimeout(r, 300));
       }
-      setSuccess('Commentaires IA générés pour tous les bulletins');
+      
+      if (processedCount > 0) {
+        setSuccess(`Commentaires IA générés pour ${processedCount}/${bulletins.length} bulletins`);
+      }
+      
+      if (errorCount > 0) {
+        setError(`${errorCount} erreurs lors de la génération des commentaires IA`);
+      }
     } catch (e) {
-      setError("Erreur lors de la génération des commentaires IA");
+      const errorMsg = e instanceof Error ? e.message : "Erreur lors de la génération des commentaires IA";
+      console.error('Bulk AI Generation Error:', e);
+      setError(errorMsg);
     } finally {
       setAiLoading(false);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <AIErrorBoundary>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Génération de Bulletins IA</h1>
         <p className="mt-2 text-gray-600">
@@ -355,7 +403,8 @@ const AIBulletinGenerator: React.FC<AIBulletinGeneratorProps> = (_props) => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AIErrorBoundary>
   );
 };
 
