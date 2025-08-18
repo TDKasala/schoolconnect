@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return null;
     }
     
-    // Prevent concurrent profile fetches unless forced
+    // Prevent concurrent fetches unless forced
     if (profileFetchInProgress && !force) {
       logger.log('AuthProvider: profile fetch already in progress, skipping');
       return user as UserWithProfile;
@@ -68,12 +68,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setProfileFetchInProgress(true);
       logger.log('AuthProvider: fetching user profile for', authUser.id);
+      console.log('[AUTH] Starting profile fetch for user:', authUser.id);
+      console.log('[AUTH] Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
       
       // Add a timeout to prevent indefinite hanging
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
       );
       
+      console.log('[AUTH] Making Supabase query to users table...');
       const supabasePromise = supabase
         .from('users')
         .select('id, full_name, role, school_id, created_at, approved')
@@ -81,9 +84,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .single();
       
       const { data, error } = await Promise.race([supabasePromise, timeoutPromise]) as any;
+      console.log('[AUTH] Query completed. Data:', data, 'Error:', error);
 
       if (error) {
         logger.error('Profile fetch error:', error);
+        console.error('[AUTH] Profile fetch error:', error);
+        console.error('[AUTH] Error code:', error.code);
+        console.error('[AUTH] Error message:', error.message);
+        console.error('[AUTH] Error details:', error.details);
+        console.error('[AUTH] Error hint:', error.hint);
         logger.error('Profile fetch error details:', {
           code: error.code,
           message: error.message,
@@ -92,8 +101,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         
         // For critical errors, return user with empty profile to prevent infinite loading
-        if (error.code === 'PGRST116' || error.message?.includes('JWT')) {
+        if (error.code === 'PGRST116' || error.message?.includes('JWT') || error.message?.includes('Row not found')) {
           logger.log('AuthProvider: critical error, returning user with empty profile');
+          console.warn('[AUTH] Critical error detected, returning user with null profile to prevent infinite loading');
           return {
             ...authUser,
             profile: null
@@ -104,17 +114,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return authUser as UserWithProfile;
       }
 
+      if (!data) {
+        console.warn('[AUTH] No profile data returned, attempting to create user profile...');
+        
+        // Try to create a basic profile for the user
+        const { data: newProfile, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: authUser.id,
+            email: authUser.email || '',
+            full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
+            role: 'teacher', // Default role
+            approved: false // Requires admin approval
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('[AUTH] Failed to create user profile:', createError);
+          logger.log('AuthProvider: could not create profile, returning user with null profile');
+          return {
+            ...authUser,
+            profile: null
+          };
+        }
+        
+        console.log('[AUTH] Created new user profile:', newProfile);
+        return {
+          ...authUser,
+          profile: newProfile as Profile
+        };
+      }
+
       logger.log('AuthProvider: profile data fetched', data);
+      console.log('[AUTH] Profile data successfully fetched:', data);
       const userWithProfile: UserWithProfile = {
         ...authUser,
         profile: data as Profile
       };
-      logger.log('AuthProvider: returning merged user profile', userWithProfile);
+      logger.log('AuthProvider: returning user with profile');
       return userWithProfile;
     } catch (error) {
       logger.error('Profile fetch exception:', error);
+      console.error('[AUTH] Profile fetch exception:', error);
       logger.error('Profile fetch exception details:', {
-        name: (error as Error).name,
         message: (error as Error).message,
         stack: (error as Error).stack
       });
@@ -150,32 +193,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       try {
         logger.log('AuthProvider: checking session');
-        const { data: { session } } = await supabase.auth.getSession();
-        logger.log('AuthProvider: session check result', session);
-        
-        if (isMounted && session?.user) {
-          logger.log('AuthProvider: session user found, fetching profile');
-          const userWithProfile = await fetchUserProfile(session.user);
-          logger.log('AuthProvider: profile fetch complete, setting user');
-          if (isMounted && userWithProfile) {
-            // Avoid redundant state updates if nothing changed
-            const prev = user as UserWithProfile | null;
-            const profileChanged = !prev || prev.id !== userWithProfile.id ||
-              JSON.stringify(prev.profile) !== JSON.stringify(userWithProfile.profile);
-            
-            if (profileChanged) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          logger.log('AuthProvider: initial session check', { hasSession: !!session });
+          console.log('[AUTH] Initial session check, has session:', !!session);
+          if (session?.user) {
+            console.log('[AUTH] Initial session user found, fetching profile...');
+            fetchUserProfile(session.user).then(userWithProfile => {
+              console.log('[AUTH] Initial profile fetch complete:', !!userWithProfile?.profile);
               setUser(userWithProfile);
-              localStorage.setItem('user', JSON.stringify(userWithProfile));
-              logger.log('AuthProvider: user state updated');
-            } else {
-              logger.log('AuthProvider: user profile unchanged, skipping update');
-            }
+              setLoading(false);
+            });
+          } else {
+            console.log('[AUTH] No initial session, setting loading to false');
+            setLoading(false);
           }
-        } else if (isMounted) {
-          logger.log('AuthProvider: no session user found, setting user to null');
-          setUser(null);
-          localStorage.removeItem('user');
-        }
+        });
       } catch (error) {
         logger.error('Session check error:', error);
         logger.error('Session check error details:', {
@@ -208,8 +240,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     }
 
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      logger.log('AuthProvider: onAuthStateChange triggered', _event, session?.user?.id);
+    const { data: authSubscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.log('AuthProvider: auth state changed', { event, hasSession: !!session });
+      console.log('[AUTH] Auth state changed:', event, 'Session:', !!session);
       if (isMounted) {
         if (session?.user) {
           // Only fetch profile if user changed or we don't have a profile yet
@@ -268,7 +301,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       logger.log('AuthProvider: cleanup function called');
       isMounted = false;
-      authSubscription?.unsubscribe();
+      authSubscription?.subscription.unsubscribe();
       // Ensure loading is set to false when component unmounts
       if (loading) {
         logger.log('AuthProvider: cleanup setting loading to false');
