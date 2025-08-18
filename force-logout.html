@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Logout - SchoolConnect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Force Logout Tool</h1>
+    <button id="forceLogout">Force Logout</button>
+    <button id="clearStorage">Clear All Storage</button>
+    <div id="status"></div>
+
+    <script>
+        const supabaseUrl = 'https://urtsvqedsewswknyxvnw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVydHN2cWVkc2V3c3drbnl4dm53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTgzMTYsImV4cCI6MjA2OTAzNDMxNn0.0u-JwSKSisSH1elVir0tsrbPwPmg4OK-Hn6eenjjAjc';
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+        
+        const status = document.getElementById('status');
+        
+        document.getElementById('forceLogout').addEventListener('click', async () => {
+            try {
+                status.innerHTML = 'Logging out...';
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) {
+                    status.innerHTML = `Logout error: ${error.message}`;
+                } else {
+                    status.innerHTML = 'Successfully logged out!';
+                }
+            } catch (err) {
+                status.innerHTML = `Error: ${err.message}`;
+            }
+        });
+        
+        document.getElementById('clearStorage').addEventListener('click', () => {
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            status.innerHTML = 'All storage cleared! Refresh the page.';
+        });
+        
+        // Show current session status
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                status.innerHTML = `Current user: ${session.user.email}`;
+            } else {
+                status.innerHTML = 'No active session';
+            }
+        });
+    </script>
+</body>
+</html>
