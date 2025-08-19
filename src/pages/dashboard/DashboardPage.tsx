@@ -6,6 +6,7 @@ import PlatformAdminDashboard from '../../components/dashboard/PlatformAdminDash
 import ParentDashboard from '../../components/dashboard/ParentDashboard';
 import PendingAccountMessage from '../../components/dashboard/PendingAccountMessage';
 import DashboardSkeleton from '../../components/dashboard/DashboardSkeleton';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { AlertTriangle } from 'lucide-react';
 import useAuthDebug from '../../hooks/useAuthDebug';
 
@@ -72,7 +73,7 @@ const DashboardPage: React.FC = () => {
     return <PendingAccountMessage />;
   }
 
-  const renderDashboard = () => {
+  const renderDashboardContent = () => {
     const role = typedUser?.profile?.role;
     
     // Wrap each dashboard component in Suspense to prevent flicker
@@ -117,7 +118,11 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  return renderDashboard();
+  return (
+    <DashboardLayout>
+      {renderDashboardContent()}
+    </DashboardLayout>
+  );
 };
 
 export default DashboardPage;
