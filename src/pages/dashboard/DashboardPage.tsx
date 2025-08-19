@@ -67,12 +67,8 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  // Redirect unapproved users to login (handled by PrivateRoute)
-  // This check is redundant but kept for safety
-  if (typedUser.profile?.approved === false) {
-    window.location.href = '/connexion?error=not_approved';
-    return null;
-  }
+  // Approval check is now handled by PrivateRoute - remove redundant check
+  // that was causing flickering
 
   const renderDashboardContent = () => {
     const role = typedUser?.profile?.role;

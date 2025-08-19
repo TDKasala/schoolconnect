@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth, UserWithProfile } from '../../contexts/AuthContext';
 import Spinner from '../Spinner';
 
@@ -19,7 +19,6 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
   redirectTo
 }) => {
   const { user, loading } = useAuth();
-  const location = useLocation();
   const typedUser = user as UserWithProfile | null;
 
   if (import.meta.env.DEV) {
@@ -29,7 +28,7 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
       allowedRoles,
       user: typedUser?.id,
       loading,
-      pathname: location.pathname
+      pathname: 'current route'
     });
   }
 
@@ -54,7 +53,7 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
     return <Spinner />;
   }
 
-  // Check approval requirement
+  // Check approval requirement - only if profile is fully loaded
   if (requireApproval && typedUser?.profile) {
     const approved = typedUser.profile.approved;
     

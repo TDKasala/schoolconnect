@@ -20,22 +20,25 @@ test.describe('Authentication Flow Regression Tests', () => {
     // Submit form
     await page.click('[data-testid="login-button"]');
     
-    // Should redirect to dashboard or pending approval
-    await expect(page).toHaveURL(/\/(dashboard|en-attente-approbation)/);
+    // Should redirect to dashboard
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
-  test('should show pending approval page for unapproved users', async ({ page }) => {
-    // Mock unapproved user session
-    await page.addInitScript(() => {
-      window.localStorage.setItem('supabase.auth.token', JSON.stringify({
-        user: { id: 'test-user', email: 'test@example.com' },
-        session: { access_token: 'mock-token' }
-      }));
+  test('should redirect unapproved users to login', async ({ page }) => {
+    await page.route('**/auth/v1/user', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id: 'test-user', email: 'test@example.com' },
+          profile: { approved: false }
+        })
+      });
     });
 
     await page.goto('/dashboard');
-    await expect(page).toHaveURL(/.*en-attente-approbation/);
-    await expect(page.locator('text=En attente d\'approbation')).toBeVisible();
+    await expect(page).toHaveURL(/.*connexion.*error=not_approved/);
+    await expect(page.locator('text=pending approval')).toBeVisible();
   });
 
   test('should redirect approved users to dashboard', async ({ page }) => {
@@ -47,8 +50,8 @@ test.describe('Authentication Flow Regression Tests', () => {
       }));
     });
 
-    await page.goto('/en-attente-approbation');
-    // Should redirect to dashboard
+    await page.goto('/dashboard');
+    // Should stay on dashboard for approved users
     await expect(page).toHaveURL(/.*dashboard/);
   });
 

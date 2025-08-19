@@ -64,7 +64,8 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const approved = profile?.approved;
   
   // Handle approval status - redirect unapproved users to login with error message
-  if (approved !== true) {
+  // Only check if profile is loaded (not null/undefined)
+  if (profile && approved !== true) {
     if (import.meta.env.DEV) {
       console.log('PrivateRoute: user not approved, redirecting to login', { approved, profile });
     }

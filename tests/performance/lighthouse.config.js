@@ -4,8 +4,7 @@ module.exports = {
       url: [
         'http://localhost:3000/',
         'http://localhost:3000/connexion',
-        'http://localhost:3000/dashboard',
-        'http://localhost:3000/en-attente-approbation'
+        'http://localhost:3000/dashboard'
       ],
       numberOfRuns: 3,
       settings: {
