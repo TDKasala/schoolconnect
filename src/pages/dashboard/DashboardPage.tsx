@@ -4,7 +4,6 @@ import SchoolAdminDashboard from '../../components/dashboard/SchoolAdminDashboar
 import TeacherDashboard from '../../components/dashboard/TeacherDashboard';
 import PlatformAdminDashboard from '../../components/dashboard/PlatformAdminDashboard';
 import ParentDashboard from '../../components/dashboard/ParentDashboard';
-import PendingAccountMessage from '../../components/dashboard/PendingAccountMessage';
 import DashboardSkeleton from '../../components/dashboard/DashboardSkeleton';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { AlertTriangle } from 'lucide-react';
@@ -68,9 +67,11 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  // Show pending message for users awaiting admin approval
+  // Redirect unapproved users to login (handled by PrivateRoute)
+  // This check is redundant but kept for safety
   if (typedUser.profile?.approved === false) {
-    return <PendingAccountMessage />;
+    window.location.href = '/connexion?error=not_approved';
+    return null;
   }
 
   const renderDashboardContent = () => {

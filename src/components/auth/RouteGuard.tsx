@@ -57,22 +57,13 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
   // Check approval requirement
   if (requireApproval && typedUser?.profile) {
     const approved = typedUser.profile.approved;
-    const onPendingPage = location.pathname === '/en-attente-approbation';
     
-    // Redirect unapproved users to pending page
-    if (approved !== true && !onPendingPage) {
+    // Redirect unapproved users to login with error message
+    if (approved !== true) {
       if (import.meta.env.DEV) {
-        console.log('RouteGuard: user not approved, redirecting to pending page', { approved });
+        console.log('RouteGuard: user not approved, redirecting to login', { approved });
       }
-      return <Navigate to="/en-attente-approbation" replace />;
-    }
-    
-    // Redirect approved users away from pending page
-    if (approved === true && onPendingPage) {
-      if (import.meta.env.DEV) {
-        console.log('RouteGuard: user approved, redirecting from pending page');
-      }
-      return <Navigate to={redirectTo || '/dashboard'} replace />;
+      return <Navigate to="/connexion?error=not_approved" replace />;
     }
   }
 

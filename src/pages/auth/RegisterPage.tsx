@@ -57,7 +57,7 @@ const RegisterPage: React.FC = () => {
         'teacher', // Default role for new users
         undefined // No school ID for new registrations
       );
-      navigate('/en-attente-approbation');
+      navigate('/connexion?success=registered');
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message || 'Erreur lors de l\'inscription. Veuillez réessayer.');

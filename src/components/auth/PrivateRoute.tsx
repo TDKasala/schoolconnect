@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface PrivateRouteProps {
@@ -20,7 +20,6 @@ const Spinner: React.FC = () => (
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  const location = useLocation();
   
   if (import.meta.env.DEV) {
     console.log('PrivateRoute: checking auth state', { user, loading });
@@ -61,25 +60,15 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     // Continue to dashboard - it will show appropriate error message
   }
 
-  // Gate: if user profile exists and is not approved, redirect to Pending Approval
+  // Gate: if user profile exists and is not approved, redirect to login
   const approved = profile?.approved;
-  const onPendingPage = location.pathname === '/en-attente-approbation';
   
-  // Handle approval status more robustly - treat null/undefined as pending approval
-  // Only allow access if explicitly approved (true)
-  if (approved !== true && !onPendingPage) {
+  // Handle approval status - redirect unapproved users to login with error message
+  if (approved !== true) {
     if (import.meta.env.DEV) {
-      console.log('PrivateRoute: user not approved, redirecting to pending page', { approved, profile });
+      console.log('PrivateRoute: user not approved, redirecting to login', { approved, profile });
     }
-    return <Navigate to="/en-attente-approbation" replace />;
-  }
-  
-  // If on pending page but user is approved, redirect to dashboard
-  if (approved === true && onPendingPage) {
-    if (import.meta.env.DEV) {
-      console.log('PrivateRoute: user approved, redirecting from pending page to dashboard');
-    }
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/connexion?error=not_approved" replace />;
   }
 
   if (import.meta.env.DEV) {

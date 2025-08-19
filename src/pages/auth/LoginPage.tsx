@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [error, setError] = useState('');
   const { login, user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const errorParam = searchParams.get('error');
+  const location = useLocation();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -24,14 +24,27 @@ const LoginPage: React.FC = () => {
     }
   }, [user, navigate, from]);
 
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+    
+    // Handle error from URL params
+    if (errorParam === 'not_approved') {
+      setError('Your account is pending approval. Please wait for an administrator to approve your account before accessing the dashboard.');
+    } else if (searchParams.get('success') === 'registered') {
+      setError('Registration successful! Your account is pending approval. Please wait for an administrator to approve your account.');
+    }
+  }, [user, navigate, errorParam]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    console.log('LoginPage: attempting login for', formData.email);
+    console.log('LoginPage: attempting login for', email);
 
     try {
-      await login(formData.email, formData.password);
+      await login(email, password);
       console.log('LoginPage: login successful, waiting for useEffect to redirect');
       // Redirect is handled by useEffect when user state changes
       // Note: AuthContext will handle setting loading to false
@@ -80,8 +93,8 @@ const LoginPage: React.FC = () => {
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="votre@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -96,8 +109,8 @@ const LoginPage: React.FC = () => {
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Mot de passe"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>

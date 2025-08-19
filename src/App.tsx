@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth, UserWithProfile } from './contexts/AuthContext';
+import { useAuth, AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import PrivateRoute from './components/auth/PrivateRoute';
@@ -12,59 +12,6 @@ import AnalyticsTracker from './components/AnalyticsTracker';
 import AppErrorBoundary from './components/ErrorBoundary';
 import { hasSupabase, supabaseInitError } from './lib/supabase';
 
-// Error Boundary Component
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('App Error Boundary caught an error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-          <div className="max-w-md text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Une erreur est survenue</h2>
-            <p className="text-gray-700 mb-4">
-              Désolé, une erreur inattendue s'est produite dans l'application.
-            </p>
-            <details className="text-left bg-gray-100 p-4 rounded-lg mb-4 max-h-40 overflow-auto">
-              <summary className="cursor-pointer font-medium text-gray-800 mb-2">Détails de l'erreur</summary>
-              <pre className="text-sm text-red-600 whitespace-pre-wrap">
-                {this.state.error?.toString()}
-              </pre>
-            </details>
-            <button 
-              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-              onClick={() => window.location.reload()}
-            >
-              Recharger la page
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 // Public pages
 import HomePage from './pages/public/HomePage';
@@ -82,12 +29,10 @@ import PrivacyPage from './pages/public/PrivacyPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import PendingApprovalPage from './pages/auth/PendingApprovalPage';
 
 // Dashboard pages
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import DashboardPage from './pages/dashboard/DashboardPage';
-import PlatformAdminDashboard from './components/dashboard/PlatformAdminDashboard';
 import PospSection from './pages/dashboard/PospSection';
 import UbankSection from './pages/dashboard/UbankSection';
 import ParentPortalSection from './pages/dashboard/ParentPortalSection';
@@ -107,8 +52,7 @@ import ParentNotesPage from './pages/dashboard/ParentNotesPage';
 import ParentPaymentsPage from './pages/dashboard/ParentPaymentsPage';
 
 const AppContent: React.FC = () => {
-  const { user, loading } = useAuth();
-  const typedUser = user as UserWithProfile | null;
+  const { loading } = useAuth();
   
   // Loading state is handled by AuthContext, no additional timeout needed
 
@@ -166,7 +110,6 @@ VITE_SUPABASE_ANON_KEY
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/inscription" element={<RegisterPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
-            <Route path="/en-attente-approbation" element={<PendingApprovalPage />} />
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={
