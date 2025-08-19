@@ -36,7 +36,7 @@ export interface Profile {
   full_name: string;
   role: 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
   school_id?: string | null;
-  approved?: boolean;
+  approved: boolean;
   created_at: string;
 }
 

@@ -115,34 +115,36 @@ export class OverviewService {
 
       if (this.userRole === 'platform_admin') {
         // Platform admin sees all stats (parallelized)
-        const [studentsRes, teachersRes, classesRes, schoolsRes, usersRes] = await Promise.all([
+        const [studentsRes, teachersRes, classesRes, schoolsRes, activeUsersRes, pendingUsersRes] = await Promise.all([
           supabase.from('students').select('id', { count: 'exact', head: true }),
           supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
           supabase.from('classes').select('id', { count: 'exact', head: true }),
           supabase.from('schools').select('id', { count: 'exact', head: true }),
-          supabase.from('users').select('id', { count: 'exact', head: true })
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('approved', true).eq('is_active', true),
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('approved', false)
         ]);
 
         if (studentsRes.error) throw studentsRes.error;
         if (teachersRes.error) throw teachersRes.error;
         if (classesRes.error) throw classesRes.error;
         if (schoolsRes.error) throw schoolsRes.error;
-        if (usersRes.error) throw usersRes.error;
+        if (activeUsersRes.error) throw activeUsersRes.error;
+        if (pendingUsersRes.error) throw pendingUsersRes.error;
 
         totalStudents = studentsRes.count || 0;
         totalTeachers = teachersRes.count || 0;
         totalClasses = classesRes.count || 0;
         totalSchools = schoolsRes.count || 0;
-        activeUsers = usersRes.count || 0;
-        pendingUsers = 0; // No status column available, set to 0
+        activeUsers = activeUsersRes.count || 0;
+        pendingUsers = pendingUsersRes.count || 0;
       } else if (this.userRole === 'school_admin' && this.schoolId) {
         // School admin sees stats for their school (parallelized)
         const [studentsRes, teachersRes, classesRes, activeUsersRes, pendingUsersRes] = await Promise.all([
           supabase.from('students').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId),
           supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher').eq('school_id', this.schoolId),
           supabase.from('classes').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId),
-          supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'active').eq('school_id', this.schoolId),
-          supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('school_id', this.schoolId)
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId).eq('approved', true).eq('is_active', true),
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('school_id', this.schoolId).eq('approved', false)
         ]);
 
         if (studentsRes.error) throw studentsRes.error;

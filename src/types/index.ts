@@ -1,59 +1,14 @@
+export type UserRole = 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
+
+// Core user shape used by services (not Supabase Auth user)
 export interface User {
   id: string;
   email: string;
   name: string;
-  avatar?: string;
-  role: UserRole; // Keep for backward compatibility
-  role_id?: string;
-  roleData?: Role; // Joined role data
-  user_status_id?: string;
-  userStatus?: UserStatus; // Joined user status data
-  schoolId?: string;
+  role: UserRole;
+  schoolId?: string | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface UserWithStatus extends User {
-  userStatus: UserStatus;
-}
-
-export interface UserWithRole extends User {
-  roleData: Role;
-}
-
-export interface UserWithStatusAndRole extends User {
-  userStatus: UserStatus;
-  roleData: Role;
-}
-
-export type UserRole = 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
-
-export type StatusName = 'active' | 'inactive' | 'suspended' | 'blocked' | 'archived';
-
-export type RoleName = 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
-
-export interface Status {
-  id: string;
-  name: string;
-  display_name: string;
-  description?: string;
-  color: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface UserStatus {
-  id: string;
-  status_name: string;
-  status_display_name: string;
-  status_description?: string;
-  status_color: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: Date;
-  updated_at: Date;
 }
 
 export interface Role {
@@ -157,10 +112,3 @@ export interface CalendarEvent {
   updatedAt: Date;
 }
 
-export interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, role: UserRole, schoolId?: string) => Promise<void>;
-  logout: () => void;
-  loading: boolean;
-}
