@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { logAuthFlow, createAuthDebugInfo } from '../../utils/authDebug';
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -22,7 +23,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   
   if (import.meta.env.DEV) {
-    console.log('PrivateRoute: checking auth state', { user, loading });
+    logAuthFlow('PrivateRoute Entry', createAuthDebugInfo(user, loading));
   }
 
   // Global auth loading
@@ -60,12 +61,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     // Continue to dashboard - it will show appropriate error message
   }
 
+  // SINGLE SOURCE OF TRUTH: Only check approval here, nowhere else
   // Gate: if user profile exists and is not approved, redirect to login
   const approved = profile?.approved;
   
   // Handle approval status - redirect unapproved users to login with error message
-  // Only check if profile is loaded (not null/undefined)
-  if (profile && approved !== true) {
+  // Only check if profile is loaded and has approval field
+  if (profile && typeof approved === 'boolean' && approved !== true) {
     if (import.meta.env.DEV) {
       console.log('PrivateRoute: user not approved, redirecting to login', { approved, profile });
     }

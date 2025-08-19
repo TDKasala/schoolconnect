@@ -67,8 +67,8 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  // Approval check is now handled by PrivateRoute - remove redundant check
-  // that was causing flickering
+  // APPROVAL CHECK COMPLETELY REMOVED - PrivateRoute is single source of truth
+  // This eliminates the flickering caused by double-checking approval status
 
   const renderDashboardContent = () => {
     const role = typedUser?.profile?.role;

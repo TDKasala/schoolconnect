@@ -53,18 +53,8 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
     return <Spinner />;
   }
 
-  // Check approval requirement - only if profile is fully loaded
-  if (requireApproval && typedUser?.profile) {
-    const approved = typedUser.profile.approved;
-    
-    // Redirect unapproved users to login with error message
-    if (approved !== true) {
-      if (import.meta.env.DEV) {
-        console.log('RouteGuard: user not approved, redirecting to login', { approved });
-      }
-      return <Navigate to="/connexion?error=not_approved" replace />;
-    }
-  }
+  // APPROVAL CHECK REMOVED: PrivateRoute handles this as single source of truth
+  // RouteGuard only handles role-based access, not approval status
 
   // Check role-based access
   if (allowedRoles.length > 0 && typedUser?.profile) {

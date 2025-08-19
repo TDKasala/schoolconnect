@@ -26,11 +26,11 @@ export interface UserWithStatusAndRole extends User {
   roleData: Role;
 }
 
-export type UserRole = 'platform_admin' | 'school_admin' | 'teacher' | 'parent' | 'pending';
+export type UserRole = 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
 
-export type StatusName = 'active' | 'inactive' | 'suspended' | 'pending' | 'blocked' | 'archived';
+export type StatusName = 'active' | 'inactive' | 'suspended' | 'blocked' | 'archived';
 
-export type RoleName = 'platform_admin' | 'school_admin' | 'teacher' | 'parent' | 'pending';
+export type RoleName = 'platform_admin' | 'school_admin' | 'teacher' | 'parent';
 
 export interface Status {
   id: string;
