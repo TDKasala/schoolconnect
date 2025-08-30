@@ -115,25 +115,64 @@ AS $$
   );
 $$;
 
--- Schools policies using the helper function
+-- Schools policies: Platform admins see all, school admins see their school
 DROP POLICY IF EXISTS "schools_select_all" ON public.schools;
+DROP POLICY IF EXISTS "schools_select_platform_admin" ON public.schools;
+DROP POLICY IF EXISTS "schools_select_school_admin" ON public.schools;
 DROP POLICY IF EXISTS "schools_insert_platform_admin" ON public.schools;
 DROP POLICY IF EXISTS "schools_update_platform_admin" ON public.schools;
+DROP POLICY IF EXISTS "schools_update_school_admin" ON public.schools;
 DROP POLICY IF EXISTS "schools_delete_platform_admin" ON public.schools;
 
-CREATE POLICY "schools_select_all" ON public.schools
+-- Platform admins can see all schools
+CREATE POLICY "schools_select_platform_admin" ON public.schools
   FOR SELECT TO authenticated
   USING (public.is_platform_admin());
 
+-- School admins can see their assigned school
+CREATE POLICY "schools_select_school_admin" ON public.schools
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users 
+      WHERE users.id = auth.uid() 
+      AND users.role = 'school_admin' 
+      AND users.school_id = schools.id
+    )
+  );
+
+-- Only platform admins can create schools
 CREATE POLICY "schools_insert_platform_admin" ON public.schools
   FOR INSERT TO authenticated
   WITH CHECK (public.is_platform_admin());
 
+-- Platform admins can update any school
 CREATE POLICY "schools_update_platform_admin" ON public.schools
   FOR UPDATE TO authenticated
   USING (public.is_platform_admin())
   WITH CHECK (public.is_platform_admin());
 
+-- School admins can update their own school
+CREATE POLICY "schools_update_school_admin" ON public.schools
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users 
+      WHERE users.id = auth.uid() 
+      AND users.role = 'school_admin' 
+      AND users.school_id = schools.id
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.users 
+      WHERE users.id = auth.uid() 
+      AND users.role = 'school_admin' 
+      AND users.school_id = schools.id
+    )
+  );
+
+-- Only platform admins can delete schools
 CREATE POLICY "schools_delete_platform_admin" ON public.schools
   FOR DELETE TO authenticated
   USING (public.is_platform_admin());
