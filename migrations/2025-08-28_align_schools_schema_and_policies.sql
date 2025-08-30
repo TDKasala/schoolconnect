@@ -3,31 +3,41 @@
 
 BEGIN;
 
--- 1) SCHEMA: Extend schools table
+-- 1) SCHEMA: Extend schools table (remove admin_id to avoid relationship conflicts)
 ALTER TABLE public.schools
   ADD COLUMN IF NOT EXISTS city text,
   ADD COLUMN IF NOT EXISTS province text,
   ADD COLUMN IF NOT EXISTS country text DEFAULT 'République Démocratique du Congo',
   ADD COLUMN IF NOT EXISTS max_students integer,
-  ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true,
-  ADD COLUMN IF NOT EXISTS admin_id uuid;
+  ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
 
--- Ensure foreign key from schools.admin_id -> users.id exists
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_schema = 'public'
-      AND table_name = 'schools'
-      AND constraint_name = 'schools_admin_id_fkey'
-  ) THEN
-    ALTER TABLE public.schools
-      ADD CONSTRAINT schools_admin_id_fkey
-      FOREIGN KEY (admin_id)
-      REFERENCES public.users(id)
-      ON DELETE SET NULL;
-  END IF;
-END$$;
+  -- Remove admin_id column and its foreign key to avoid multiple relationships
+  -- School admins are identified by users.role = 'school_admin' AND users.school_id = school.id
+  -- Drop legacy trigger/function that managed schools.admin_id (column has been removed)
+  DROP TRIGGER IF EXISTS trigger_update_school_admin_reference ON public.users;
+  DROP FUNCTION IF EXISTS public.update_school_admin_reference();
+  DO $$
+  BEGIN
+    -- Drop foreign key constraint if it exists
+    IF EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_schema = 'public'
+        AND table_name = 'schools'
+        AND constraint_name = 'schools_admin_id_fkey'
+    ) THEN
+      ALTER TABLE public.schools DROP CONSTRAINT schools_admin_id_fkey;
+    END IF;
+    
+    -- Drop admin_id column if it exists
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'schools'
+        AND column_name = 'admin_id'
+    ) THEN
+      ALTER TABLE public.schools DROP COLUMN admin_id;
+    END IF;
+  END$$;
 
 -- Ensure code has a safe default so inserts can omit it
 -- Example: SCH-1a2b3c4d
@@ -55,18 +65,21 @@ BEGIN
 END$$;
 
   -- Platform admin: full read/update/insert rights on users via JWT claim
+  DROP POLICY IF EXISTS "users_select_platform_admin_v2" ON public.users;
+  DROP POLICY IF EXISTS "users_update_platform_admin_v2" ON public.users;
+  DROP POLICY IF EXISTS "users_insert_platform_admin" ON public.users;
   CREATE POLICY "users_select_platform_admin_v2" ON public.users
     FOR SELECT TO authenticated
-    USING (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'));
+    USING (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'app_metadata' ->> 'role')::text = 'platform_admin'));
   
   CREATE POLICY "users_update_platform_admin_v2" ON public.users
     FOR UPDATE TO authenticated
-    USING (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'))
-    WITH CHECK (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'));
+    USING (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'app_metadata' ->> 'role')::text = 'platform_admin'))
+    WITH CHECK (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'app_metadata' ->> 'role')::text = 'platform_admin'));
   
   CREATE POLICY "users_insert_platform_admin" ON public.users
     FOR INSERT TO authenticated
-    WITH CHECK (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'));
+    WITH CHECK (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'app_metadata' ->> 'role')::text = 'platform_admin'));
 
 -- Optional: allow self-registration profile insert for the current user
 DO $$
@@ -80,22 +93,49 @@ BEGIN
   END IF;
 END$$;
 
--- 3) RLS: Schools policies - prefer JWT for platform admin
+-- 3) RLS: Schools policies - use function to check platform admin role
 DROP POLICY IF EXISTS "schools_select_platform_admin" ON public.schools;
 DROP POLICY IF EXISTS "schools_update_platform_admin" ON public.schools;
 DROP POLICY IF EXISTS "schools_insert_platform_admin" ON public.schools;
+DROP POLICY IF EXISTS "schools_select_platform_admin_v2" ON public.schools;
+DROP POLICY IF EXISTS "schools_update_platform_admin_v2" ON public.schools;
+DROP POLICY IF EXISTS "schools_insert_platform_admin_v2" ON public.schools;
 
-  CREATE POLICY "schools_select_platform_admin_v2" ON public.schools
-    FOR SELECT TO authenticated
-    USING (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'));
-  
-  CREATE POLICY "schools_update_platform_admin_v2" ON public.schools
-    FOR UPDATE TO authenticated
-    USING (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'))
-    WITH CHECK (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'));
-  
-  CREATE POLICY "schools_insert_platform_admin_v2" ON public.schools
-    FOR INSERT TO authenticated
-    WITH CHECK (((auth.jwt() ->> 'role')::text = 'platform_admin') OR ((auth.jwt() -> 'user_metadata' ->> 'role')::text = 'platform_admin'));
+-- Create helper function to check if current user is platform admin
+CREATE OR REPLACE FUNCTION public.is_platform_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.users 
+    WHERE id = auth.uid() 
+    AND role = 'platform_admin'
+  );
+$$;
+
+-- Schools policies using the helper function
+DROP POLICY IF EXISTS "schools_select_all" ON public.schools;
+DROP POLICY IF EXISTS "schools_insert_platform_admin" ON public.schools;
+DROP POLICY IF EXISTS "schools_update_platform_admin" ON public.schools;
+DROP POLICY IF EXISTS "schools_delete_platform_admin" ON public.schools;
+
+CREATE POLICY "schools_select_all" ON public.schools
+  FOR SELECT TO authenticated
+  USING (public.is_platform_admin());
+
+CREATE POLICY "schools_insert_platform_admin" ON public.schools
+  FOR INSERT TO authenticated
+  WITH CHECK (public.is_platform_admin());
+
+CREATE POLICY "schools_update_platform_admin" ON public.schools
+  FOR UPDATE TO authenticated
+  USING (public.is_platform_admin())
+  WITH CHECK (public.is_platform_admin());
+
+CREATE POLICY "schools_delete_platform_admin" ON public.schools
+  FOR DELETE TO authenticated
+  USING (public.is_platform_admin());
 
 COMMIT;
